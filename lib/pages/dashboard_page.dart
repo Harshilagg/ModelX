@@ -11,6 +11,7 @@ import 'search_results_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../widgets/model_x_copilot.dart';
 
 
 
@@ -32,6 +33,7 @@ class _DashboardPageState extends State<DashboardPage> {
   final SearchService _searchService = SearchService();
   List<Map<String, dynamic>> searchResults = [];
   bool searching = false;
+  String _userType = 'User';
 
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
@@ -47,6 +49,17 @@ class _DashboardPageState extends State<DashboardPage> {
         setState(() => showRecent = false);
       }
     });
+    _loadUserType();
+  }
+
+  Future<void> _loadUserType() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (mounted && doc.exists) {
+        setState(() => _userType = doc.data()?['userType'] ?? 'User');
+      }
+    }
   }
 
   
@@ -124,53 +137,61 @@ class _DashboardPageState extends State<DashboardPage> {
         body: Column(
           
           children: [
-            // Persistent Top Bar
-            Container(
-            color: Colors.blue, // Top bar color
-            child: SafeArea(
-            child:Container(
-              color: Colors.blue,
-              //add some space above the top bar for status bar
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 20),
-              child: Row(
-                children: [
-                  IconButton(
+            // Persistent Top Bar (modern neutral style)
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    IconButton(
                       onPressed: () {
-                        // hide overlay when navigating away
                         setState(() {
                           searchResults = [];
                           showRecent = false;
                         });
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => ProfilePage()));
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => ProfilePage()));
                       },
-                      icon: const Icon(Icons.person, color: Colors.white)),
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      focusNode: _searchFocus,
-                      onChanged: onSearchChanged,
-                      onTap: () {
-                        if (_searchController.text.trim().isEmpty) {
-                          _loadRecentSearches();
-                          setState(() => showRecent = true);
-                        }
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Search users or @username',
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none),
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 12),
+                      icon: Icon(Icons.person, color: Theme.of(context).primaryColor),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    // Search field with subtle card
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0,4))],
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.search, color: Colors.grey),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: TextField(
+                                controller: _searchController,
+                                focusNode: _searchFocus,
+                                onChanged: onSearchChanged,
+                                onTap: () {
+                                  if (_searchController.text.trim().isEmpty) {
+                                    _loadRecentSearches();
+                                    setState(() => showRecent = true);
+                                  }
+                                },
+                                decoration: const InputDecoration(border: InputBorder.none, hintText: 'Search users or @username'),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
 
-                  // this is chat button with unread badge
-                  StreamBuilder<QuerySnapshot>(
+                    const SizedBox(width: 12),
+
+                    // Chat button with badge
+                    StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('user_chats')
                           .doc(FirebaseAuth.instance.currentUser!.uid)
@@ -179,7 +200,6 @@ class _DashboardPageState extends State<DashboardPage> {
                           .snapshots(),
                       builder: (context, snapshot) {
                         int unreadTotal = 0;
-
                         if (snapshot.hasData) {
                           for (var doc in snapshot.data!.docs) {
                             unreadTotal += (doc['unreadCount'] ?? 0) as int;
@@ -187,58 +207,37 @@ class _DashboardPageState extends State<DashboardPage> {
                         }
 
                         return Stack(
+                          clipBehavior: Clip.none,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.chat, color: Colors.white),
+                              icon: Icon(Icons.chat_bubble_outline, color: Theme.of(context).primaryColor),
                               onPressed: () {
                                 setState(() {
                                   searchResults = [];
                                   showRecent = false;
                                 });
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => ChatInboxPage()),
-                                );
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => ChatInboxPage()));
                               },
                             ),
-
-                            // 🔴 UNREAD BADGE
                             if (unreadTotal > 0)
                               Positioned(
-                                right: 6,
-                                top: 6,
+                                right: 2,
+                                top: -4,
                                 child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  constraints: const BoxConstraints(
-                                    minWidth: 18,
-                                    minHeight: 18,
-                                  ),
-                                  child: Text(
-                                    unreadTotal.toString(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle, boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)]),
+                                  constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                                  child: Center(child: Text(unreadTotal.toString(), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
                                 ),
                               ),
                           ],
                         );
                       },
                     ),
-
-
-                ],
+                  ],
+                ),
               ),
             ),
-            ),
-          ),
 
             // Page content
             Expanded(
@@ -379,25 +378,38 @@ class _DashboardPageState extends State<DashboardPage> {
           ],
         ),
 
-        // Bottom Navigation Bar
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: (i) => setState(() {
-            _selectedIndex = i;
-            // hide search overlay when switching tabs
-            searchResults = [];
-            showRecent = false;
-            FocusScope.of(context).unfocus();
-          }),
-          selectedItemColor: Colors.blue,       // Color for the active tab
-          unselectedItemColor: Colors.grey[600], // Color for inactive tabs
-          type: BottomNavigationBarType.fixed,  // Ensures all items are visible
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
-            BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Network'),
-            BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
-          ],
+        // Bottom Navigation Bar (modern)
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(color: Theme.of(context).cardColor, boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 12)]),
+          child: SafeArea(
+            child: BottomNavigationBar(
+              currentIndex: _selectedIndex,
+              onTap: (i) => setState(() {
+                _selectedIndex = i;
+                // hide search overlay when switching tabs
+                searchResults = [];
+                showRecent = false;
+                FocusScope.of(context).unfocus();
+              }),
+              selectedItemColor: Theme.of(context).primaryColor,
+              unselectedItemColor: Colors.grey[600],
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Theme.of(context).cardColor,
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
+                BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Network'),
+                BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
+              ],
+            ),
+          ),
+        ),
+        floatingActionButton: ModelXCopilot(
+          pageContext: {
+            'page': 'home',
+            'role': _userType,
+            'tab': ['Home', 'Notifications', 'Network', 'Jobs'][_selectedIndex],
+          },
         ),
       ),
     );

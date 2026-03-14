@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'create_casting_page.dart';
 
 class CastingPage extends StatelessWidget {
   const CastingPage({super.key});
@@ -7,10 +8,15 @@ class CastingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CreateCastingPage()),
+        ),
         label: const Text('Create Casting'),
         icon: const Icon(Icons.add),
+        backgroundColor: const Color(0xFF0F172A),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(

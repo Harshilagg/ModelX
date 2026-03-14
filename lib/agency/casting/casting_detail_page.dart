@@ -34,8 +34,27 @@ class _CastingDetailPageState extends State<CastingDetailPage> {
   }
 
   Future<void> _updateApplicant(String id, String status) async {
-    await _service.updateApplicantStatus(widget.castingId, id, status);
-    _load();
+    try {
+      // optimistic local update for immediate UI feedback
+      setState(() {
+        _applicants = _applicants.map((a) {
+          if ((a['id'] ?? '') == id) {
+            return {...a, 'status': status};
+          }
+          return a;
+        }).toList();
+      });
+
+      await _service.updateApplicantStatus(widget.castingId, id, status);
+
+      // reload from server to ensure canonical state
+      await _load();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Applicant status updated to $status')));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update status: $e')));
+      // reload to restore correct UI
+      await _load();
+    }
   }
 
   @override

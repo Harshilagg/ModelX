@@ -116,12 +116,22 @@ class _LoginPageState extends State<LoginPage> {
         if (!mounted) return;
         if (userDoc.exists) {
           debugPrint('➡️ Found model profile');
-          // ✅ MODEL LOGIN
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const DashboardPage()),
-            (_) => false,
-          );
+          // Mirror AuthGate logic: if profileCompleted -> Dashboard, else CreateProfilePage
+          final data = userDoc.data();
+          final profileCompleted = data != null && (data['profileCompleted'] == true);
+          if (profileCompleted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const DashboardPage()),
+              (_) => false,
+            );
+          } else {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const SelectPortfolioPage()),
+              (_) => false,
+            );
+          }
           return;
         }
 

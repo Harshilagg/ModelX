@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-// no firestore import required here; applicant data is passed in
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../pages/user_profile_page.dart';
+import '../../pages/chat_page.dart';
+import '../../services/chat_service.dart';
 
 class ApplicantCard extends StatelessWidget {
   final String castingId;
@@ -36,13 +38,66 @@ class ApplicantCard extends StatelessWidget {
                 Text(message, maxLines: 3, overflow: TextOverflow.ellipsis),
               ],
               const SizedBox(height: 8),
-              Wrap(
+                  Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  ElevatedButton(onPressed: status == 'Shortlisted' ? null : () => onUpdate(applicantId, 'shortlisted'), child: const Text('Shortlist')),
-                  OutlinedButton(onPressed: () => onUpdate(applicantId, 'rejected'), child: const Text('Reject')),
-                  TextButton(onPressed: modelUid != null ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => UserProfilePage(uid: modelUid))) : null, child: const Text('View Profile')),
+                  // 3-STEP FLOW: Shortlist -> Connect -> Message
+                  if (modelUid != null) ...[
+                    if (status == 'pending')
+                      ElevatedButton(
+                        onPressed: () => onUpdate(applicantId, 'SHORTLISTED'),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue[50]),
+                        child: const Text('Shortlist', style: TextStyle(color: Colors.blue)),
+                      )
+                    else if (status == 'SHORTLISTED')
+                      ElevatedButton(
+                        onPressed: () async {
+                          final current = FirebaseAuth.instance.currentUser;
+                          if (current == null) return;
+                          final agencyId = current.uid;
+                          final chatService = ChatService();
+                          try {
+                            final chatId = await chatService.createChat(castingId, modelUid, agencyId);
+                            if (context.mounted) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ChatPage(peerId: modelUid, peerName: name, peerImage: avatar ?? '', chatId: chatId),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to connect: $e')));
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                        child: const Text('Connect', style: TextStyle(color: Colors.white)),
+                      )
+                    else if (status == 'NEGOTIATING')
+                      ElevatedButton(
+                        onPressed: () {
+                          final list = [FirebaseAuth.instance.currentUser!.uid, modelUid]..sort();
+                          final chatId = list.join('--');
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ChatPage(peerId: modelUid, peerName: name, peerImage: avatar ?? '', chatId: chatId),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F172A)),
+                        child: const Text('Message', style: TextStyle(color: Colors.white)),
+                      ),
+                  ],
+                  
+                  if (status != 'rejected')
+                    OutlinedButton(onPressed: () => onUpdate(applicantId, 'rejected'), child: const Text('Reject')),
+                  
+                  TextButton(
+                    onPressed: modelUid != null ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => UserProfilePage(uid: modelUid))) : null, 
+                    child: const Text('View Profile'),
+                  ),
                 ],
               )
             ]),

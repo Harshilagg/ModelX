@@ -63,7 +63,13 @@ class _CastingListPageState extends State<CastingListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateCastingPage())).then((_) => _load()), label: const Text('Create Casting'), icon: const Icon(Icons.add)),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateCastingPage())).then((_) => _load()),
+        label: const Text('Create Casting'),
+        icon: const Icon(Icons.add),
+        backgroundColor: const Color(0xFF0F172A),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

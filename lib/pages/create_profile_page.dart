@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dashboard_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../agency/scouting/ai_scout_service.dart'; // Import AI Service
 
 class CreateProfilePage extends StatefulWidget {
   final VoidCallback? onComplete; // for tests or custom flows to avoid Firebase calls
@@ -69,14 +70,21 @@ class _CreateProfilePageState extends State<CreateProfilePage> {
       }
     }
 
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+    final profileData = {
       'fullName': displayNameController.text.trim(),
       'fullNameLower': displayNameController.text.trim().toLowerCase(),
       'username': desiredUsername,
       'usernameLower': desiredUsername.isNotEmpty ? desiredUsername.toLowerCase() : null,
       'bio': bioController.text.trim(),
       'profileCompleted': true,
-    }, SetOptions(merge: true));
+    };
+
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set(profileData, SetOptions(merge: true));
+
+    // AUTO-SYNC: Index new user for AI Search
+    AiScoutService().indexProfile(user.uid, profileData).catchError((e) {
+      debugPrint('AI Initial Sync failed: $e');
+    });
 
     setState(() => loading = false);
 

@@ -1,11 +1,18 @@
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import '../widgets/model_card.dart';
+import '../../widgets/model_x_copilot.dart';
 import 'scout_service.dart';
+import 'ai_scout_service.dart';
 
 class ScoutPage extends StatefulWidget {
-  const ScoutPage({super.key});
+  final bool standalone;
+  final Function(List<AiScoutResult>)? onExternalResults;
+  const ScoutPage({super.key, this.standalone = true, this.onExternalResults});
+
+  // Static bridge for external AI results (e.g. from Dashboard Copilot)
+  static void Function(List<AiScoutResult>)? onAiResultsExternal;
 
   @override
   State<ScoutPage> createState() => _ScoutPageState();
@@ -15,7 +22,9 @@ class _ScoutPageState extends State<ScoutPage> {
   final _searchCtl = TextEditingController();
   final _locationCtl = TextEditingController();
   final _service = ScoutService();
+  final _aiService = AiScoutService();
 
+  bool _aiMode = false;
   String? _gender;
   int? _minAge;
   int? _maxAge;
@@ -25,12 +34,20 @@ class _ScoutPageState extends State<ScoutPage> {
   // full fetched+filtered results and visible page slice
   List<Map<String, dynamic>> _allResults = [];
   List<Map<String, dynamic>> _results = [];
+  List<AiScoutResult> _aiResults = [];
   int _pageSize = 20;
+
+  @override
+  void initState() {
+    super.initState();
+    ScoutPage.onAiResultsExternal = _onAiResults;
+  }
 
   @override
   void dispose() {
     _searchCtl.dispose();
     _locationCtl.dispose();
+    ScoutPage.onAiResultsExternal = null; // Clear bridge
     super.dispose();
   }
 
@@ -38,6 +55,8 @@ class _ScoutPageState extends State<ScoutPage> {
     setState(() {
       _loading = true;
       _results = [];
+      _aiMode = false; // Reset AI mode when starting a normal search
+      _aiResults = []; // Also clear AI results
     });
 
     final filters = <String, dynamic>{};
@@ -51,87 +70,42 @@ class _ScoutPageState extends State<ScoutPage> {
     try {
       final results = await _service.searchUsers(query: query, filters: filters);
 
-      // client-side permissive matching: show doc if ANY one field matches query or filters
-      final qLower = query.toLowerCase();
-      final List<Map<String, dynamic>> docs = [];
+      setState(() {
+        _allResults = results.map((d) {
+          final data = Map<String, dynamic>.from(d);
+          data['id'] = data['id'] ?? data['uid'];
+          return data;
+        }).toList();
 
-      for (final d in results) {
-        final Map<String, dynamic> data = Map<String, dynamic>.from(d);
-        data['id'] = data['id'] ?? data['uid'];
-
-        bool matched = false;
-
-        if (qLower.isEmpty) matched = true;
-
-        // fields to check for permissive matching
-        final fullName = (data['fullName'] ?? data['displayName'] ?? '').toString().toLowerCase();
-        final username = (data['username'] ?? '').toString().toLowerCase();
-        final location = (data['location'] ?? '').toString().toLowerCase();
-
-        List<String> toList(dynamic v) {
-          if (v == null) return [];
-          if (v is List) return v.map((e) => e.toString().toLowerCase()).toList();
-          return v.toString().split(',').map((e) => e.trim().toLowerCase()).where((e) => e.isNotEmpty).toList();
+        // simple sorting
+        if (_sort == 'recency') {
+          _allResults.sort((a, b) {
+            final ta = (a['createdAt'] is Timestamp) ? (a['createdAt'] as Timestamp).toDate() : DateTime.tryParse(a['createdAt']?.toString() ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+            final tb = (b['createdAt'] is Timestamp) ? (b['createdAt'] as Timestamp).toDate() : DateTime.tryParse(b['createdAt']?.toString() ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+            return tb.compareTo(ta);
+          });
         }
 
-        final skills = toList(data['skills']);
-        final specialties = toList(data['specialties']);
-        final languages = toList(data['languages']);
-        final experience = (data['experience'] ?? '').toString().toLowerCase();
-        final preferredWork = (data['preferredWork'] ?? '').toString().toLowerCase();
-
-        if (qLower.isNotEmpty) {
-          if (fullName.contains(qLower)) matched = true;
-          if (username.contains(qLower)) matched = true;
-          if (location.contains(qLower)) matched = true;
-          if (skills.any((s) => s.contains(qLower))) matched = true;
-          if (specialties.any((s) => s.contains(qLower))) matched = true;
-          if (languages.any((s) => s.contains(qLower))) matched = true;
-          if (experience.contains(qLower)) matched = true;
-          if (preferredWork.contains(qLower)) matched = true;
-        }
-
-        // apply provided filters permissively (if any filter present, but server-side already applied some)
-        if (!matched && filters.isNotEmpty) {
-          if (filters['gender'] != null && (data['gender']?.toString() == filters['gender'])) matched = true;
-          if (filters['minAge'] != null && data['age'] != null && (data['age'] as num) >= (filters['minAge'] as num)) matched = true;
-          if (filters['maxAge'] != null && data['age'] != null && (data['age'] as num) <= (filters['maxAge'] as num)) matched = true;
-          if (filters['location'] != null && filters['location'].toString().isNotEmpty && data['location'] != null && data['location'].toString().toLowerCase().contains(filters['location'].toString().toLowerCase())) matched = true;
-        }
-
-        if (matched) docs.add(data);
-      }
-
-      // simple sorting
-      if (_sort == 'recency') {
-        docs.sort((a, b) {
-          final ta = (a['createdAt'] is Timestamp) ? (a['createdAt'] as Timestamp).toDate() : DateTime.tryParse(a['createdAt']?.toString() ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
-          final tb = (b['createdAt'] is Timestamp) ? (b['createdAt'] as Timestamp).toDate() : DateTime.tryParse(b['createdAt']?.toString() ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
-          return tb.compareTo(ta);
-        });
-      }
-
-      if (mounted) {
-        setState(() {
-          _allResults = docs;
-          _results = _allResults.take(_pageSize).toList();
-        });
-      }
+        _results = _allResults.take(_pageSize).toList();
+      });
     } catch (e, st) {
       debugPrint('Scout search failed: $e');
-      debugPrint(st.toString());
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Search failed: ${e.toString()}')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      } else {
-        _loading = false;
-      }
+      if (mounted) setState(() => _loading = false);
     }
+  }
+
+  void _onAiResults(List<AiScoutResult> results) {
+    setState(() {
+      _aiResults = results;
+      _aiMode = true; 
+      _allResults = [];
+      _results = [];
+      _loading = false; 
+    });
   }
 
   Future<void> _toggleShortlist(String modelId) async {
@@ -150,7 +124,16 @@ class _ScoutPageState extends State<ScoutPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Talent Scouting')),
+      appBar: AppBar(
+        title: const Text('Talent Scouting'),
+        actions: const [
+          SizedBox(width: 8),
+        ],
+      ),
+      floatingActionButton: widget.standalone ? ModelXCopilot(
+        pageContext: const {'page': 'scout', 'role': 'Agency'},
+        onResults: _onAiResults,
+      ) : null,
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(children: [
@@ -196,45 +179,157 @@ class _ScoutPageState extends State<ScoutPage> {
 
           const SizedBox(height: 12),
 
+          // AI Results Header (Premium Gradient)
+          if (_aiMode && _aiResults.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0F172A), Color(0xFF334155)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0F172A).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'AI Recommended Talent',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    ],
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _aiMode = false;
+                        _aiResults = [];
+                        _search(); // Re-trigger normal search
+                      });
+                    },
+                    icon: const Icon(Icons.close, color: Colors.white, size: 16),
+                    label: const Text('Clear', style: TextStyle(color: Colors.white)),
+                    style: TextButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.2)),
+                  ),
+                ],
+              ),
+            ),
+
+          if (_aiMode && _aiResults.isNotEmpty) const SizedBox(height: 16),
+
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
-                : _results.isEmpty
-                          ? const Center(child: Text('No results'))
-                          : Column(
-                              children: [
-                                Expanded(
-                                  child: ListView.separated(
-                                    itemCount: _results.length,
-                                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                                    itemBuilder: (context, index) {
-                                      final data = _results[index];
-                                      return Row(children: [
-                                        Expanded(child: ModelCard(data: data, compact: true)),
-                                        const SizedBox(width: 8),
-                                        IconButton(
-                                          onPressed: () => _toggleShortlist(data['id']),
-                                          icon: const Icon(Icons.star_border),
-                                        )
-                                      ]);
-                                    },
-                                  ),
-                                ),
-                                if (_results.length < _allResults.length)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                          setState(() {
-                                            final next = _allResults.skip(_results.length).take(_pageSize).toList();
-                                            _results.addAll(next);
-                                          });
-                                      },
-                                      child: const Text('Load more'),
-                                    ),
+                : (_aiMode ? _aiResults : _results).isEmpty
+                    ? const Center(child: Text('No results'))
+                    : Column(
+                        children: [
+                          Expanded(
+                            child: ListView.separated(
+                              itemCount: _aiMode ? _aiResults.length : _results.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 8),
+                              itemBuilder: (context, index) {
+                                if (_aiMode) {
+                                  final res = _aiResults[index];
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Stack(
+                                        children: [
+                                          ModelCard(data: res.profile, compact: true),
+                                          Positioned(
+                                            top: 8,
+                                            right: 8,
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: Colors.white.withOpacity(0.9),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: IconButton(
+                                                onPressed: () => _toggleShortlist(res.profile['id']),
+                                                icon: const Icon(Icons.star_border, color: Color(0xFF0F172A)),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Container(
+                                        width: double.infinity,
+                                        margin: const EdgeInsets.symmetric(vertical: 8),
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.1)),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: const Color(0xFF0F172A).withOpacity(0.05),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text("✨", style: TextStyle(fontSize: 16)),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                res.explanation,
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: Colors.grey.shade800,
+                                                  height: 1.4,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                    ],
+                                  );
+                                }
+                                final data = _results[index];
+                                return Row(children: [
+                                  Expanded(child: ModelCard(data: data, compact: true)),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    onPressed: () => _toggleShortlist(data['id']),
+                                    icon: const Icon(Icons.star_border),
                                   )
-                              ],
+                                ]);
+                              },
                             ),
+                          ),
+                          if (!_aiMode && _results.length < _allResults.length)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    final next = _allResults.skip(_results.length).take(_pageSize).toList();
+                                    _results.addAll(next);
+                                  });
+                                },
+                                child: const Text('Load more'),
+                              ),
+                            )
+                        ],
+                      ),
           )
         ]),
       ),

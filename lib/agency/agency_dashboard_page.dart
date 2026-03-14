@@ -6,6 +6,9 @@ import 'scouting/scout_page.dart';
 import 'casting/casting_list_page.dart';
 import 'announcements/announcements_page.dart';
 import 'team_access/team_access_page.dart';
+import '../widgets/model_x_copilot.dart';
+
+import '../pages/home_page.dart';
 
 class AgencyDashboardPage extends StatefulWidget {
   const AgencyDashboardPage({super.key});
@@ -18,12 +21,12 @@ class _AgencyDashboardPageState extends State<AgencyDashboardPage> {
   int _selectedIndex = 0;
 
   static final List<Widget> _pages = <Widget>[
-    _HomeView(),
-    ModelRosterPage(),
-    ScoutPage(),
-    CastingListPage(),
-    AnnouncementsPage(),
-    TeamAccessPage(),
+    const HomePage(), 
+    const _HomeView(), 
+    const ModelRosterPage(),
+    const ScoutPage(standalone: false),
+    const CastingListPage(),
+    const TeamAccessPage(), // Removed Announcements from main nav to keep it clean (moved to Insights)
   ];
 
   void _onItemTapped(int index) {
@@ -41,14 +44,30 @@ class _AgencyDashboardPageState extends State<AgencyDashboardPage> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
+        selectedItemColor: const Color(0xFF0F172A),
+        unselectedItemColor: Colors.grey[400],
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
+        unselectedLabelStyle: const TextStyle(fontSize: 11),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Dashboard'),
-          BottomNavigationBarItem(icon: Icon(Icons.group_outlined), label: 'My Models'),
+          BottomNavigationBarItem(icon: Icon(Icons.rss_feed_rounded), label: 'Feed'),
+          BottomNavigationBarItem(icon: Icon(Icons.analytics_outlined), label: 'Insights'),
+          BottomNavigationBarItem(icon: Icon(Icons.group_outlined), label: 'Models'),
           BottomNavigationBarItem(icon: Icon(Icons.search_outlined), label: 'Scout'),
           BottomNavigationBarItem(icon: Icon(Icons.work_outline), label: 'Castings'),
-          BottomNavigationBarItem(icon: Icon(Icons.campaign_outlined), label: 'Announcements'),
           BottomNavigationBarItem(icon: Icon(Icons.group_add_outlined), label: 'Team'),
         ],
+      ),
+      floatingActionButton: ModelXCopilot(
+        pageContext: {
+          'page': _selectedIndex == 3 ? 'scout' : 'home',
+          'role': 'Agency',
+          'tab': ['Feed', 'Insights', 'Models', 'Scout', 'Castings', 'Team'][_selectedIndex],
+        },
+        onResults: (results) {
+          if (_selectedIndex == 3) {
+            ScoutPage.onAiResultsExternal?.call(results);
+          }
+        },
       ),
     );
   }
@@ -98,6 +117,10 @@ class _HomeView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
+        const Text('Recent Announcements', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 12),
+        const AnnouncementsPage(), // Embedding the announcements list here
+        const SizedBox(height:20),
         const Text('Recent Castings', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
         Column(children: List.generate(3, (i) => Card(margin: const EdgeInsets.only(bottom: 12), child: ListTile(title: Text('Casting ${i+1}'), subtitle: const Text('Brief details'))))),

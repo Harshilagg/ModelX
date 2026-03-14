@@ -1,6 +1,10 @@
 # Miscellaneous
 *.class
 *.log
+pubspec.lock
+
+# AI Configuration (holds API keys)
+lib/services/ai_config.dart
 *.pyc
 *.swp
 .DS_Store

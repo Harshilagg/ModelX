@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/user_profile_page.dart';
+import '../pages/chat_page.dart';
+import '../services/chat_service.dart';
 import '../widgets/portfolio_carousel.dart';
 
 class ModelApplicationCard extends StatelessWidget {
@@ -134,20 +137,72 @@ class ModelApplicationCard extends StatelessWidget {
                         spacing: 8,
                         runSpacing: 6,
                         children: [
-                          _actionButton(
-                            label: status == 'shortlisted'
-                                ? 'Shortlisted'
-                                : 'Shortlist',
-                            color: Colors.green,
-                            onTap: status == 'shortlisted'
-                                ? null
-                                : () => _updateStatus(context, 'shortlisted'),
-                          ),
-                          _actionButton(
-                            label: 'Reject',
-                            color: Colors.red,
-                            onTap: () => _updateStatus(context, 'rejected'),
-                          ),
+                          if (status == 'applied' || status == 'pending')
+                            _actionButton(
+                              label: 'Shortlist',
+                              color: Colors.blue,
+                              onTap: () => _updateStatus(context, 'SHORTLISTED'),
+                            )
+                          else if (status == 'SHORTLISTED' || status == 'shortlisted')
+                            _actionButton(
+                              label: 'Connect',
+                              color: Colors.blue,
+                              onTap: () async {
+                                final current = FirebaseAuth.instance.currentUser;
+                                if (current == null) return;
+                                final brandId = current.uid;
+                                final chatService = ChatService();
+                                try {
+                                  final chatId = await chatService.createGigChat(gigId, modelId, brandId);
+                                  if (context.mounted) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => ChatPage(
+                                          peerId: modelId,
+                                          peerName: user['fullName'] ?? '',
+                                          peerImage: user['profileImage'] ?? '',
+                                          chatId: chatId,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Failed to connect: $e')),
+                                    );
+                                  }
+                                }
+                              },
+                            )
+                          else if (status == 'NEGOTIATING')
+                            _actionButton(
+                              label: 'Message',
+                              color: const Color(0xFF0F172A),
+                              onTap: () {
+                                final list = [FirebaseAuth.instance.currentUser!.uid, modelId]..sort();
+                                final chatId = list.join('--');
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ChatPage(
+                                      peerId: modelId,
+                                      peerName: user['fullName'] ?? '',
+                                      peerImage: user['profileImage'] ?? '',
+                                      chatId: chatId,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          
+                          if (status != 'rejected')
+                            _actionButton(
+                                label: 'Reject',
+                                color: Colors.red,
+                                onTap: () => _updateStatus(context, 'rejected'),
+                              ),
                         ],
                       ),
 

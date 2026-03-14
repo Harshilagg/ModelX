@@ -43,6 +43,21 @@ service cloud.firestore {
       }
     }
 
+    // Chats collection used by casting negotiations
+    match /chats/{chatId} {
+      allow get: if request.auth != null && (request.auth.uid == resource.data.modelId || request.auth.uid == resource.data.agencyId);
+      // creation allowed when the authenticated user is the agency or the model and the doc contains matching ids
+      allow create: if request.auth != null && (request.resource.data.agencyId == request.auth.uid || request.resource.data.modelId == request.auth.uid) && request.resource.data.castingId is string && request.resource.data.modelId is string && request.resource.data.agencyId is string;
+      allow update: if request.auth != null && (request.auth.uid == resource.data.modelId || request.auth.uid == resource.data.agencyId);
+      allow delete: if request.auth != null && (request.auth.uid == resource.data.agencyId);
+
+      match /messages/{msgId} {
+        allow create: if request.auth != null && request.auth.uid == request.resource.data.senderId && (request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.modelId || request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.agencyId);
+        allow read: if request.auth != null && (request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.modelId || request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.agencyId);
+        allow update, delete: if false;
+      }
+    }
+
     // Legacy per-user chat index (if used elsewhere)
     match /user_chats/{userId}/chats/{chatId} {
       allow read: if request.auth != null && request.auth.uid == userId;

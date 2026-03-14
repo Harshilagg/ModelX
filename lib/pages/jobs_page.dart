@@ -30,15 +30,46 @@ class _JobCardWrapper extends StatelessWidget {
     return StreamBuilder<DocumentSnapshot>(
       stream: appRef.snapshots(),
       builder: (context, snapshot) {
-        final hasApplied = snapshot.data?.exists ?? false;
+        final appDoc = snapshot.data;
+        final hasApplied = appDoc?.exists ?? false;
+        
+        String appStatus = 'Apply';
+        if (hasApplied) {
+          final appData = appDoc?.data() as Map<String, dynamic>?;
+          appStatus = appData?['status'] ?? 'Applied';
+        }
+
+        // Modern status colors
+        Color statusColor = Colors.grey;
+        if (appStatus == 'SHORTLISTED') statusColor = Colors.blue;
+        if (appStatus == 'NEGOTIATING') statusColor = const Color(0xFF0F172A);
+        if (appStatus == 'ACCEPTED') statusColor = Colors.green;
 
         return GigCard(
           showBrandHeader: true,
           brandName: brandName,
-          actionWidget: _applyButton(
-            hasApplied,
-            () => _applyToGig(context),
-          ),
+          actionWidget: hasApplied
+              ? Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: statusColor.withOpacity(0.2)),
+                  ),
+                  child: Text(
+                    appStatus.toUpperCase(),
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                )
+              : _applyButton(
+                  hasApplied,
+                  () => _applyToGig(context),
+                ),
           projectTitle: gigData['projectTitle'],
           description: gigData['description'],
           physicalAttributes: physical,
@@ -225,23 +256,29 @@ class JobsPage extends StatelessWidget {
                     createdAt = DateTime.now();
                   }
 
-                  return FutureBuilder<bool>(
-                    future: () async {
-                      try {
-                        final doc = await FirebaseFirestore.instance
-                            .collection('castings')
-                            .doc(castDoc.id)
-                            .collection('applicants')
-                            .doc(modelId)
-                            .get();
-                        return doc.exists;
-                      } catch (e) {
-                        // permission denied or other error — treat as not applied to avoid noisy logs
-                        return false;
-                      }
-                    }(),
+                  return FutureBuilder<DocumentSnapshot>(
+                    future: FirebaseFirestore.instance
+                        .collection('castings')
+                        .doc(castDoc.id)
+                        .collection('applicants')
+                        .doc(modelId)
+                        .get(),
                     builder: (context, appSnap) {
-                      final hasApplied = appSnap.data ?? false;
+                      final appDoc = appSnap.data;
+                      final hasApplied = appDoc?.exists ?? false;
+                      
+                      String appStatus = 'Apply';
+                      if (hasApplied) {
+                        final appData = appDoc?.data() as Map<String, dynamic>?;
+                        appStatus = appData?['status'] ?? 'Applied';
+                      }
+
+                      // Modern status colors
+                      Color statusColor = Colors.grey;
+                      if (appStatus == 'SHORTLISTED') statusColor = Colors.blue;
+                      if (appStatus == 'NEGOTIATING') statusColor = const Color(0xFF0F172A);
+                      if (appStatus == 'ACCEPTED') statusColor = Colors.green;
+
                       return CastingCard(
                         id: castDoc.id,
                         title: data['title'] ?? data['projectTitle'] ?? '',
@@ -263,9 +300,21 @@ class JobsPage extends StatelessWidget {
                         showApply: !hasApplied,
                         actionWidget: hasApplied
                             ? Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(color: Colors.grey.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
-                                child: const Text('Applied', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w700)),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: statusColor.withOpacity(0.2)),
+                                ),
+                                child: Text(
+                                  appStatus.toUpperCase(),
+                                  style: TextStyle(
+                                    color: statusColor,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
                               )
                             : null,
                       );

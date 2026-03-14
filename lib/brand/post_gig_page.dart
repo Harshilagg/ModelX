@@ -88,6 +88,7 @@ class _PostGigPageState extends State<PostGigPage> {
   String roleType = 'Model';
 
   // ================= POST GIG =================
+  // ignore: unused_element
   Future<void> _postGig() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -691,11 +692,11 @@ class _PostGigPageState extends State<PostGigPage> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? Colors.blue.withOpacity(0.15)
+                        ? const Color(0xFF0F172A).withOpacity(0.15)
                         : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isSelected ? Colors.blue : Colors.grey.shade400,
+                      color: isSelected ? const Color(0xFF0F172A) : Colors.grey.shade400,
                     ),
                   ),
                   alignment: Alignment.center,
@@ -706,7 +707,7 @@ class _PostGigPageState extends State<PostGigPage> {
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w500,
                       color:
-                          isSelected ? Colors.blue : Colors.grey.shade800,
+                          isSelected ? const Color(0xFF0F172A) : Colors.grey.shade800,
                     ),
                   ),
                 ),

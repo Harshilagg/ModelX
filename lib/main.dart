@@ -9,6 +9,7 @@ import 'pages/onboarding_page.dart';
 import 'pages/create_profile_page.dart';
 import 'config.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'ui/app_theme.dart';
 import 'brand/brand_dashboard_page.dart';
 import 'agency/agency_dashboard_page.dart';
 
@@ -28,7 +29,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'ModelX App',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: AppTheme.light(),
       home: const AppEntry(),
     );
   }

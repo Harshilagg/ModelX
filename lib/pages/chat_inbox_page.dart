@@ -37,8 +37,9 @@ class ChatInboxPage extends StatelessWidget {
           }
 
           final chats = snapshot.data!.docs;
+
           if (chats.isEmpty) {
-            return const Center(child: Text('No conversations yet'));
+            return const Center(child: Text('No messages yet'));
           }
 
           return ListView.builder(
@@ -97,6 +98,7 @@ class ChatInboxPage extends StatelessWidget {
                         peerId: peerId,
                         peerName: peerName,
                         peerImage: peerImage,
+                        chatId: chats[index].id,
                       ),
                     ),
                   );

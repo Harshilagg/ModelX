@@ -6,9 +6,13 @@ import 'login_page.dart';
 import 'connected_users_page.dart';
 import 'user_profile_page.dart';
 import 'package:image_picker/image_picker.dart';
-//import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_application_modelx/services/cloudinary_service.dart';
+import '../agency/scouting/ai_scout_service.dart'; // Import AI Service
+import '../widgets/profile_avatar.dart';
+import '../widgets/profile_stats.dart';
 import 'create_post_page.dart';
+import '../widgets/portfolio_grid.dart';
+import '../widgets/model_x_copilot.dart';
 
 const bgColor = Color.fromARGB(255, 254, 254, 254);
 const cardColor = Colors.white;
@@ -185,8 +189,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (_formKey.currentState!.validate()) {
       setState(() => loading = true);
       final user = _auth.currentUser!;
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-        // Basic info - store single fullName field
+      final profileData = {
         'fullName': fullNameController.text.trim(),
         'fullNameLower': fullNameController.text.trim().toLowerCase(),
         'location': locationController.text.trim(),
@@ -194,8 +197,6 @@ class _ProfilePageState extends State<ProfilePage> {
         'email': emailController.text.trim(),
         'bio': bioController.text.trim(),
         'profileImage': profileImageUrl.isNotEmpty ? profileImageUrl : null,
-
-        // Model-specific info
         'age': ageController.text.trim(),
         'gender': genderController.text.trim(),
         'height': heightController.text.trim(),
@@ -206,29 +207,30 @@ class _ProfilePageState extends State<ProfilePage> {
         'availability': availabilityController.text.trim(),
         'achievements': achievementsController.text.trim(),
         'preferredWork': preferredWorkController.text.trim(),
-  'tagline': taglineController.text.trim(),
-  'heightUnit': heightUnit,
-  'shoeSizeUnit': shoeSizeUnit,
+        'tagline': taglineController.text.trim(),
+        'heightUnit': heightUnit,
+        'shoeSizeUnit': shoeSizeUnit,
+        'usernameLower': username.trim().isNotEmpty ? username.trim().toLowerCase() : null,
+        'skinColor': skinColorController.text.trim(),
+        'waist': waistController.text.trim(),
+        'hips': hipsController.text.trim(),
+        'shoeSize': shoeSizeController.text.trim(),
+        'eyeColor': eyeColorController.text.trim(),
+        'hairColor': hairColorController.text.trim(),
+        'tattoos': tattoosController.text.trim(),
+        'shoulderWidth': shoulderWidthController.text.trim(),
+        'piercing': piercingController.text.trim(),
+        'projects': projectsController.text.trim().isEmpty ? null : projectsController.text.trim().split('\n'),
+        'agencies': agenciesController.text.trim().isEmpty ? null : agenciesController.text.trim().split('\n'),
+      };
 
-  // store usernameLower if a username exists locally
-  'usernameLower': username.trim().isNotEmpty ? username.trim().toLowerCase() : null,
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set(profileData, SetOptions(merge: true));
+      
+      // AUTO-SYNC: Update AI Vector Index in background
+      AiScoutService().indexProfile(user.uid, profileData).catchError((e) {
+        debugPrint('AI Sync failed: $e');
+      });
 
-  // followers/following are managed by social actions elsewhere
-
-  // Additional attributes
-  'skinColor': skinColorController.text.trim(),
-  'waist': waistController.text.trim(),
-  'hips': hipsController.text.trim(),
-  'shoeSize': shoeSizeController.text.trim(),
-  'eyeColor': eyeColorController.text.trim(),
-  'hairColor': hairColorController.text.trim(),
-  'tattoos': tattoosController.text.trim(),
-  'shoulderWidth': shoulderWidthController.text.trim(),
-  'piercing': piercingController.text.trim(),
-
-  'projects': projectsController.text.trim().isEmpty ? null : projectsController.text.trim().split('\n'),
-  'agencies': agenciesController.text.trim().isEmpty ? null : agenciesController.text.trim().split('\n'),
-      }, SetOptions(merge: true));
       setState(() => loading = false);
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Profile updated')));
@@ -317,67 +319,9 @@ Widget _sectionCard({required Widget child}) {
   );
 }
 
-Widget _statItem(String label, int? value,
-    {IconData? icon, required VoidCallback onTap}) {
-  return GestureDetector(
-    onTap: onTap,
-    child: Column(
-      children: [
-        icon != null
-            ? Icon(icon, color: primaryColor)
-            : Text(
-                "$value",
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(color: textSecondary),
-        ),
-      ],
-    ),
-  );
-}
+// Removed legacy _statItem in favor of `ProfileStats` widget.
 
-Widget _chip(String label, String value) {
-  if (value.isEmpty) return const SizedBox();
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-    decoration: BoxDecoration(
-      color: cardColor,
-      borderRadius: BorderRadius.circular(14),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black,
-          blurRadius: 10,
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: textSecondary,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            color: textPrimary,
-          ),
-        ),
-      ],
-    ),
-  );
-}
+// Legacy _chip removed; UI uses Section cards and ProfileStats widget.
 
 Widget _bulletBlock(String title, String value) {
   if (value.trim().isEmpty) return const SizedBox();
@@ -755,6 +699,17 @@ Widget build(BuildContext context) {
         ),
       ],
     ),
+    floatingActionButton: ModelXCopilot(
+      pageContext: {
+        'page': 'profile',
+        'role': 'Model',
+        'profileData': {
+          'bio': bioController.text,
+          'skills': skillsController.text,
+          'experience': experienceController.text,
+        }
+      },
+    ),
 
     body: SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -767,109 +722,57 @@ Widget build(BuildContext context) {
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
             child: Column(
               children: [
-                Stack(
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    CircleAvatar(
-                      radius: 72,
-                      backgroundImage: profileImageUrl.isNotEmpty
-                          ? NetworkImage(profileImageUrl)
-                          : const AssetImage('assets/avatar.jpg')
-                              as ImageProvider,
-                    ),
-                    GestureDetector(
-                      onTap: pickAndUploadImage,
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: const BoxDecoration(
-                          color: primaryColor,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.camera_alt,
-                          size: 18,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                Text(
-                  fullNameController.text.isEmpty
-                      ? "Your Name"
-                      : fullNameController.text,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: textPrimary,
-                  ),
-                ),
-
-                if (username.isNotEmpty)
-                  Text(
-                    "@$username",
-                    style: const TextStyle(
-                      color: primaryColor,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                    ),
-                  ),
-
-                const SizedBox(height: 14),
-
-                // ---------- STATS ----------
+                // Modern card-style hero area
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  width: double.infinity,
                   decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0,6))],
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  child: Column(
                     children: [
-                      _statItem("Followers", followersCount,
-                          onTap: _showFollowersList),
-                      _statItem("Following", followingCount, onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ConnectedUsersPage(),
-                          ),
-                        );
-                      }),
-                      _statItem("Improve", null,
-                          icon: Icons.upgrade,
-                          onTap: () => _showEditProfileModal(context)),
-                          
-                      // Column(
-                      //   children: [
-                      //     IconButton(
-                      //       icon: const Icon(Icons.add_box_outlined),
-                      //       onPressed: () {
-                      //         Navigator.push(
-                      //           context,
-                      //           MaterialPageRoute(
-                      //             builder: (_) => const CreatePostPage(),
-                      //           ),
-                      //         );
-                      //       },
-                      //     ),
-                      //     const Text(
-                      //       "Create Post",
-                      //       style: TextStyle(fontSize: 12, color: textSecondary),
-                      //     ),
-                      //   ],
-                      // ),
+                      // cover strip
+                      Container(height: 12, decoration: const BoxDecoration(borderRadius: BorderRadius.vertical(top: Radius.circular(16)), color: Color(0xFFF6F2ED))),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 18).copyWith(top: 0, bottom: 18),
+                        child: Row(
+                          children: [
+                            Stack(
+                              alignment: Alignment.bottomRight,
+                              children: [
+                                ProfileAvatar(imageUrl: profileImageUrl.isNotEmpty ? profileImageUrl : null, size: 92),
+                                GestureDetector(
+                                  onTap: pickAndUploadImage,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(color: primaryColor, shape: BoxShape.circle),
+                                    child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(fullNameController.text.isEmpty ? 'Your Name' : fullNameController.text, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                                  if (username.isNotEmpty) Text('@$username', style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
+                                  const SizedBox(height: 12),
+                                  ProfileStats(
+                                    followers: followersCount,
+                                    following: followingCount,
+                                    onFollowers: _showFollowersList,
+                                    onFollowing: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ConnectedUsersPage())),
+                                    onEdit: () => _showEditProfileModal(context),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1089,85 +992,10 @@ Widget build(BuildContext context) {
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('portfolio')
-                  .where('uid', isEqualTo: _auth.currentUser!.uid)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final docs = snapshot.data!.docs;
-                if (docs.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Text(
-                      "Add your best work to stand out.",
-                      style: TextStyle(color: textSecondary),
-                    ),
-                  );
-                }
-
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: docs.length,
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 14,
-                    childAspectRatio: 0.9,
-                  ),
-                  itemBuilder: (context, index) {
-                    final media = docs[index];
-
-                    return GestureDetector(
-                      onTap: () => _viewMediaFullScreen(
-                        media['mediaUrl'],
-                        media['mediaType'],
-                      ),
-                      onLongPress: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text("Delete image?"),
-                            content: const Text(
-                                "This will permanently remove the image."),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text("Cancel"),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text(
-                                  "Delete",
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-
-                        if (confirm == true) {
-                          _deletePortfolioItem(media);
-                        }
-                      },
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
-                        child: Image.network(
-                          media['mediaUrl'],
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    );
-                  }
-
-                );
-              },
+            child: PortfolioGrid(
+              stream: FirebaseFirestore.instance.collection('portfolio').where('uid', isEqualTo: _auth.currentUser!.uid).snapshots(),
+              onDelete: (doc) => _deletePortfolioItem(doc),
+              onView: (url, type) => _viewMediaFullScreen(url, type),
             ),
           ),
 

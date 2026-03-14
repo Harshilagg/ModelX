@@ -115,79 +115,201 @@ class _CreateCastingPageState extends State<CreateCastingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Create Casting')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          TextField(controller: _titleCtl, decoration: const InputDecoration(labelText: 'Title')),
-          const SizedBox(height: 12),
-          TextField(controller: _descCtl, decoration: const InputDecoration(labelText: 'Description (brief)'), maxLines: 4),
-          const SizedBox(height: 12),
+    const primaryNavy = Color(0xFF0F172A);
+    const accentBlue = Colors.blueAccent;
 
-          // Details
-          const Text('Details', style: TextStyle(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          TextField(controller: _locationCtl, decoration: const InputDecoration(labelText: 'Venue / Location')),
-          const SizedBox(height: 8),
-          Row(children: [
-            Expanded(child: TextField(controller: _compMinCtl, decoration: const InputDecoration(labelText: 'Compensation min'))),
-            const SizedBox(width: 8),
-            Expanded(child: TextField(controller: _compMaxCtl, decoration: const InputDecoration(labelText: 'Compensation max'))),
-          ]),
-          const SizedBox(height: 8),
-          TextField(controller: _outfitCtl, decoration: const InputDecoration(labelText: 'Outfit requirements (optional)')),
-          const SizedBox(height: 8),
-          Row(children: [
-            Expanded(child: Text('Shooting start: ${_shootingStart != null ? _shootingStart!.toLocal().toString().split('.').first : 'Not set'}')),
-            TextButton(onPressed: () async {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        title: const Text('Create Casting', style: TextStyle(fontWeight: FontWeight.w700)),
+        backgroundColor: Colors.white,
+        foregroundColor: primaryNavy,
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // ================= BASIC INFO =================
+          _sectionHeader('Basic Information'),
+          _card(Column(children: [
+            _textField(_titleCtl, 'Job Title', Icons.work_outline),
+            const SizedBox(height: 16),
+            _textField(_descCtl, 'Description', Icons.description_outlined, maxLines: 4),
+          ])),
+
+          const SizedBox(height: 24),
+
+          // ================= GIG DETAILS =================
+          _sectionHeader('Gig Details'),
+          _card(Column(children: [
+            _textField(_locationCtl, 'Location / Venue', Icons.location_on_outlined),
+            const SizedBox(height: 16),
+            Row(children: [
+              Expanded(child: _textField(_compMinCtl, 'Min Pay', Icons.payments_outlined, keyboardType: TextInputType.number)),
+              const SizedBox(width: 12),
+              Expanded(child: _textField(_compMaxCtl, 'Max Pay', Icons.payments_outlined, keyboardType: TextInputType.number)),
+            ]),
+            const SizedBox(height: 16),
+            _textField(_outfitCtl, 'Outfit Requirements', Icons.checkroom_outlined),
+          ])),
+
+          const SizedBox(height: 24),
+
+          // ================= SHOOTING DATES =================
+          _sectionHeader('Project Timeline'),
+          _card(Column(children: [
+            _dateTile('Shooting Starts', _shootingStart, () async {
               final dt = await _pickDateTime(context);
               if (dt != null) setState(() => _shootingStart = dt);
-            }, child: const Text('Set')),
-          ]),
-          Row(children: [
-            Expanded(child: Text('Shooting end: ${_shootingEnd != null ? _shootingEnd!.toLocal().toString().split('.').first : 'Not set'}')),
-            TextButton(onPressed: () async {
+            }),
+            const Divider(height: 24),
+            _dateTile('Shooting Ends', _shootingEnd, () async {
               final dt = await _pickDateTime(context);
               if (dt != null) setState(() => _shootingEnd = dt);
-            }, child: const Text('Set')),
-          ]),
-          const SizedBox(height: 12),
+            }),
+          ])),
 
-          // Talent requirements
-          const Text('Talent requirements', style: TextStyle(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          Row(children: [
-            const SizedBox(width: 8),
-            DropdownButton<String>(value: _genderReq, items: const [DropdownMenuItem(value: 'any', child: Text('Any')), DropdownMenuItem(value: 'male', child: Text('Male')), DropdownMenuItem(value: 'female', child: Text('Female')), DropdownMenuItem(value: 'other', child: Text('Other'))], onChanged: (v) => setState(() => _genderReq = v!)),
-            const SizedBox(width: 16),
-            SizedBox(width: 110, child: TextField(decoration: const InputDecoration(labelText: 'Min age'), keyboardType: TextInputType.number, onChanged: (v) => _minAge = int.tryParse(v))),
-            const SizedBox(width: 8),
-            SizedBox(width: 110, child: TextField(decoration: const InputDecoration(labelText: 'Max age'), keyboardType: TextInputType.number, onChanged: (v) => _maxAge = int.tryParse(v))),
-          ]),
-          const SizedBox(height: 8),
-          TextField(controller: _looksCtl, decoration: const InputDecoration(labelText: 'Looks / Style (comma separated)')),
-          const SizedBox(height: 8),
-          TextField(controller: _skillsCtl, decoration: const InputDecoration(labelText: 'Skills (comma separated)')),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
 
-          // Media
-          Wrap(spacing: 8, children: _mediaUrls.map((u) => Image.network(u, height: 80, width: 80, fit: BoxFit.cover)).toList()),
-          const SizedBox(height: 8),
+          // ================= TALENT REQUISITES =================
+          _sectionHeader('Talent Requirements'),
+          _card(Column(children: [
+             Row(children: [
+              const Icon(Icons.wc, color: Colors.grey, size: 22),
+              const SizedBox(width: 12),
+              const Text('Gender: ', style: TextStyle(color: Colors.grey)),
+              const Spacer(),
+              DropdownButton<String>(
+                value: _genderReq,
+                underline: const SizedBox(),
+                items: const [
+                  DropdownMenuItem(value: 'any', child: Text('Any')),
+                  DropdownMenuItem(value: 'male', child: Text('Male')),
+                  DropdownMenuItem(value: 'female', child: Text('Female')),
+                  DropdownMenuItem(value: 'other', child: Text('Other'))
+                ],
+                onChanged: (v) => setState(() => _genderReq = v!),
+              ),
+            ]),
+            const Divider(height: 16),
+            Row(children: [
+              Expanded(child: _textField(null, 'Min Age', Icons.calendar_today_outlined, keyboardType: TextInputType.number, initialValue: _minAge?.toString(), onChanged: (v) => _minAge = int.tryParse(v))),
+              const SizedBox(width: 12),
+              Expanded(child: _textField(null, 'Max Age', Icons.calendar_today_outlined, keyboardType: TextInputType.number, initialValue: _maxAge?.toString(), onChanged: (v) => _maxAge = int.tryParse(v))),
+            ]),
+            const SizedBox(height: 16),
+            _textField(_looksCtl, 'Preferred Looks (comma separated)', Icons.face_outlined),
+            const SizedBox(height: 16),
+            _textField(_skillsCtl, 'Required Skills (comma separated)', Icons.star_border),
+          ])),
 
-          // Status
-          Row(children: [
-            const Text('Status: '),
-            const SizedBox(width: 8),
-            DropdownButton<String>(value: _status, items: const [DropdownMenuItem(value: 'open', child: Text('Open')), DropdownMenuItem(value: 'closed', child: Text('Closed')), DropdownMenuItem(value: 'filled', child: Text('Filled'))], onChanged: (v) => setState(() => _status = v!)),
-          ]),
+          const SizedBox(height: 24),
 
-          const SizedBox(height: 8),
-          Row(children: [ElevatedButton(onPressed: _saving ? null : _pickMedia, child: const Text('Add Media')), const SizedBox(width: 12), ElevatedButton(onPressed: _saving ? null : _submit, child: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Publish'))]),
+          // ================= MEDIA =================
+          _sectionHeader('Casting Assets'),
+          if (_mediaUrls.isNotEmpty)
+            Container(
+              height: 100,
+              margin: const EdgeInsets.only(bottom: 12),
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _mediaUrls.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (_, i) => ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(_mediaUrls[i], height: 100, width: 100, fit: BoxFit.cover),
+                ),
+              ),
+            ),
+          
+          ElevatedButton.icon(
+            onPressed: _saving ? null : _pickMedia,
+            icon: const Icon(Icons.add_a_photo_outlined),
+            label: const Text('Add Reference Media'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: primaryNavy,
+              elevation: 0,
+              side: BorderSide(color: Colors.grey.shade200),
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+
+          const SizedBox(height: 32),
+
+          // ================= SUBMIT =================
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: _saving ? null : _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryNavy,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 4,
+                shadowColor: primaryNavy.withOpacity(0.3),
+              ),
+              child: _saving 
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
+                : const Text('Publish Casting Call', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+            ),
+          ),
+          const SizedBox(height: 40),
         ]),
       ),
     );
   }
+
+  Widget _sectionHeader(String title) => Padding(
+    padding: const EdgeInsets.only(left: 4, bottom: 10),
+    child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
+  );
+
+  Widget _card(Widget child) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+      ],
+    ),
+    child: child,
+  );
+
+  Widget _textField(TextEditingController? ctl, String label, IconData icon, {int maxLines = 1, TextInputType keyboardType = TextInputType.text, String? initialValue, Function(String)? onChanged}) => TextFormField(
+    controller: ctl,
+    initialValue: initialValue,
+    onChanged: onChanged,
+    maxLines: maxLines,
+    keyboardType: keyboardType,
+    decoration: InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, size: 20),
+      labelStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade100)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blueAccent)),
+      filled: true,
+      fillColor: const Color(0xFFF9FAFB),
+    ),
+  );
+
+  Widget _dateTile(String label, DateTime? value, VoidCallback onTap) => InkWell(
+    onTap: onTap,
+    child: Row(children: [
+      const Icon(Icons.calendar_month, color: Colors.grey, size: 22),
+      const SizedBox(width: 12),
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        const SizedBox(height: 4),
+        Text(value != null ? value.toLocal().toString().split('.').first : 'Not Set', style: TextStyle(fontWeight: FontWeight.w600, color: value != null ? Colors.black : Colors.grey)),
+      ]),
+      const Spacer(),
+      const Icon(Icons.edit_calendar_outlined, size: 18, color: Colors.blueAccent),
+    ]),
+  );
 
   Future<DateTime?> _pickDateTime(BuildContext context) async {
     final date = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2000), lastDate: DateTime(2100));

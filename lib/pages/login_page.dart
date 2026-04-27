@@ -5,10 +5,13 @@ import 'dashboard_page.dart';
 import '../brand/brand_dashboard_page.dart';
 import '../agency/agency_dashboard_page.dart';
 import '../agency/agency_edit_profile_page.dart';
+import '../agency/team_access/invite_acceptance_page.dart';
 import '../selectportfolio/select_portfolio_page.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final String? inviteToken;
+
+  const LoginPage({super.key, this.inviteToken});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -103,94 +106,109 @@ class _LoginPageState extends State<LoginPage> {
 
       // 🔐 Firebase Auth login
       final credential = await _auth.signInWithEmailAndPassword(
-          email: emailToUse,
-          password: password,
-        );
+        email: emailToUse,
+        password: password,
+      );
 
-        final user = credential.user!;
-        final uid = user.uid;
+      final user = credential.user!;
+      final uid = user.uid;
 
-        // 🔍 1. Check MODEL (users) collection
-        debugPrint('🔎 Checking users for $uid');
-        final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (widget.inviteToken != null) {
         if (!mounted) return;
-        if (userDoc.exists) {
-          debugPrint('➡️ Found model profile');
-          // Mirror AuthGate logic: if profileCompleted -> Dashboard, else CreateProfilePage
-          final data = userDoc.data();
-          final profileCompleted = data != null && (data['profileCompleted'] == true);
-          if (profileCompleted) {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const DashboardPage()),
-              (_) => false,
-            );
-          } else {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const SelectPortfolioPage()),
-              (_) => false,
-            );
-          }
-          return;
-        }
-
-        // 🔍 2. Check BRAND collection
-        debugPrint('🔎 Checking brands for $uid');
-        final brandDoc = await FirebaseFirestore.instance.collection('brands').doc(uid).get();
-        if (brandDoc.exists) {
-          debugPrint('➡️ Found brand profile');
-          // ✅ BRAND LOGIN
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const BrandDashboardPage()),
-            (_) => false,
-          );
-          return;
-        }
-
-        // 🔍 3. Check AGENCY collection
-        debugPrint('🔎 Checking agency for $uid');
-        final agencyDoc = await FirebaseFirestore.instance.collection('agency').doc(uid).get();
-        if (agencyDoc.exists) {
-          debugPrint('➡️ Found agency profile');
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Logged in as Agency')));
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const AgencyDashboardPage()),
-            (_) => false,
-          );
-          return;
-        }
-
-        // ❌ If none found
-        debugPrint('❌ No profile found for $uid');
-
-        if (!mounted) return;
-        // Offer to create agency profile (handles case where auth user exists but Firestore doc was not created)
-        final choice = await showDialog<String>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('No profile found'),
-            content: const Text('No model/brand/agency profile exists for this account. Would you like to create an Agency profile now?'),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context, 'cancel'), child: const Text('Cancel')),
-              TextButton(onPressed: () => Navigator.pop(context, 'select'), child: const Text('Select role')),
-              TextButton(onPressed: () => Navigator.pop(context, 'agency'), child: const Text('Create Agency')),
-            ],
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => InviteAcceptancePage(
+              token: widget.inviteToken!,
+              autoAcceptOnLoad: true,
+            ),
           ),
+          (_) => false,
         );
+        return;
+      }
 
-        if (choice == 'agency') {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AgencyEditProfilePage()));
-          return;
-        } else if (choice == 'select') {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SelectPortfolioPage()));
-          return;
+      // 🔍 1. Check MODEL (users) collection
+      debugPrint('🔎 Checking users for $uid');
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (!mounted) return;
+      if (userDoc.exists) {
+        debugPrint('➡️ Found model profile');
+        // Mirror AuthGate logic: if profileCompleted -> Dashboard, else CreateProfilePage
+        final data = userDoc.data();
+        final profileCompleted = data != null && (data['profileCompleted'] == true);
+        if (profileCompleted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const DashboardPage()),
+            (_) => false,
+          );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No profile found')));
-          return;
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const SelectPortfolioPage()),
+            (_) => false,
+          );
         }
+        return;
+      }
+
+      // 🔍 2. Check BRAND collection
+      debugPrint('🔎 Checking brands for $uid');
+      final brandDoc = await FirebaseFirestore.instance.collection('brands').doc(uid).get();
+      if (brandDoc.exists) {
+        debugPrint('➡️ Found brand profile');
+        // ✅ BRAND LOGIN
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const BrandDashboardPage()),
+          (_) => false,
+        );
+        return;
+      }
+
+      // 🔍 3. Check AGENCY collection
+      debugPrint('🔎 Checking agency for $uid');
+      final agencyDoc = await FirebaseFirestore.instance.collection('agency').doc(uid).get();
+      if (agencyDoc.exists) {
+        debugPrint('➡️ Found agency profile');
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Logged in as Agency')));
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const AgencyDashboardPage()),
+          (_) => false,
+        );
+        return;
+      }
+
+      // ❌ If none found
+      debugPrint('❌ No profile found for $uid');
+
+      if (!mounted) return;
+      // Offer to create agency profile (handles case where auth user exists but Firestore doc was not created)
+      final choice = await showDialog<String>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('No profile found'),
+          content: const Text('No model/brand/agency profile exists for this account. Would you like to create an Agency profile now?'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, 'cancel'), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.pop(context, 'select'), child: const Text('Select role')),
+            TextButton(onPressed: () => Navigator.pop(context, 'agency'), child: const Text('Create Agency')),
+          ],
+        ),
+      );
+
+      if (choice == 'agency') {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AgencyEditProfilePage()));
+        return;
+      } else if (choice == 'select') {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SelectPortfolioPage()));
+        return;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No profile found')));
+        return;
+      }
     }
     on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

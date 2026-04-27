@@ -61,9 +61,10 @@ class AgencyService {
     required String fromAgencyName,
   }) async {
     final token = _generateRandomToken(32);
+    final normalizedEmail = email.trim().toLowerCase();
     final invite = AgencyInvite(
       id: '', 
-      email: email,
+      email: normalizedEmail,
       role: role,
       fromAgencyId: fromAgencyId,
       fromAgencyName: fromAgencyName,
@@ -73,19 +74,19 @@ class AgencyService {
       status: 'pending',
     );
 
-    // Using the collection name from firestore.rules
-    await _invitesRef.add(invite.toFirestore());
+    // Use the token as the document ID so invite validation can do a direct get.
+    await _invitesRef.doc(token).set(invite.toFirestore());
     
     // Send Email
     final inviteLink = 'https://modelx-invite.onrender.com?token=$token'; // Hosted redirect URL
     await _emailService.sendInvitationEmail(
-      recipientEmail: email,
+      recipientEmail: normalizedEmail,
       agencyName: fromAgencyName,
       role: role.toString().split('.').last,
       inviteLink: inviteLink,
     );
     
-    await logActivity(fromAgencyId, 'Invited $email as ${role.toString().split('.').last}');
+    await logActivity(fromAgencyId, 'Invited $normalizedEmail as ${role.toString().split('.').last}');
   }
 
   /// Fetch pending invites for an agency
@@ -125,19 +126,31 @@ class AgencyService {
 
   /// Validate an invitation token
   Future<AgencyInvite> validateInviteToken(String token) async {
-    final query = await _invitesRef
-        .where('token', isEqualTo: token)
-        .where('status', isEqualTo: 'pending')
-        .limit(1)
-        .get();
+    late final DocumentSnapshot doc;
+    try {
+      doc = await _invitesRef.doc(token).get();
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw Exception('Invalid or expired invitation');
+      }
+      rethrow;
+    }
 
-    if (query.docs.isEmpty) {
+    if (!doc.exists) {
       throw Exception('Invalid or expired invitation');
     }
 
-    final invite = AgencyInvite.fromFirestore(query.docs.first);
+    final invite = AgencyInvite.fromFirestore(doc);
+    if (invite.status != 'pending') {
+      throw Exception('Invalid or expired invitation');
+    }
+
     if (invite.expiresAt.isBefore(DateTime.now())) {
-      await _invitesRef.doc(invite.id).update({'status': 'expired'});
+      try {
+        await _invitesRef.doc(invite.id).update({'status': 'expired'});
+      } on FirebaseException {
+        // A signed-out user can still view the expired state even if they cannot write it back.
+      }
       throw Exception('Invitation has expired');
     }
 
@@ -147,6 +160,15 @@ class AgencyService {
   /// Accept an invitation
   Future<void> acceptInvite(String token, String userUid) async {
     final invite = await validateInviteToken(token);
+    final currentUser = _auth.currentUser;
+    final currentUserEmail = currentUser?.email?.trim().toLowerCase();
+
+    if (currentUser == null || currentUser.uid != userUid) {
+      throw Exception('You must be logged in to accept this invitation');
+    }
+    if (currentUserEmail == null || currentUserEmail != invite.email) {
+      throw Exception('This invitation was sent to a different email address');
+    }
 
     final userDoc = await _db.collection('users').doc(userUid).get();
     if (!userDoc.exists) throw Exception('User profile not found');
@@ -168,9 +190,10 @@ class AgencyService {
       transaction.set(_agenciesRef.doc(invite.fromAgencyId).collection('members').doc(userUid), {
         'uid': userUid,
         'fullName': userData['fullName'] ?? 'Team Member',
-        'email': userData['email'] ?? '',
+        'email': currentUserEmail,
         'role': invite.role.toString().split('.').last,
         'joinedAt': FieldValue.serverTimestamp(),
+        'inviteToken': invite.token,
       });
       
       // 4. Update user document with agency association

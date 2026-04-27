@@ -94,8 +94,21 @@ service cloud.firestore {
           request.auth.uid == agencyId ||
           exists(/databases/$(database)/documents/agency/$(agencyId)/members/$(request.auth.uid))
         );
-        // Only the owner can manage the roster
-        allow create, update, delete: if request.auth != null && request.auth.uid == agencyId;
+        // The owner manages the roster. Invited users can create only their own member record.
+        allow create: if request.auth != null && (
+          request.auth.uid == agencyId ||
+          (
+            request.auth.uid == memberId &&
+            request.resource.data.uid == memberId &&
+            request.auth.token.email == request.resource.data.email &&
+            request.resource.data.inviteToken is string &&
+            get(/databases/$(database)/documents/agencyInvites/$(request.resource.data.inviteToken)).data.status == 'pending' &&
+            get(/databases/$(database)/documents/agencyInvites/$(request.resource.data.inviteToken)).data.email == request.auth.token.email &&
+            get(/databases/$(database)/documents/agencyInvites/$(request.resource.data.inviteToken)).data.fromAgencyId == agencyId &&
+            get(/databases/$(database)/documents/agencyInvites/$(request.resource.data.inviteToken)).data.role == request.resource.data.role
+          )
+        );
+        allow update, delete: if request.auth != null && request.auth.uid == agencyId;
       }
 
       // Activity logs
@@ -158,25 +171,41 @@ service cloud.firestore {
     match /agencyInvites/{inviteId} {
       // Creation Rule
       allow create: if request.auth != null && (
-        request.resource.data.fromAgencyId == request.auth.uid ||
-        exists(/databases/$(database)/documents/agency/$(request.resource.data.fromAgencyId)/members/$(request.auth.uid))
+        request.resource.data.token == inviteId &&
+        (
+          request.resource.data.fromAgencyId == request.auth.uid ||
+          exists(/databases/$(database)/documents/agency/$(request.resource.data.fromAgencyId)/members/$(request.auth.uid))
+        )
       );
 
-      // Read Rule - allow viewing by recipient OR sender OR any existing team member of that agency
-      allow read, list: if request.auth != null && (
-        request.auth.uid == resource.data.toUid ||
+      // Allow direct invite lookups before login without exposing the full invites collection.
+      allow get: if
+        resource.data.status == 'pending' ||
+        (request.auth != null && (
+          request.auth.uid == resource.data.fromAgencyId ||
+          request.auth.token.email == resource.data.email ||
+          exists(/databases/$(database)/documents/agency/$(resource.data.fromAgencyId)/members/$(request.auth.uid))
+        ));
+
+      // Invite lists stay restricted to authenticated agency participants or the recipient.
+      allow list: if request.auth != null && (
         request.auth.uid == resource.data.fromAgencyId ||
+        request.auth.token.email == resource.data.email ||
         exists(/databases/$(database)/documents/agency/$(resource.data.fromAgencyId)/members/$(request.auth.uid))
       );
 
       // Management Rule
       allow delete: if request.auth != null && (
-        request.auth.uid == resource.data.toUid ||
-        request.auth.uid == resource.data.fromAgencyId
+        request.auth.uid == resource.data.fromAgencyId ||
+        request.auth.token.email == resource.data.email
       );
 
       // Status Update (Accept/Expire)
-      allow update: if request.auth != null;
+      allow update: if request.auth != null && (
+        request.auth.uid == resource.data.fromAgencyId ||
+        request.auth.token.email == resource.data.email ||
+        exists(/databases/$(database)/documents/agency/$(resource.data.fromAgencyId)/members/$(request.auth.uid))
+      );
     }
 
     // -------------------- FALLBACK --------------------

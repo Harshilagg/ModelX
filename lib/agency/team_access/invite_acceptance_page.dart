@@ -8,7 +8,13 @@ import '../../pages/login_page.dart';
 
 class InviteAcceptancePage extends StatefulWidget {
   final String token;
-  const InviteAcceptancePage({super.key, required this.token});
+  final bool autoAcceptOnLoad;
+
+  const InviteAcceptancePage({
+    super.key,
+    required this.token,
+    this.autoAcceptOnLoad = false,
+  });
 
   @override
   State<InviteAcceptancePage> createState() => _InviteAcceptancePageState();
@@ -17,6 +23,7 @@ class InviteAcceptancePage extends StatefulWidget {
 class _InviteAcceptancePageState extends State<InviteAcceptancePage> {
   final AgencyService _agencyService = AgencyService();
   bool _isLoading = true;
+  bool _acceptInProgress = false;
   String? _error;
   AgencyInvite? _invite;
 
@@ -35,6 +42,9 @@ class _InviteAcceptancePageState extends State<InviteAcceptancePage> {
           _isLoading = false;
         });
       }
+      if (widget.autoAcceptOnLoad && FirebaseAuth.instance.currentUser != null) {
+        await _acceptInvite();
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -46,14 +56,23 @@ class _InviteAcceptancePageState extends State<InviteAcceptancePage> {
   }
 
   Future<void> _acceptInvite() async {
+    if (_acceptInProgress) return;
+
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       // Prompt login if not authenticated
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginPage()));
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => LoginPage(inviteToken: widget.token)),
+      );
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _acceptInProgress = true;
+      _isLoading = true;
+      _error = null;
+    });
     try {
       await _agencyService.acceptInvite(widget.token, user.uid);
       if (mounted) {
@@ -68,6 +87,7 @@ class _InviteAcceptancePageState extends State<InviteAcceptancePage> {
         setState(() {
           _error = 'Acceptance failed: $e';
           _isLoading = false;
+          _acceptInProgress = false;
         });
       }
     }

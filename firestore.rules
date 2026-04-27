@@ -1,167 +1,145 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // -------------------- USERS --------------------
-    // User profiles (models and regular users)
     match /users/{userId} {
-      // Allow authenticated clients to read profiles and run queries
-      allow get, list: if request.auth != null;
-
-      // Create profile: users create their own doc
+      allow read, get, list: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == userId;
-
-      // Update / delete: only profile owner
-      allow update, delete: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && (
+        request.auth.uid == userId ||
+        (request.resource.data.connections is list && request.auth.uid in request.resource.data.connections)
+      );
     }
 
     // -------------------- POSTS / COMMENTS --------------------
     match /posts/{postId} {
       allow read: if true;
-      allow create: if request.auth != null && request.resource.data.authorId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.authorId == request.auth.uid;
-
+      allow write: if request.auth != null;
       match /comments/{commentId} {
         allow read: if true;
-        allow create: if request.auth != null && request.resource.data.authorId == request.auth.uid;
-        allow update, delete: if request.auth != null && resource.data.authorId == request.auth.uid;
+        allow write: if request.auth != null;
       }
     }
 
     // -------------------- CHATS / MESSAGES --------------------
-    // Basic pattern: conversations with participants array
-    match /conversations/{convId} {
-      allow create: if request.auth != null && request.resource.data.participants is list && request.auth.uid in request.resource.data.participants;
-      allow read: if request.auth != null && request.auth.uid in resource.data.participants;
-      allow update, delete: if request.auth != null && request.auth.uid in resource.data.participants;
-
-      match /messages/{msgId} {
-        allow create: if request.auth != null && request.auth.uid == request.resource.data.senderId && request.auth.uid in get(/databases/$(database)/documents/conversations/$(convId)).data.participants;
-        allow read: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/conversations/$(convId)).data.participants;
-        allow update, delete: if false; // keep messages immutable for simplicity
-      }
-    }
-
-    // Chats collection used by casting negotiations
     match /chats/{chatId} {
-      allow get: if request.auth != null && (request.auth.uid == resource.data.modelId || request.auth.uid == resource.data.agencyId);
-      // creation allowed when the authenticated user is the agency or the model and the doc contains matching ids
-      allow create: if request.auth != null && (request.resource.data.agencyId == request.auth.uid || request.resource.data.modelId == request.auth.uid) && request.resource.data.castingId is string && request.resource.data.modelId is string && request.resource.data.agencyId is string;
-      allow update: if request.auth != null && (request.auth.uid == resource.data.modelId || request.auth.uid == resource.data.agencyId);
-      allow delete: if request.auth != null && (request.auth.uid == resource.data.agencyId);
-
-      match /messages/{msgId} {
-        allow create: if request.auth != null && request.auth.uid == request.resource.data.senderId && (request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.modelId || request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.agencyId);
-        allow read: if request.auth != null && (request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.modelId || request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.agencyId);
-        allow update, delete: if false;
+      allow read, write: if request.auth != null && chatId.matches('.*' + request.auth.uid + '.*');
+      match /messages/{messageId} {
+        allow read, write: if request.auth != null && chatId.matches('.*' + request.auth.uid + '.*');
       }
     }
 
-    // Legacy per-user chat index (if used elsewhere)
     match /user_chats/{userId}/chats/{chatId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update, delete: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && (
+        request.auth.uid == userId ||
+        request.resource.data.peerId == request.auth.uid
+      );
     }
 
     // -------------------- PORTFOLIO --------------------
     match /portfolio/{docId} {
       allow read: if true;
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow write: if request.auth != null;
     }
 
     // -------------------- CONNECTION REQUESTS --------------------
     match /connection_requests/{requestId} {
-      allow read: if request.auth != null && (
-        request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId
-      );
-
+      allow read: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.senderId;
-
-      // Receiver may accept/reject (update) and delete
       allow update, delete: if request.auth != null && request.auth.uid == resource.data.receiverId;
     }
 
     // -------------------- BRANDS --------------------
     match /brands/{brandId} {
-      allow get, list: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow read, write: if request.auth != null && request.auth.uid == brandId;
     }
 
     // -------------------- GIGS + APPLICATIONS --------------------
     match /gigs/{gigId} {
       allow read: if true;
-      allow create: if request.auth != null && request.resource.data.brandId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.brandId == request.auth.uid;
-
-      // allow models to increment applicationsCount via update that only changes that field
-      allow update: if request.auth != null
-        && request.auth.uid != resource.data.brandId
-        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['applicationsCount']);
+      allow write: if request.auth != null && request.auth.uid == resource.data.brandId;
+      allow update: if request.auth != null &&
+        request.auth.uid != resource.data.brandId &&
+        request.resource.data.diff(resource.data).changedKeys().hasOnly(['applicationsCount']);
 
       match /applications/{modelId} {
-        allow create: if request.auth != null && request.auth.uid == modelId;
-        allow read: if request.auth != null && (request.auth.uid == modelId || request.auth.uid == get(/databases/$(database)/documents/gigs/$(gigId)).data.brandId);
-        allow update, delete: if request.auth != null && request.auth.uid == get(/databases/$(database)/documents/gigs/$(gigId)).data.brandId;
+        allow create, read: if request.auth != null && request.auth.uid == modelId;
+        allow read, update: if request.auth != null && request.auth.uid == get(/databases/$(database)/documents/gigs/$(gigId)).data.brandId;
       }
     }
 
-    // -------------------- AGENCIES + ROSTER + SHORTLIST --------------------
+    // -------------------- AGENCIES --------------------
     match /agency/{agencyId} {
-      // allow agencies to read their profile and allow others to read if needed
-      allow get, list: if request.auth != null;
+      // Allow the agency owner (docId matches UID) OR any verified member
+      allow read, create, update: if request.auth != null && (
+        request.auth.uid == agencyId ||
+        exists(/databases/$(database)/documents/agency/$(agencyId)/members/$(request.auth.uid))
+      );
 
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
-
-      // roster subcollection (if used)
+      // Models/Roster
       match /models/{modelId} {
         allow read: if request.auth != null;
+        allow create, update, delete: if request.auth != null && (
+          request.auth.uid == agencyId ||
+          exists(/databases/$(database)/documents/agency/$(agencyId)/members/$(request.auth.uid))
+        );
+      }
+
+      // Team Members
+      match /members/{memberId} {
+        // Members must be able to see each other
+        allow read: if request.auth != null && (
+          request.auth.uid == agencyId ||
+          exists(/databases/$(database)/documents/agency/$(agencyId)/members/$(request.auth.uid))
+        );
+        // Only the owner can manage the roster
         allow create, update, delete: if request.auth != null && request.auth.uid == agencyId;
       }
 
-      // shortlist subcollection for agencies to store bookmarked models
+      // Activity logs
+      match /activity/{activityId} {
+        allow read: if request.auth != null && (
+          request.auth.uid == agencyId ||
+          exists(/databases/$(database)/documents/agency/$(agencyId)/members/$(request.auth.uid))
+        );
+        allow create: if request.auth != null;
+      }
+
+      // Shortlist
       match /shortlist/{modelId} {
-        allow read: if request.auth != null && request.auth.uid == agencyId;
+        allow read: if request.auth != null && (
+          request.auth.uid == agencyId ||
+          exists(/databases/$(database)/documents/agency/$(agencyId)/members/$(request.auth.uid))
+        );
         allow create, delete: if request.auth != null && request.auth.uid == agencyId;
       }
     }
 
-    // -------------------- CASTINGS + APPLICANTS --------------------
+    // -------------------- CASTINGS --------------------
     match /castings/{castingId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.agencyId == request.auth.uid;
-      // Agency owner may update/delete the casting document
-      allow update, delete: if request.auth != null && resource.data.agencyId == request.auth.uid;
-
-      // Allow models (non-agency) to only increment `applicationsCount` on a casting
-      // This mirrors the gigs rule which permits a single-field increment by applicants.
-        allow update: if request.auth != null
-          && request.auth.uid != resource.data.agencyId
-          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['applicationsCount']);
+      allow create: if request.auth != null && (
+        request.resource.data.agencyId == request.auth.uid ||
+        exists(/databases/$(database)/documents/agency/$(request.resource.data.agencyId)/members/$(request.auth.uid))
+      );
+      allow update, delete: if request.auth != null && (
+        request.auth.uid == resource.data.agencyId ||
+        exists(/databases/$(database)/documents/agency/$(resource.data.agencyId)/members/$(request.auth.uid))
+      );
+      allow update: if request.auth != null &&
+        request.auth.uid != resource.data.agencyId &&
+        request.resource.data.diff(resource.data).changedKeys().hasOnly(['applicationsCount']);
 
       match /applicants/{applicantId} {
-        // Model may create their own application document (must include modelId matching their uid)
         allow create: if request.auth != null && request.resource.data.modelId == request.auth.uid;
-
-        // Allow the applicant (by path id), the owning agency, or the applicant
-        // as indicated by the document's `modelId` field to read applicant docs.
-        // This covers both cases where applicant documents were created using the
-        // model's UID as the doc id, or where an auto-id was used but the
-        // document contains `modelId` pointing to the applicant.
-          allow get: if request.auth != null && (
-            request.auth.uid == applicantId ||
-            request.auth.uid == get(/databases/$(database)/documents/castings/$(castingId)).data.agencyId ||
-            (resource.data.modelId == request.auth.uid)
-          );
-
-          // Explicitly allow listing of applicants
-          allow list: if request.auth != null && request.auth.uid == get(/databases/$(database)/documents/castings/$(castingId)).data.agencyId;
-
-        // Agency can update/delete; applicant (model) can also update/delete their own doc
+        allow get: if request.auth != null && (
+          request.auth.uid == applicantId ||
+          (resource.data.modelId == request.auth.uid) ||
+          request.auth.uid == get(/databases/$(database)/documents/castings/$(castingId)).data.agencyId
+        );
+        allow list: if request.auth != null && request.auth.uid == get(/databases/$(database)/documents/castings/$(castingId)).data.agencyId;
         allow update, delete: if request.auth != null && (
           request.auth.uid == get(/databases/$(database)/documents/castings/$(castingId)).data.agencyId ||
           request.auth.uid == resource.data.modelId
@@ -178,25 +156,32 @@ service cloud.firestore {
 
     // -------------------- AGENCY INVITES --------------------
     match /agencyInvites/{inviteId} {
-      allow create: if request.auth != null && request.resource.data.fromAgencyId == request.auth.uid;
-      allow read: if request.auth != null && (request.auth.uid == resource.data.toUid || request.auth.uid == resource.data.fromAgencyId);
-      allow delete: if request.auth != null && (request.auth.uid == resource.data.toUid || request.auth.uid == resource.data.fromAgencyId);
+      // Creation Rule
+      allow create: if request.auth != null && (
+        request.resource.data.fromAgencyId == request.auth.uid ||
+        exists(/databases/$(database)/documents/agency/$(request.resource.data.fromAgencyId)/members/$(request.auth.uid))
+      );
+
+      // Read Rule - allow viewing by recipient OR sender OR any existing team member of that agency
+      allow read, list: if request.auth != null && (
+        request.auth.uid == resource.data.toUid ||
+        request.auth.uid == resource.data.fromAgencyId ||
+        exists(/databases/$(database)/documents/agency/$(resource.data.fromAgencyId)/members/$(request.auth.uid))
+      );
+
+      // Management Rule
+      allow delete: if request.auth != null && (
+        request.auth.uid == resource.data.toUid ||
+        request.auth.uid == resource.data.fromAgencyId
+      );
+
+      // Status Update (Accept/Expire)
+      allow update: if request.auth != null;
     }
 
     // -------------------- FALLBACK --------------------
     match /{document=**} {
       allow read, write: if false;
-    }
-  }
-}
-rules_version = '2';
-
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    // Allow all reads and writes for authenticated users
-    match /{document=**} {
-      allow read, write: if request.auth != null;
     }
   }
 }

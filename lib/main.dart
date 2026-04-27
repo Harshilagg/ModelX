@@ -12,6 +12,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'ui/app_theme.dart';
 import 'brand/brand_dashboard_page.dart';
 import 'agency/agency_dashboard_page.dart';
+import 'package:app_links/app_links.dart';
+import 'dart:async';
+import 'agency/team_access/invite_acceptance_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,12 +24,58 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late AppLinks _appLinks;
+  StreamSubscription<Uri>? _linkSubscription;
+  final _navigatorKey = GlobalKey<NavigatorState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _initDeepLinks();
+  }
+
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _initDeepLinks() {
+    _appLinks = AppLinks();
+
+    // Check initial link if app was opened via one
+    _appLinks.getInitialLink().then((uri) {
+      if (uri != null) _handleDeepLink(uri);
+    });
+
+    // Listen to incoming links while app is open
+    _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
+      _handleDeepLink(uri);
+    });
+  }
+
+  void _handleDeepLink(Uri uri) {
+    debugPrint('🔗 Received Deep Link: $uri');
+    if (uri.host == 'invite' && uri.queryParameters.containsKey('token')) {
+      final token = uri.queryParameters['token']!;
+      _navigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (_) => InviteAcceptancePage(token: token)),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'ModelX App',
       theme: AppTheme.light(),

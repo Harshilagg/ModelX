@@ -2,14 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'chat_page.dart';
+import '../ui/app_theme.dart';
+import '../widgets/profile_avatar.dart';
+import '../widgets/state_views.dart';
 
 class ChatInboxPage extends StatelessWidget {
-  ChatInboxPage({super.key});
-
-  final User currentUser = FirebaseAuth.instance.currentUser!;
+  const ChatInboxPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Read the current user fresh on every build rather than capturing it
+    // once at construction — avoids a null force-unwrap if this is built
+    // before auth state settles, and avoids querying a stale uid if the
+    // signed-in user ever changes without this widget being recreated.
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      return const Scaffold(
+        appBar: null,
+        body: Center(child: Text('Please sign in to view messages')),
+      );
+    }
+
     final inboxRef = FirebaseFirestore.instance
     .collection('user_chats')
     .doc(currentUser.uid)
@@ -24,26 +37,33 @@ class ChatInboxPage extends StatelessWidget {
         stream: inboxRef.snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'Failed to load inbox',
-                style: TextStyle(color: Colors.red),
-              ),
-            );
+            return const ErrorStateView(message: 'Failed to load inbox');
           }
 
           if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoadingState();
           }
 
           final chats = snapshot.data!.docs;
 
           if (chats.isEmpty) {
-            return const Center(child: Text('No messages yet'));
+            return const EmptyState(
+              icon: Icons.chat_bubble_outline_rounded,
+              title: 'No messages yet',
+              message: 'Conversations you start will show up here.',
+            );
           }
 
-          return ListView.builder(
+          return ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             itemCount: chats.length,
+            separatorBuilder: (_, __) => const Divider(
+              height: 1,
+              thickness: 1,
+              color: AppColors.line,
+              indent: 84,
+              endIndent: AppSpacing.md,
+            ),
             itemBuilder: (_, index) {
               final data = chats[index].data() as Map<String, dynamic>;
 
@@ -55,33 +75,45 @@ class ChatInboxPage extends StatelessWidget {
               final unreadCount = data['unreadCount'] ?? 0;
 
               return ListTile(
-                leading: CircleAvatar(
-                  backgroundImage: peerImage.isNotEmpty
-                      ? NetworkImage(peerImage)
-                      : const AssetImage('assets/avatar.jpg')
-                          as ImageProvider,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.xs,
                 ),
+                leading: ProfileAvatar(imageUrl: peerImage, name: peerName, size: 52),
                 title: Text(
                   peerUsername.toString().isNotEmpty
                       ? '@$peerUsername'
                       : peerName,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: AppColors.ink,
+                  ),
                 ),
-                subtitle: Text(
-                  lastMessage,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    lastMessage.toString().isNotEmpty ? lastMessage : 'No messages yet',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: AppColors.inkFaint, fontSize: 13.5),
+                  ),
                 ),
                 trailing: unreadCount > 0
-                    ? CircleAvatar(
-                        radius: 12,
-                        backgroundColor: Colors.red,
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.select,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                        ),
+                        constraints: const BoxConstraints(minWidth: 20),
                         child: Text(
                           unreadCount.toString(),
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                            color: AppColors.paper,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       )

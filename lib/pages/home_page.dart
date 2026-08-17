@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'user_profile_page.dart';
+import '../ui/app_theme.dart';
+import '../widgets/profile_avatar.dart';
+import '../widgets/state_views.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -14,18 +17,23 @@ class HomePage extends StatelessWidget {
           .orderBy('createdAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const ErrorStateView(
+            message: 'Could not load the feed. Please try again.',
+          );
+        }
+
         if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
+          return const LoadingState();
         }
 
         final posts = snapshot.data!.docs;
 
         if (posts.isEmpty) {
-          return const Center(
-            child: Text(
-              'No posts yet',
-              style: TextStyle(color: Colors.grey),
-            ),
+          return const EmptyState(
+            icon: Icons.photo_camera_outlined,
+            title: 'No posts yet',
+            message: 'When people you follow share something,\nit will show up here.',
           );
         }
 
@@ -39,15 +47,16 @@ class HomePage extends StatelessWidget {
             return _PostCard(
               postId: post.id,
               postData: data,
-              );
+            );
           },
         );
       },
     );
   }
 }
+
 /////////////////////////LIKE////////////////////////////////
-class _LikeButton extends StatelessWidget {
+class _LikeButton extends StatefulWidget {
   final String postId;
   final List<String> likes;
 
@@ -57,43 +66,105 @@ class _LikeButton extends StatelessWidget {
   });
 
   @override
+  State<_LikeButton> createState() => _LikeButtonState();
+}
+
+class _LikeButtonState extends State<_LikeButton> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 1.35).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 50,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.35, end: 1.0).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 50,
+      ),
+    ]).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleTap() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+
+    if (!MediaQuery.of(context).disableAnimations) {
+      _controller.forward(from: 0);
+    }
+
+    final postRef =
+        FirebaseFirestore.instance.collection('posts').doc(widget.postId);
+
+    // Run as a transaction so rapid double-taps read the latest
+    // server state instead of racing off this widget's (possibly
+    // stale) `likes` prop — avoids the like count drifting out of
+    // sync with the `likes` array.
+    await FirebaseFirestore.instance.runTransaction((tx) async {
+      final snap = await tx.get(postRef);
+      final data = snap.data() ?? {};
+      final currentLikes = List<String>.from(data['likes'] ?? []);
+      if (currentLikes.contains(userId)) {
+        tx.update(postRef, {
+          'likes': FieldValue.arrayRemove([userId]),
+          'likeCount': FieldValue.increment(-1),
+        });
+      } else {
+        tx.update(postRef, {
+          'likes': FieldValue.arrayUnion([userId]),
+          'likeCount': FieldValue.increment(1),
+        });
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final userId = FirebaseAuth.instance.currentUser!.uid;
-    final isLiked = likes.contains(userId);
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final isLiked = userId != null && widget.likes.contains(userId);
 
     return GestureDetector(
-      onTap: () async {
-        final postRef =
-            FirebaseFirestore.instance.collection('posts').doc(postId);
-
-        if (isLiked) {
-          await postRef.update({
-            'likes': FieldValue.arrayRemove([userId]),
-            'likeCount': FieldValue.increment(-1),
-          });
-        } else {
-          await postRef.update({
-            'likes': FieldValue.arrayUnion([userId]),
-            'likeCount': FieldValue.increment(1),
-          });
-        }
-      },
+      onTap: userId == null ? null : _handleTap,
+      behavior: HitTestBehavior.opaque,
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isLiked ? Icons.favorite : Icons.favorite_border,
-            color: isLiked ? Colors.red : Colors.grey,
+          ScaleTransition(
+            scale: _scale,
+            child: Icon(
+              isLiked ? Icons.favorite : Icons.favorite_border,
+              color: isLiked ? AppColors.select : AppColors.inkFaint,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 6),
           Text(
-            likes.length.toString(),
-            style: const TextStyle(color: Colors.grey),
+            widget.likes.length.toString(),
+            style: const TextStyle(
+              color: AppColors.inkSoft,
+              fontWeight: FontWeight.w600,
+              fontSize: 13.5,
+            ),
           ),
         ],
       ),
     );
   }
 }
+
 /////////////////////////COMMENT////////////////////////////////
 class _CommentButton extends StatelessWidget {
   final String postId;
@@ -107,25 +178,33 @@ class _CommentButton extends StatelessWidget {
         showModalBottomSheet(
           context: context,
           isScrollControlled: true,
+          backgroundColor: AppColors.paper,
           shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
           ),
           builder: (_) => _CommentsSheet(postId: postId),
         );
       },
-      child: Row(
-        children: const [
-          Icon(Icons.mode_comment_outlined, color: Colors.grey),
+      behavior: HitTestBehavior.opaque,
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.mode_comment_outlined, color: AppColors.inkFaint, size: 22),
           SizedBox(width: 6),
           Text(
             "Comment",
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(
+              color: AppColors.inkSoft,
+              fontWeight: FontWeight.w600,
+              fontSize: 13.5,
+            ),
           ),
         ],
       ),
     );
   }
 }
+
 /////////////////////////COMMENTS SHEET////////////////////////////////
 class _CommentsSheet extends StatefulWidget {
   final String postId;
@@ -138,31 +217,46 @@ class _CommentsSheet extends StatefulWidget {
 class _CommentsSheetState extends State<_CommentsSheet> {
   final TextEditingController _controller = TextEditingController();
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   Future<void> _addComment() async {
-  final user = FirebaseAuth.instance.currentUser!;
-  final text = _controller.text.trim();
-  if (text.isEmpty) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
 
-  final userDoc = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .get();
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
 
-  final userData = userDoc.data() ?? {};
+      final userData = userDoc.data() ?? {};
 
-  await FirebaseFirestore.instance
-      .collection('posts')
-      .doc(widget.postId)
-      .collection('comments')
-      .add({
-    'uid': user.uid,
-    'username': userData['username'] ?? '',
-    'profileImage': userData['profileImage'] ?? '',
-    'text': text,
-    'createdAt': FieldValue.serverTimestamp(),
-  });
+      await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(widget.postId)
+          .collection('comments')
+          .add({
+        'uid': user.uid,
+        'username': userData['username'] ?? '',
+        'profileImage': userData['profileImage'] ?? '',
+        'text': text,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
-  _controller.clear();
+      if (!mounted) return;
+      _controller.clear();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not post comment: $e')),
+      );
+    }
   }
 
   @override
@@ -171,127 +265,160 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 12),
-          const Text(
-            "Comments",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: Column(
+            children: [
+              const SizedBox(height: AppSpacing.sm),
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.line,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                "Comments",
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              const Divider(height: 1),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('posts')
+                      .doc(widget.postId)
+                      .collection('comments')
+                      .orderBy('createdAt', descending: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return const ErrorStateView(
+                        message: 'Could not load comments.',
+                      );
+                    }
 
-          const Divider(),
+                    if (!snapshot.hasData) {
+                      return const LoadingState();
+                    }
 
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('posts')
-                  .doc(widget.postId)
-                  .collection('comments')
-                  .orderBy('createdAt', descending: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+                    final comments = snapshot.data!.docs;
 
-                final comments = snapshot.data!.docs;
+                    if (comments.isEmpty) {
+                      return const EmptyState(
+                        icon: Icons.mode_comment_outlined,
+                        title: "No comments yet",
+                        message: "Be the first to share your thoughts.",
+                      );
+                    }
 
-                if (comments.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      "No comments yet",
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  itemCount: comments.length,
-                  itemBuilder: (context, index) {
-                    final data =
-                        comments[index].data() as Map<String, dynamic>;
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-
-                      leading: CircleAvatar(
-                        radius: 16, // 👈 smaller than post header
-                        backgroundImage:
-                            (data['profileImage'] != null && data['profileImage'].toString().isNotEmpty)
-                                ? NetworkImage(data['profileImage'])
-                                : null,
-                        child: (data['profileImage'] == null ||
-                                data['profileImage'].toString().isEmpty)
-                            ? const Icon(Icons.person, size: 16)
-                            : null,
-                      ),
-
-                      title: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                      builder: (_) => UserProfilePage(uid: data['uid']),
-                                    ),
-                          );
-                        },
-                        child: Text(
-                          data['username'] ?? '',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                      itemCount: comments.length,
+                      itemBuilder: (context, index) {
+                        final data =
+                            comments[index].data() as Map<String, dynamic>;
+                        return InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => UserProfilePage(uid: data['uid']),
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                              vertical: AppSpacing.xs,
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ProfileAvatar(
+                                  imageUrl: data['profileImage'],
+                                  name: data['username'],
+                                  size: 32,
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        data['username'] ?? '',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 13,
+                                          color: AppColors.ink,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        data['text'] ?? '',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: AppColors.inkSoft,
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ),
-
-                      subtitle: Text(
-                        data['text'] ?? '',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-
-                      onTap: () {
-                        // optional: tap anywhere to open profile
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                                      builder: (_) => UserProfilePage(uid: data['uid']),
-                                    ),
                         );
                       },
                     );
                   },
-                );
-              },
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: InputDecoration(
-                      hintText: "Add a comment...",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        textCapitalization: TextCapitalization.sentences,
+                        decoration: InputDecoration(
+                          hintText: "Add a comment...",
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                            vertical: 12,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Material(
+                      color: AppColors.ink,
+                      shape: const CircleBorder(),
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_upward_rounded, color: AppColors.paper, size: 20),
+                        onPressed: _addComment,
+                      ),
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: _addComment,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
+
 //////////////////////////POST CARD STYLE OF POST////////////////////////////////
 class _PostCard extends StatelessWidget {
   final String postId;
@@ -303,24 +430,18 @@ class _PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    final hasImage = postData['imageUrl'] != null &&
+        postData['imageUrl'].toString().isNotEmpty;
+    final hasCaption = postData['caption'] != null &&
+        postData['caption'].toString().isNotEmpty;
+
+    return Container(
+      color: AppColors.paper,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ===== POST HEADER =====
-          ListTile(
-            leading: CircleAvatar(
-              backgroundImage: postData['userImage'] != null
-                  ? NetworkImage(postData['userImage'])
-                  : null,
-            ),
-            title: Text(
-              postData['username'] ?? '',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+          InkWell(
             onTap: () {
               Navigator.push(
                 context,
@@ -328,35 +449,81 @@ class _PostCard extends StatelessWidget {
                   builder: (_) => UserProfilePage(uid: postData['uid']),
                 ),
               );
-
             },
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
+              child: Row(
+                children: [
+                  ProfileAvatar(
+                    imageUrl: postData['userImage'],
+                    name: postData['username'],
+                    size: 40,
+                  ),
+                  const SizedBox(width: AppSpacing.sm + 2),
+                  Expanded(
+                    child: Text(
+                      postData['username'] ?? '',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
 
           // ===== POST IMAGE =====
-          if (postData['imageUrl'] != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+          if (hasImage)
+            AspectRatio(
+              aspectRatio: 1,
               child: Image.network(
                 postData['imageUrl'],
-                width: double.infinity,
-                height: 300,
                 fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return Container(
+                    color: AppColors.paperRaised,
+                    alignment: Alignment.center,
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: AppColors.inkFaint,
+                        value: progress.expectedTotalBytes != null
+                            ? progress.cumulativeBytesLoaded /
+                                progress.expectedTotalBytes!
+                            : null,
+                      ),
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: AppColors.paperRaised,
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.broken_image_outlined,
+                      color: AppColors.inkFaint,
+                      size: 32,
+                    ),
+                  );
+                },
               ),
             ),
 
-          // ===== CAPTION =====
-          if (postData['caption'] != null &&
-              postData['caption'].toString().isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                postData['caption'],
-                style: const TextStyle(fontSize: 14),
-              ),
-            ),
-
+          // ===== LIKE / COMMENT ROW =====
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              0,
+            ),
             child: Row(
               children: [
                 _LikeButton(
@@ -369,7 +536,25 @@ class _PostCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 8),
+          // ===== CAPTION =====
+          if (hasCaption)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
+              child: Text(
+                postData['caption'],
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            )
+          else
+            const SizedBox(height: AppSpacing.sm),
+
+          // ===== SEPARATOR BETWEEN FEED ITEMS =====
+          Container(height: AppSpacing.sm, color: AppColors.paperRaised),
         ],
       ),
     );

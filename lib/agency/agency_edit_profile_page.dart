@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_application_modelx/services/cloudinary_service.dart';
+import '../ui/app_theme.dart';
+import '../widgets/app_button.dart';
+import '../widgets/state_views.dart';
 
 class AgencyEditProfilePage extends StatefulWidget {
   const AgencyEditProfilePage({super.key});
@@ -28,7 +31,9 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
 
   String? logoUrl;
   String? coverUrl;
+  String? _email;
   bool loading = true;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -52,6 +57,7 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
     linkedinController.text = (d['socialLinks']?['linkedin']) ?? '';
     logoUrl = d['logoUrl'];
     coverUrl = d['coverImageUrl'];
+    _email = (d['email'] ?? '').toString();
     setState(() => loading = false);
   }
 
@@ -64,13 +70,17 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
     final uploaded = await CloudinaryService.uploadProfileImage(file, 'agency_$uid');
     if (uploaded == null) return;
     setState(() {
-      if (isLogo) logoUrl = uploaded; else coverUrl = uploaded;
+      if (isLogo) {
+        logoUrl = uploaded;
+      } else {
+        coverUrl = uploaded;
+      }
     });
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => loading = true);
+    setState(() => _saving = true);
     final uid = _auth.currentUser!.uid;
     await FirebaseFirestore.instance.collection('agency').doc(uid).set({
       'agencyName': agencyNameController.text.trim(),
@@ -89,14 +99,16 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
     }, SetOptions(merge: true));
 
     if (!mounted) return;
-    setState(() => loading = false);
+    setState(() => _saving = false);
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved')));
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (loading) {
+      return const Scaffold(body: LoadingState());
+    }
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Agency Profile')),
       body: Padding(
@@ -105,24 +117,82 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
           key: _formKey,
           child: ListView(
             children: [
-              TextFormField(controller: agencyNameController, decoration: const InputDecoration(labelText: 'Agency Name'), validator: (v) => v==null||v.isEmpty? 'Required' : null,),
+              TextFormField(
+                controller: agencyNameController,
+                decoration: const InputDecoration(labelText: 'Agency Name'),
+                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 12),
               TextFormField(controller: phoneController, decoration: const InputDecoration(labelText: 'Phone')),
+              const SizedBox(height: 12),
               TextFormField(controller: addressController, decoration: const InputDecoration(labelText: 'Address')),
+              const SizedBox(height: 12),
               TextFormField(controller: websiteController, decoration: const InputDecoration(labelText: 'Website')),
-              const SizedBox(height: 12),
-              Row(children: [
-                ElevatedButton.icon(onPressed: () => _pickAndUpload(true), icon: const Icon(Icons.photo), label: const Text('Change Logo')),
-                const SizedBox(width: 12),
-                ElevatedButton.icon(onPressed: () => _pickAndUpload(false), icon: const Icon(Icons.photo_library), label: const Text('Change Cover')),
-              ]),
-              const SizedBox(height: 12),
+              if (_email != null && _email!.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: AppColors.paperRaised,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    border: Border.all(color: AppColors.line),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.email_outlined, size: 18, color: AppColors.inkFaint),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _email!,
+                          style: const TextStyle(color: AppColors.inkFaint, fontSize: 14),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Text('Not editable', style: TextStyle(color: AppColors.inkFaint, fontSize: 11)),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: AppButton(
+                      label: 'Change Logo',
+                      variant: AppButtonVariant.secondary,
+                      icon: Icons.photo_outlined,
+                      onPressed: () => _pickAndUpload(true),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AppButton(
+                      label: 'Change Cover',
+                      variant: AppButtonVariant.secondary,
+                      icon: Icons.photo_library_outlined,
+                      onPressed: () => _pickAndUpload(false),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
               TextFormField(controller: bioController, decoration: const InputDecoration(labelText: 'Bio'), maxLines: 4),
+              const SizedBox(height: 12),
               TextFormField(controller: specialtiesController, decoration: const InputDecoration(labelText: 'Specialties (comma separated)')),
+              const SizedBox(height: 12),
               TextFormField(controller: servicesController, decoration: const InputDecoration(labelText: 'Services (comma separated)')),
+              const SizedBox(height: 12),
               TextFormField(controller: instagramController, decoration: const InputDecoration(labelText: 'Instagram')),
+              const SizedBox(height: 12),
               TextFormField(controller: linkedinController, decoration: const InputDecoration(labelText: 'LinkedIn')),
-              const SizedBox(height: 18),
-              ElevatedButton(onPressed: _save, child: const Text('Save')),
+              const SizedBox(height: 24),
+              AppButton(
+                label: 'Save',
+                expand: true,
+                loading: _saving,
+                onPressed: _saving ? null : _save,
+              ),
             ],
           ),
         ),

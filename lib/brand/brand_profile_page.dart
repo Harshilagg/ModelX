@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../pages/login_page.dart';
+import '../ui/app_theme.dart';
+import '../widgets/app_button.dart';
+import '../widgets/app_card.dart';
+import '../widgets/profile_avatar.dart';
+import '../widgets/section_header.dart';
+import '../widgets/state_views.dart';
 
 
 class BrandProfilePage extends StatefulWidget {
@@ -39,7 +45,7 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
         .doc(uid)
         .get();
 
-    final d = doc.data()!;
+    final d = doc.data() ?? <String, dynamic>{};
     brandName.text = d['brandName'] ?? '';
     industry.text = d['industry'] ?? '';
     about.text = d['aboutBrand'] ?? '';
@@ -108,7 +114,7 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
   Widget build(BuildContext context) {
     if (loading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: LoadingState(),
       );
     }
 
@@ -118,13 +124,10 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
         actions: [
           TextButton(
             onPressed: () => setState(() => isEdit = !isEdit),
-            child: Text(
-              isEdit ? 'Cancel' : 'Edit',
-              style: const TextStyle(color: Colors.black),
-            ),
+            child: Text(isEdit ? 'Cancel' : 'Edit'),
           ),
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.black),
+            icon: const Icon(Icons.logout),
             onPressed: _signOut,
           ),
         ],
@@ -135,49 +138,100 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            // ================= PROGRESS =================
-            Text(
-              'Profile Completion ${(completion * 100).toInt()}%',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            LinearProgressIndicator(
-              value: completion,
-              minHeight: 8,
-              borderRadius: BorderRadius.circular(8),
-            ),
-
-            const SizedBox(height: 30),
-
-            _section('Basic Identity'),
-            _field('Brand Name', brandName),
-            _field('Industry', industry),
-
-            _section('Brand Details'),
-            _field('About Brand', about, maxLines: 6),
-            _field('Locations (comma separated)', locations),
-
-            _section('Online Presence'),
-            _field('Website', website),
-            _field('Instagram', instagram),
-            _field('LinkedIn', linkedin),
-
-            _section('Past Projects'),
-            _projectPlaceholder(),
-
-            const SizedBox(height: 30),
-
-            if (isEdit)
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _save,
-                  child: const Text(
-                    'Save Changes',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+            // ================= HERO =================
+            Row(
+              children: [
+                ProfileAvatar(name: brandName.text, size: 72),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    brandName.text.isEmpty ? 'Your Brand' : brandName.text,
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
                 ),
+              ],
+            ),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // ================= PROGRESS =================
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Profile Completion ${(completion * 100).toInt()}%',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    child: LinearProgressIndicator(
+                      value: completion,
+                      minHeight: 8,
+                      color: AppColors.gold,
+                      backgroundColor: AppColors.line,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.xl),
+
+            SectionHeader(title: 'Basic Identity'),
+            const SizedBox(height: AppSpacing.md),
+            AppCard(
+              child: Column(
+                children: [
+                  _field('Brand Name', brandName),
+                  _field('Industry', industry, last: true),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.xl),
+
+            SectionHeader(title: 'Brand Details'),
+            const SizedBox(height: AppSpacing.md),
+            AppCard(
+              child: Column(
+                children: [
+                  _field('About Brand', about, maxLines: 6),
+                  _field('Locations (comma separated)', locations, last: true),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.xl),
+
+            SectionHeader(title: 'Online Presence'),
+            const SizedBox(height: AppSpacing.md),
+            AppCard(
+              child: Column(
+                children: [
+                  _field('Website', website),
+                  _field('Instagram', instagram),
+                  _field('LinkedIn', linkedin, last: true),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.xl),
+
+            SectionHeader(title: 'Campaign Gallery'),
+            const SizedBox(height: AppSpacing.md),
+            AppCard(
+              child: _projectPlaceholder(),
+            ),
+
+            const SizedBox(height: AppSpacing.xl),
+
+            if (isEdit)
+              AppButton(
+                label: 'Save Changes',
+                onPressed: _save,
+                expand: true,
               ),
           ],
         ),
@@ -187,31 +241,16 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
 
   // ================= UI HELPERS =================
 
-  Widget _section(String title) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      );
-
   Widget _field(String label, TextEditingController c,
-      {int maxLines = 1}) {
+      {int maxLines = 1, bool last = false}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(bottom: last ? 0 : AppSpacing.md),
       child: TextField(
         controller: c,
         maxLines: maxLines,
         enabled: isEdit,
         decoration: InputDecoration(
           labelText: label,
-          filled: true,
-          fillColor: Colors.white,
-          border:
-              OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
         ),
       ),
     );
@@ -219,14 +258,14 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
 
   Widget _projectPlaceholder() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(14),
+        color: AppColors.paperRaised,
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: const Text(
-        'Upload 3–20 campaign images\n(Coming next)',
-        style: TextStyle(color: Colors.grey),
+        'Campaign gallery — not yet available in the app.',
+        style: TextStyle(color: AppColors.inkFaint),
       ),
     );
   }

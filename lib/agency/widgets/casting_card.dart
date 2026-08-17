@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../ui/app_theme.dart';
+import '../../widgets/status_pill.dart';
 import '../casting/casting_service.dart';
 
+/// Job card for agency-posted castings, shown to models in the jobs feed
+/// and to agencies in their own casting list. Shares its visual language
+/// (card shell, chip style, meta row) with `GigCard` even though the two
+/// stay separate widgets — they render different data shapes.
 class CastingCard extends StatefulWidget {
   final String id;
   final String title;
@@ -52,7 +58,6 @@ class CastingCard extends StatefulWidget {
 
   @override
   State<CastingCard> createState() => _CastingCardState();
-
 }
 
 class _CastingCardState extends State<CastingCard> {
@@ -101,82 +106,126 @@ class _CastingCardState extends State<CastingCard> {
     }
     setState(() => _sending = false);
   }
+
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         onTap: widget.onTap,
         child: Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(14),
+          margin: const EdgeInsets.only(bottom: AppSpacing.md),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
+            color: AppColors.paper,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.line),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.ink.withValues(alpha: 0.04),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // header
-        Row(children: [
-          CircleAvatar(radius: 18, backgroundColor: Colors.blue.withOpacity(0.12), child: const Icon(Icons.business, size: 18, color: Colors.blue)),
-          const SizedBox(width: 10),
-          Expanded(child: Text(widget.posterName ?? 'Agency', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600))),
-          if (widget.actionWidget != null) widget.actionWidget!,
-        ]),
-        const SizedBox(height: 12),
+            // header
+            Row(children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(color: AppColors.paperRaised, shape: BoxShape.circle),
+                child: const Icon(Icons.business_rounded, size: 18, color: AppColors.inkSoft),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  widget.posterName ?? 'Agency',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink),
+                ),
+              ),
+              if (widget.actionWidget != null) widget.actionWidget!,
+            ]),
+            const SizedBox(height: AppSpacing.sm + 4),
 
-        // title
-        Text(widget.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
+            // title
+            Text(widget.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.ink)),
+            const SizedBox(height: AppSpacing.sm + 4),
 
-        // description
-        Text('About the Casting', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87)),
-        const SizedBox(height: 6),
-        Text(widget.description, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.5)),
-        const SizedBox(height: 12),
+            // description
+            const Text('About the casting', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.inkSoft)),
+            const SizedBox(height: 6),
+            Text(widget.description, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, color: AppColors.ink, height: 1.5)),
+            const SizedBox(height: AppSpacing.sm + 4),
 
-        Wrap(spacing: 12, runSpacing: 8, children: [
-          if (widget.timeline.isNotEmpty) _detailText('Timeline: ${widget.timeline}'),
-          if ((widget.compensationMin != null && widget.compensationMin!.isNotEmpty) || (widget.compensationMax != null && widget.compensationMax!.isNotEmpty))
-            _detailText('Compensation: ${widget.compensationMin ?? '-'} - ${widget.compensationMax ?? '-'}'),
-          if (widget.budgetType.isNotEmpty && widget.budgetAmount.isNotEmpty) _detailText('${widget.budgetType}: ₹${widget.budgetAmount}'),
-          if (widget.location.isNotEmpty) _detailText('Location: ${widget.location}'),
-        ]),
-        const SizedBox(height: 8),
+            Wrap(spacing: AppSpacing.md, runSpacing: AppSpacing.sm, children: [
+              if (widget.timeline.isNotEmpty) _detailText('Timeline: ${widget.timeline}'),
+              if ((widget.compensationMin != null && widget.compensationMin!.isNotEmpty) || (widget.compensationMax != null && widget.compensationMax!.isNotEmpty))
+                _detailText('Compensation: ${widget.compensationMin ?? '-'} - ${widget.compensationMax ?? '-'}'),
+              if (widget.budgetType.isNotEmpty && widget.budgetAmount.isNotEmpty) _detailText('${widget.budgetType}: ₹${widget.budgetAmount}'),
+              if (widget.location.isNotEmpty) _detailText('Location: ${widget.location}'),
+            ]),
 
-        // talent summary placed below compensation/details to avoid horizontal overflow
-        if (widget.talentRequirements != null) Padding(padding: const EdgeInsets.only(bottom: 12), child: _talentSummary(widget.talentRequirements!)),
+            // talent summary placed below compensation/details to avoid horizontal overflow
+            if (widget.talentRequirements != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              _talentSummary(widget.talentRequirements!),
+            ],
 
-        const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm + 4),
 
-        Row(children: [
-          Text('${widget.applicants} Applications', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          _dot(),
-          _statusBadge(widget.status),
-          _dot(),
-          _meta(_timeAgo(widget.createdAt)),
-          const Spacer(),
-          if (!_applied && widget.showApply)
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(minimumSize: const Size(80, 36), padding: const EdgeInsets.symmetric(horizontal: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-              onPressed: _sending ? null : _applyNow,
-              child: _sending ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Apply', style: TextStyle(fontSize: 14)),
-            )
-          else if (_applied)
-            Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), decoration: BoxDecoration(color: Colors.grey.withOpacity(0.12), borderRadius: BorderRadius.circular(8)), child: const Text('Applied', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w700))),
-        ])
-      ]),
+            Row(children: [
+              Text('${widget.applicants} applications', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.ink)),
+              _dot(),
+              StatusPill(status: widget.status),
+              _dot(),
+              _meta(_timeAgo(widget.createdAt)),
+              const Spacer(),
+              if (!_applied && widget.showApply)
+                SizedBox(
+                  height: 36,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(80, 36),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                    ),
+                    onPressed: _sending ? null : _applyNow,
+                    child: _sending
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.paper),
+                          )
+                        : const Text('Apply', style: TextStyle(fontSize: 13.5)),
+                  ),
+                )
+              else if (_applied)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(color: AppColors.paperRaised, borderRadius: BorderRadius.circular(AppRadius.md), border: Border.all(color: AppColors.lineStrong)),
+                  child: const Text('Applied', style: TextStyle(color: AppColors.inkSoft, fontWeight: FontWeight.w700, fontSize: 13)),
+                ),
+            ]),
+          ]),
         ),
       ),
     );
   }
 
-  Widget _detailText(String text) => Text(text, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13));
+  Widget _detailText(String text) =>
+      Text(text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.ink));
 
-  Widget _meta(String text) => Text(text, style: const TextStyle(fontSize: 12, color: Colors.grey));
+  Widget _meta(String text) => Text(text, style: const TextStyle(fontSize: 12, color: AppColors.inkFaint));
 
-  Widget _dot() => Container(margin: const EdgeInsets.symmetric(horizontal: 6), width: 4, height: 4, decoration: const BoxDecoration(color: Colors.grey, shape: BoxShape.circle));
+  Widget _dot() => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+        width: 3,
+        height: 3,
+        decoration: const BoxDecoration(color: AppColors.lineStrong, shape: BoxShape.circle),
+      );
 
   String _timeAgo(DateTime date) {
     final diff = DateTime.now().difference(date);
@@ -186,34 +235,16 @@ class _CastingCardState extends State<CastingCard> {
     return 'Just now';
   }
 
-  Widget _statusBadge(String status) {
-    late String label;
-    late Color color;
-    late Color bgColor;
-    switch (status.toLowerCase()) {
-      case 'open':
-        label = 'Live';
-        color = Colors.green;
-        bgColor = Colors.green.withOpacity(0.12);
-        break;
-      case 'closed':
-        label = 'Closed';
-        color = Colors.red;
-        bgColor = Colors.red.withOpacity(0.12);
-        break;
-      default:
-        label = status;
-        color = Colors.grey.shade700;
-        bgColor = Colors.grey.withOpacity(0.15);
-    }
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)), child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)));
-  }
-
   Widget _talentSummary(Map<String, dynamic> t) {
     final gender = (t['gender'] ?? 'any').toString();
     final minAge = t['minAge']?.toString();
     final maxAge = t['maxAge']?.toString();
-    final looks = t['looks']?.toString();
+    // 'looks' may be stored either as a legacy comma-string or as a
+    // List<String> (current shape) — handle both for backwards compatibility.
+    final looksRaw = t['looks'];
+    final looks = (looksRaw is List)
+        ? looksRaw.cast<String>().join(', ')
+        : looksRaw?.toString();
     final skills = (t['skills'] is List) ? (t['skills'] as List).cast<String>() : null;
     final parts = <String>[];
     if (gender != 'any') parts.add(gender);
@@ -221,8 +252,10 @@ class _CastingCardState extends State<CastingCard> {
     if (looks != null && looks.isNotEmpty) parts.add(looks);
     if (skills != null && skills.isNotEmpty) parts.add(skills.take(3).join(', '));
     if (parts.isEmpty) return const SizedBox.shrink();
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.06), borderRadius: BorderRadius.circular(8)), child: Text(parts.join(' • '), style: const TextStyle(fontSize: 12, color: Colors.blue)));
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(color: AppColors.goldBg, borderRadius: BorderRadius.circular(AppRadius.sm)),
+      child: Text(parts.join(' • '), style: const TextStyle(fontSize: 12, color: AppColors.gold, fontWeight: FontWeight.w600)),
+    );
   }
-
 }
-

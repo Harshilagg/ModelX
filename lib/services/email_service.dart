@@ -7,7 +7,7 @@ import 'ai_config.dart';
 
 class EmailService {
   final String _apiKey = AiConfig.sendGridApiKey;
-  final String _fromEmail = 'aggarwalharshil02@gmail.com'; 
+  final String _fromEmail = 'harshilaggarwal0207@gmail.com'; 
   final String _fromName = 'ModelX Team';
 
   Future<void> sendInvitationEmail({

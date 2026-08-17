@@ -3,6 +3,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import '../pages/login_page.dart';
+import '../ui/app_theme.dart';
+import '../widgets/app_card.dart';
+import '../widgets/profile_avatar.dart';
+import '../widgets/section_header.dart';
+import '../widgets/state_views.dart';
+import 'agency_edit_profile_page.dart';
 
 class AgencyProfilePage extends StatefulWidget {
   const AgencyProfilePage({super.key});
@@ -36,6 +42,15 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
     }
   }
 
+  Future<void> _openEdit() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const AgencyEditProfilePage()),
+    );
+    if (!mounted) return;
+    setState(() => loading = true);
+    _load();
+  }
+
   void _copyToClipboard(String label, String value) {
     Clipboard.setData(ClipboardData(text: value));
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label copied')));
@@ -44,6 +59,7 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
   Widget _buildCover(BuildContext context) {
     final cover = (data['coverImageUrl'] ?? '').toString();
     final logo = (data['logoUrl'] ?? '').toString();
+    final agencyName = (data['agencyName'] ?? '').toString();
 
     return Stack(
       alignment: Alignment.center,
@@ -52,20 +68,22 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
         Container(
           height: 160,
           width: double.infinity,
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: AppColors.paperRaised,
           child: cover.isNotEmpty
               ? Image.network(cover, fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox())
-              : Center(child: Icon(Icons.photo_library, size: 44, color: Colors.grey[400])),
+              : const Center(child: Icon(Icons.photo_library_outlined, size: 44, color: AppColors.inkFaint)),
         ),
         Positioned(
           bottom: -40,
-          child: CircleAvatar(
-            radius: 40,
-            backgroundColor: Colors.white,
-            child: ClipOval(
-              child: logo.isNotEmpty
-                  ? Image.network(logo, width: 76, height: 76, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox())
-                  : Icon(Icons.business, size: 40, color: Colors.grey[600]),
+          child: Container(
+            width: 88,
+            height: 88,
+            padding: const EdgeInsets.all(4),
+            decoration: const BoxDecoration(color: AppColors.paper, shape: BoxShape.circle),
+            child: ProfileAvatar(
+              imageUrl: logo.isNotEmpty ? logo : null,
+              name: agencyName,
+              size: 80,
             ),
           ),
         ),
@@ -73,9 +91,24 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
     );
   }
 
+  Widget _chip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.paperRaised,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: AppColors.line),
+      ),
+      alignment: Alignment.center,
+      child: Text(label, style: const TextStyle(color: AppColors.ink, fontSize: 13, fontWeight: FontWeight.w600)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (loading) {
+      return const Scaffold(body: LoadingState());
+    }
 
     final agencyName = (data['agencyName'] ?? '').toString();
     final website = (data['website'] ?? '').toString();
@@ -83,11 +116,17 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
     final specialties = (data['specialties'] is List) ? List.from(data['specialties'] as List) : <dynamic>[];
     final services = (data['services'] is List) ? List.from(data['services'] as List) : <dynamic>[];
     final portfolio = (data['portfolioMedia'] is List) ? List.from(data['portfolioMedia'] as List) : <dynamic>[];
+    final isFreshProfile = agencyName.isEmpty && bio.isEmpty;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(agencyName.isNotEmpty ? agencyName : 'Agency'),
         actions: [
+          IconButton(
+            tooltip: 'Edit profile',
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: _openEdit,
+          ),
           IconButton(
             tooltip: 'Sign out',
             icon: const Icon(Icons.logout),
@@ -116,47 +155,86 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
                   Center(
                     child: Column(
                       children: [
-                        Text(agencyName.isNotEmpty ? agencyName : 'Unnamed Agency', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 6),
+                        Text(
+                          agencyName.isNotEmpty ? agencyName : 'Unnamed Agency',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 8),
                         if (data['isVerified'] == true)
-                          Row(mainAxisSize: MainAxisSize.min, children: const [Icon(Icons.check_circle, color: Colors.green, size: 16), SizedBox(width: 6), Text('Verified', style: TextStyle(color: Colors.green))]),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.goldBg,
+                              borderRadius: BorderRadius.circular(AppRadius.pill),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.verified, color: AppColors.gold, size: 15),
+                                SizedBox(width: 5),
+                                Text('Verified', style: TextStyle(color: AppColors.gold, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                              ],
+                            ),
+                          ),
                         if (website.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(website, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                          const SizedBox(height: 10),
+                          Text(website, style: const TextStyle(color: AppColors.inkSoft, fontSize: 13.5)),
                         ]
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 12),
-                  if (bio.isNotEmpty)
-                    Card(elevation: 0, child: Padding(padding: const EdgeInsets.all(12), child: Text(bio, style: const TextStyle(height: 1.6)))),
+                  if (isFreshProfile) ...[
+                    const SizedBox(height: 16),
+                    EmptyState(
+                      icon: Icons.storefront_outlined,
+                      title: 'Set up your agency profile',
+                      message: 'Add your agency name, bio, specialties and contact details so brands and models can find you.',
+                      actionLabel: 'Edit profile',
+                      onAction: _openEdit,
+                    ),
+                  ],
 
                   const SizedBox(height: 12),
+                  if (bio.isNotEmpty)
+                    AppCard(
+                      child: Text(bio, style: const TextStyle(height: 1.6, color: AppColors.ink, fontSize: 14.5)),
+                    ),
+
+                  const SizedBox(height: 20),
                   if (specialties.isNotEmpty) ...[
-                    const Padding(padding: EdgeInsets.only(bottom: 6), child: Text('Specialties', style: TextStyle(fontWeight: FontWeight.w700))),
+                    const SectionHeader(title: 'Specialties'),
+                    const SizedBox(height: 12),
                     SizedBox(
                       height: 40,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
-                        itemBuilder: (_, i) => Chip(label: Text(specialties[i].toString())),
+                        itemBuilder: (_, i) => _chip(specialties[i].toString()),
                         separatorBuilder: (_, __) => const SizedBox(width: 8),
                         itemCount: specialties.length,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 20),
                   ],
 
                   if (services.isNotEmpty) ...[
-                    const Text('Services', style: TextStyle(fontWeight: FontWeight.w700)),
+                    const SectionHeader(title: 'Services'),
                     const SizedBox(height: 8),
-                    Column(children: services.map((s) => ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.check_circle_outline), title: Text(s.toString()))).toList()),
-                    const SizedBox(height: 12),
+                    Column(
+                      children: services
+                          .map((s) => ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: const Icon(Icons.check_circle_outline, color: AppColors.inkFaint),
+                                title: Text(s.toString(), style: const TextStyle(color: AppColors.ink)),
+                              ))
+                          .toList(),
+                    ),
+                    const SizedBox(height: 20),
                   ],
 
                   if (portfolio.isNotEmpty) ...[
-                    const Text('Portfolio', style: TextStyle(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 8),
+                    const SectionHeader(title: 'Portfolio'),
+                    const SizedBox(height: 12),
                     SizedBox(
                       height: 120,
                       child: ListView.separated(
@@ -164,48 +242,103 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
                         itemBuilder: (context, index) {
                           final item = portfolio[index];
                           final url = item is String ? item : (item is Map && item['url'] != null ? item['url'].toString() : '');
-                          return ClipRRect(borderRadius: BorderRadius.circular(8), child: url.isNotEmpty ? Image.network(url, width: 160, height: 120, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: Colors.grey[200])) : Container(width: 160, height: 120, color: Colors.grey[200]));
+                          return ClipRRect(
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            child: url.isNotEmpty
+                                ? Image.network(
+                                    url,
+                                    width: 160,
+                                    height: 120,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(width: 160, height: 120, color: AppColors.paperRaised),
+                                  )
+                                : Container(width: 160, height: 120, color: AppColors.paperRaised),
+                          );
                         },
                         separatorBuilder: (_, __) => const SizedBox(width: 8),
                         itemCount: portfolio.length,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 20),
                   ],
 
-                  const SizedBox(height: 6),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Text('Contact', style: TextStyle(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  AppCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SectionHeader(title: 'Contact'),
                         const SizedBox(height: 8),
                         if ((data['phone'] ?? '').toString().isNotEmpty)
-                          ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.phone), title: Text(data['phone'].toString()), trailing: IconButton(icon: const Icon(Icons.copy), onPressed: () => _copyToClipboard('Phone', data['phone'].toString()))),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.phone_outlined, color: AppColors.inkFaint),
+                            title: Text(data['phone'].toString(), style: const TextStyle(color: AppColors.ink)),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.copy_outlined, color: AppColors.inkFaint),
+                              onPressed: () => _copyToClipboard('Phone', data['phone'].toString()),
+                            ),
+                          ),
                         if ((data['email'] ?? '').toString().isNotEmpty)
-                          ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.email), title: Text(data['email'].toString()), trailing: IconButton(icon: const Icon(Icons.copy), onPressed: () => _copyToClipboard('Email', data['email'].toString()))),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.email_outlined, color: AppColors.inkFaint),
+                            title: Text(data['email'].toString(), style: const TextStyle(color: AppColors.ink)),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.copy_outlined, color: AppColors.inkFaint),
+                              onPressed: () => _copyToClipboard('Email', data['email'].toString()),
+                            ),
+                          ),
                         if ((data['address'] ?? '').toString().isNotEmpty)
-                          ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.location_on), title: Text(data['address'].toString())),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.location_on_outlined, color: AppColors.inkFaint),
+                            title: Text(data['address'].toString(), style: const TextStyle(color: AppColors.ink)),
+                          ),
                         if (website.isNotEmpty)
-                          ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.link), title: Text(website), trailing: IconButton(icon: const Icon(Icons.copy), onPressed: () => _copyToClipboard('Website', website))),
-                      ]),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.link, color: AppColors.inkFaint),
+                            title: Text(website, style: const TextStyle(color: AppColors.ink)),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.copy_outlined, color: AppColors.inkFaint),
+                              onPressed: () => _copyToClipboard('Website', website),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
 
-                  const SizedBox(height: 12),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Text('Social', style: TextStyle(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 16),
+                  AppCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SectionHeader(title: 'Social'),
                         const SizedBox(height: 8),
                         if (data['socialLinks'] != null && (data['socialLinks'] is Map)) ...[
                           if ((data['socialLinks']['instagram'] ?? '').toString().isNotEmpty)
-                            ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.camera_alt), title: Text(data['socialLinks']['instagram'].toString()), trailing: IconButton(icon: const Icon(Icons.copy), onPressed: () => _copyToClipboard('Instagram', data['socialLinks']['instagram'].toString()))),
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.camera_alt_outlined, color: AppColors.inkFaint),
+                              title: Text(data['socialLinks']['instagram'].toString(), style: const TextStyle(color: AppColors.ink)),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.copy_outlined, color: AppColors.inkFaint),
+                                onPressed: () => _copyToClipboard('Instagram', data['socialLinks']['instagram'].toString()),
+                              ),
+                            ),
                           if ((data['socialLinks']['linkedin'] ?? '').toString().isNotEmpty)
-                            ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.business), title: Text(data['socialLinks']['linkedin'].toString()), trailing: IconButton(icon: const Icon(Icons.copy), onPressed: () => _copyToClipboard('LinkedIn', data['socialLinks']['linkedin'].toString()))),
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.business_outlined, color: AppColors.inkFaint),
+                              title: Text(data['socialLinks']['linkedin'].toString(), style: const TextStyle(color: AppColors.ink)),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.copy_outlined, color: AppColors.inkFaint),
+                                onPressed: () => _copyToClipboard('LinkedIn', data['socialLinks']['linkedin'].toString()),
+                              ),
+                            ),
                         ],
-                      ]),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),

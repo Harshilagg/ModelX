@@ -1,27 +1,40 @@
 import 'package:flutter/material.dart';
+import '../ui/app_theme.dart';
+
 class AppCard extends StatelessWidget {
   final Widget child;
   final EdgeInsets? padding;
   final VoidCallback? onTap;
+  final bool flat;
 
-  const AppCard({super.key, required this.child, this.padding, this.onTap});
+  const AppCard({super.key, required this.child, this.padding, this.onTap, this.flat = false});
 
   @override
   Widget build(BuildContext context) {
     final card = Container(
       padding: padding ?? const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0,6)),
-        ],
+        color: AppColors.paper,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.line),
+        boxShadow: flat
+            ? null
+            : [
+                BoxShadow(
+                  color: AppColors.ink.withValues(alpha: 0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
       ),
       child: child,
     );
 
     if (onTap != null) {
-      return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(14), child: card);
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: InkWell(onTap: onTap, child: card),
+      );
     }
     return card;
   }

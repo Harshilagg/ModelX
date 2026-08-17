@@ -279,10 +279,11 @@ class ModelApplicationCard extends StatelessWidget {
         .doc(modelId)
         .update({'status': newStatus});
 
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          newStatus == 'shortlisted'
+          newStatus.toUpperCase() == 'SHORTLISTED'
               ? 'Added to shortlist'
               : 'Applicant rejected',
         ),

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../ui/app_theme.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/state_views.dart';
 import '../widgets/casting_card.dart';
 import 'create_casting_page.dart';
 import 'casting_service.dart';
@@ -63,26 +66,37 @@ class _CastingListPageState extends State<CastingListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.paper,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateCastingPage())).then((_) => _load()),
-        label: const Text('Create Casting'),
-        icon: const Icon(Icons.add),
-        backgroundColor: const Color(0xFF0F172A),
+        label: const Text('Create casting'),
+        icon: const Icon(Icons.add_rounded),
+        backgroundColor: AppColors.ink,
+        foregroundColor: AppColors.paper,
+        elevation: 0,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Castings', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 12),
+          const Text('Castings', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.ink)),
+          const SizedBox(height: AppSpacing.sm + 4),
           _loading
-              ? const Center(child: CircularProgressIndicator())
-              : Expanded(
+              ? const Expanded(child: LoadingState())
+              : _castings.isEmpty
+                  ? const Expanded(
+                      child: EmptyState(
+                        icon: Icons.campaign_outlined,
+                        title: 'No castings yet',
+                        message: 'Create your first casting call to start receiving applications.',
+                      ),
+                    )
+                  : Expanded(
                   child: Column(children: [
                     Expanded(
                       child: ListView.separated(
                         itemCount: _castings.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm + 4),
                         itemBuilder: (context, index) {
                           final c = _castings[index] as Map<String, dynamic>;
                           DateTime createdAt;
@@ -121,10 +135,13 @@ class _CastingListPageState extends State<CastingListPage> {
                     ),
                     if (_hasMore)
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: _loadingMore
-                            ? const CircularProgressIndicator()
-                            : ElevatedButton(onPressed: _loadMore, child: const Text('Load more')),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                        child: AppButton(
+                          label: 'Load more',
+                          variant: AppButtonVariant.secondary,
+                          loading: _loadingMore,
+                          onPressed: _loadingMore ? null : _loadMore,
+                        ),
                       ),
                   ]),
                 ),

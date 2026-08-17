@@ -6,13 +6,16 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'login_page.dart';
 import 'dashboard_page.dart';
 import 'create_profile_page.dart';
+import '../agency/team_access/invite_acceptance_page.dart';
 
 class SignupPage extends StatefulWidget {
   final String userType; // 'model'
+  final String? inviteToken;
 
   const SignupPage({
     super.key,
     required this.userType,
+    this.inviteToken,
   });
 
   @override
@@ -66,7 +69,7 @@ class _SignupPageState extends State<SignupPage> {
     setState(() => loading = true);
     try {
       final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
+        email: emailController.text.trim().toLowerCase(),
         password: passwordController.text.trim(),
       );
 
@@ -100,11 +103,24 @@ class _SignupPageState extends State<SignupPage> {
       // Ensure auth user is fresh, then send to CreateProfilePage to finish profile.
       await FirebaseAuth.instance.currentUser?.reload();
       if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const CreateProfilePage()),
-        (route) => false,
-      );
+      if (widget.inviteToken != null) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => InviteAcceptancePage(
+              token: widget.inviteToken!,
+              autoAcceptOnLoad: true,
+            ),
+          ),
+          (route) => false,
+        );
+      } else {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const CreateProfilePage()),
+          (route) => false,
+        );
+      }
     } on FirebaseAuthException catch (e) {
       _showError(e.message);
     } finally {
@@ -158,7 +174,18 @@ Future<void> signupWithGoogle() async {
     final profileCompleted = data != null && (data['profileCompleted'] == true);
 
     if (!mounted) return;
-    if (profileCompleted) {
+    if (widget.inviteToken != null) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => InviteAcceptancePage(
+            token: widget.inviteToken!,
+            autoAcceptOnLoad: true,
+          ),
+        ),
+        (route) => false,
+      );
+    } else if (profileCompleted) {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const DashboardPage()),
@@ -186,7 +213,7 @@ Future<void> signupWithGoogle() async {
       final fullName = isGoogleUser
           ? (authUser?.displayName ?? fullNameController.text.trim())
           : fullNameController.text.trim();
-      final email = isGoogleUser ? (authUser?.email ?? emailController.text.trim()) : emailController.text.trim();
+      final email = (isGoogleUser ? (authUser?.email ?? emailController.text.trim()) : emailController.text.trim()).trim().toLowerCase();
 
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'uid': uid,

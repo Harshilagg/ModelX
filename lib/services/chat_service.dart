@@ -37,13 +37,15 @@ class ChatService {
     final modelUserDoc = await _db.collection('users').doc(modelId).get();
     final agencyUserDoc = await _db.collection('users').doc(agencyId).get();
     final modelName = modelUserDoc.data()?['fullName'] ?? modelUserDoc.data()?['displayName'] ?? '';
+    final modelUsername = modelUserDoc.data()?['username'] ?? '';
     final modelImage = modelUserDoc.data()?['profileImage'] ?? modelUserDoc.data()?['avatarUrl'] ?? '';
     final agencyName = agencyUserDoc.data()?['fullName'] ?? agencyUserDoc.data()?['displayName'] ?? '';
+    final agencyUsername = agencyUserDoc.data()?['username'] ?? '';
     final agencyImage = agencyUserDoc.data()?['profileImage'] ?? agencyUserDoc.data()?['avatarUrl'] ?? '';
 
     final batch = _db.batch();
     batch.set(docRef, chatData, SetOptions(merge: true));
-    
+
     final applicantRef = _db.collection('castings').doc(castingId).collection('applicants').doc(modelId);
     batch.update(applicantRef, {'status': 'NEGOTIATING'});
 
@@ -52,12 +54,14 @@ class ChatService {
     batch.set(agencyInboxRef, {
       'peerId': modelId,
       'peerName': modelName,
+      'peerUsername': modelUsername,
       'peerImage': modelImage,
       'lastTimestamp': now,
     }, SetOptions(merge: true));
     batch.set(modelInboxRef, {
       'peerId': agencyId,
       'peerName': agencyName,
+      'peerUsername': agencyUsername,
       'peerImage': agencyImage,
       'lastTimestamp': now,
     }, SetOptions(merge: true));
@@ -89,13 +93,15 @@ class ChatService {
     final modelUserDoc = await _db.collection('users').doc(modelId).get();
     final brandUserDoc = await _db.collection('users').doc(brandId).get();
     final modelName = modelUserDoc.data()?['fullName'] ?? modelUserDoc.data()?['displayName'] ?? '';
+    final modelUsername = modelUserDoc.data()?['username'] ?? '';
     final modelImage = modelUserDoc.data()?['profileImage'] ?? modelUserDoc.data()?['avatarUrl'] ?? '';
     final brandName = brandUserDoc.data()?['fullName'] ?? brandUserDoc.data()?['displayName'] ?? '';
+    final brandUsername = brandUserDoc.data()?['username'] ?? '';
     final brandImage = brandUserDoc.data()?['profileImage'] ?? brandUserDoc.data()?['avatarUrl'] ?? '';
 
     final batch = _db.batch();
     batch.set(docRef, chatData, SetOptions(merge: true));
-    
+
     final applicantRef = _db.collection('gigs').doc(gigId).collection('applications').doc(modelId);
     batch.update(applicantRef, {'status': 'NEGOTIATING'});
 
@@ -104,12 +110,14 @@ class ChatService {
     batch.set(brandInboxRef, {
       'peerId': modelId,
       'peerName': modelName,
+      'peerUsername': modelUsername,
       'peerImage': modelImage,
       'lastTimestamp': now,
     }, SetOptions(merge: true));
     batch.set(modelInboxRef, {
       'peerId': brandId,
       'peerName': brandName,
+      'peerUsername': brandUsername,
       'peerImage': brandImage,
       'lastTimestamp': now,
     }, SetOptions(merge: true));
@@ -175,10 +183,14 @@ class ChatService {
     }
     chat = chatDoc.data()! as Map<String, dynamic>;
 
-    // determine receiver id
+    // determine receiver id — casting chats store `agencyId`, gig chats store
+    // `brandId`; a chat doc only ever has one of the two.
     final modelId = chat['modelId'] as String;
-    final agencyId = chat['agencyId'] as String;
-    final receiverId = user.uid == agencyId ? modelId : agencyId;
+    final counterpartyId = (chat['agencyId'] ?? chat['brandId']) as String?;
+    if (counterpartyId == null) {
+      throw Exception('Chat is missing a counterparty (agencyId/brandId)');
+    }
+    final receiverId = user.uid == counterpartyId ? modelId : counterpartyId;
 
     // fetch receiver public key and profile info
     final recvDoc = await _db.collection('users').doc(receiverId).get();
@@ -215,6 +227,7 @@ class ChatService {
     batch.set(senderInbox, {
       'peerId': receiverId,
       'peerName': recvData['fullName'] ?? recvData['displayName'] ?? '',
+      'peerUsername': recvData['username'] ?? '',
       'peerImage': recvData['profileImage'] ?? recvData['avatarUrl'] ?? '',
       'lastMessage': type == 'text' ? content : '[${type.toUpperCase()}]',
       'lastTimestamp': Timestamp.now(),
@@ -223,6 +236,7 @@ class ChatService {
     batch.set(receiverInbox, {
       'peerId': user.uid,
       'peerName': senderData['fullName'] ?? senderData['displayName'] ?? '',
+      'peerUsername': senderData['username'] ?? '',
       'peerImage': senderData['profileImage'] ?? senderData['avatarUrl'] ?? '',
       'lastMessage': type == 'text' ? content : '[${type.toUpperCase()}]',
       'lastTimestamp': Timestamp.now(),

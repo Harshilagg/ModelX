@@ -32,7 +32,7 @@ class _BrandSignupPageState extends State<BrandSignupPage> {
     try {
       // Create user with email and password
       final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
+        email: emailController.text.trim().toLowerCase(),
         password: passwordController.text.trim(),
       );
 
@@ -45,7 +45,7 @@ class _BrandSignupPageState extends State<BrandSignupPage> {
         'brandName': brandNameController.text.trim(),
         'industry': industryController.text.trim(),
         'location': locationController.text.trim(),
-        'email': emailController.text.trim(),
+        'email': emailController.text.trim().toLowerCase(),
         'about': aboutController.text.trim(),
         'profileCompleted': true,
         'createdAt': FieldValue.serverTimestamp(),

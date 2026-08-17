@@ -4,7 +4,9 @@ import '../brand/brand_signup_page.dart';
 import '../agency/agency_signup_page.dart';
 
 class SelectPortfolioPage extends StatelessWidget {
-  const SelectPortfolioPage({super.key});
+  final String? inviteToken;
+
+  const SelectPortfolioPage({super.key, this.inviteToken});
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +39,7 @@ class SelectPortfolioPage extends StatelessWidget {
               onTap: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => const SignupPage(userType: 'Model')),
+                  MaterialPageRoute(builder: (_) => SignupPage(userType: 'Model', inviteToken: inviteToken)),
                 );
               },
             ),

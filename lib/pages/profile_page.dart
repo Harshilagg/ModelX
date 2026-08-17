@@ -13,14 +13,11 @@ import '../widgets/profile_stats.dart';
 import 'create_post_page.dart';
 import '../widgets/portfolio_grid.dart';
 import '../widgets/model_x_copilot.dart';
-
-const bgColor = Color.fromARGB(255, 254, 254, 254);
-const cardColor = Colors.white;
-const primaryColor = Color.fromARGB(255, 0, 0, 0); // modern blue
-const textPrimary = Color(0xFF111827);
-const textSecondary = Color.fromARGB(255, 0, 0, 0);
-const infoCardBg = Color(0xFFFFFFE3); // light blue background
-const infoCardTitle = Color(0xFFCBCBCB); // same as primaryColor
+import '../ui/app_theme.dart';
+import '../widgets/app_button.dart';
+import '../widgets/app_card.dart';
+import '../widgets/section_header.dart';
+import '../widgets/state_views.dart';
 
 
 class ProfilePage extends StatefulWidget {
@@ -76,6 +73,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController agenciesController = TextEditingController();
 
   bool loading = false;
+  bool _isLoading = true;
   String profileImageUrl = '';
   String username = '';
   File? pickedImage;
@@ -146,6 +144,8 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     } catch (e) {
       debugPrint("🔥 Error loading user data: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -253,8 +253,9 @@ class _ProfilePageState extends State<ProfilePage> {
   return Container(
     padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
     decoration: BoxDecoration(
-      color: infoCardBg,
-      borderRadius: BorderRadius.circular(14),
+      color: AppColors.paperRaised,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      border: Border.all(color: AppColors.line),
     ),
     child: Column(
       mainAxisSize: MainAxisSize.min,
@@ -264,7 +265,7 @@ class _ProfilePageState extends State<ProfilePage> {
           style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: infoCardTitle,
+            color: AppColors.inkFaint,
             letterSpacing: 0.4,
           ),
         ),
@@ -275,7 +276,7 @@ class _ProfilePageState extends State<ProfilePage> {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: textPrimary,
+            color: AppColors.ink,
           ),
         ),
       ],
@@ -291,7 +292,7 @@ class _ProfilePageState extends State<ProfilePage> {
       style: const TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w700,
-        color: textPrimary,
+        color: AppColors.ink,
       ),
     ),
   );
@@ -300,21 +301,9 @@ class _ProfilePageState extends State<ProfilePage> {
 Widget _sectionCard({required Widget child}) {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 20),
-    child: Container(
-      width: double.infinity,
+    child: AppCard(
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: child,
+      child: SizedBox(width: double.infinity, child: child),
     ),
   );
 }
@@ -333,16 +322,36 @@ Widget _bulletBlock(String title, String value) {
         style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w700,
-          color: textPrimary,
+          color: AppColors.ink,
         ),
       ),
       const SizedBox(height: 8),
       Text(
         value,
         style: const TextStyle(
-          color: textSecondary,
+          color: AppColors.inkSoft,
           height: 1.6,
           fontSize: 14,
+        ),
+      ),
+    ],
+  );
+}
+
+Widget _contactRow(IconData icon, String value) {
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Icon(icon, size: 18, color: AppColors.gold),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Text(
+          value,
+          style: const TextStyle(
+            color: AppColors.ink,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     ],
@@ -410,7 +419,7 @@ Widget _bulletBlock(String title, String value) {
                   ),
                 ),
                 // Physical attributes grid
-                Align(alignment: Alignment.centerLeft, child: Text('Physical Attributes', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey[800]))),
+                Align(alignment: Alignment.centerLeft, child: Text('Physical Attributes', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.inkSoft))),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 12,
@@ -489,7 +498,7 @@ Widget _bulletBlock(String title, String value) {
                 const SizedBox(height: 16),
 
                 // Projects & Agencies
-                Align(alignment: Alignment.centerLeft, child: Text('Experience', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey[800]))),
+                Align(alignment: Alignment.centerLeft, child: Text('Experience', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.inkSoft))),
                 const SizedBox(height: 8),
                 TextField(controller: projectsController, decoration: const InputDecoration(labelText: 'Projects (one per line)', border: OutlineInputBorder()), maxLines: 3),
                 const SizedBox(height: 12),
@@ -504,7 +513,7 @@ Widget _bulletBlock(String title, String value) {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
+                      color: AppColors.inkSoft,
                     ),
                   ),
                 ),
@@ -538,20 +547,27 @@ Widget _bulletBlock(String title, String value) {
                     border: OutlineInputBorder(),
                   ),
                 ),
+                const SizedBox(height: 12),
+
+                TextField(
+                  controller: achievementsController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Achievements',
+                    hintText: 'Awards, features, notable wins',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
                 const SizedBox(height: 20),
 
-                ElevatedButton(
+                AppButton(
+                  label: "Save Changes",
+                  variant: AppButtonVariant.primary,
+                  expand: true,
                   onPressed: () {
                     saveProfile();
                     Navigator.pop(context);
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 40),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                  ),
-                  child: const Text("Save Changes"),
                 ),
                 const SizedBox(height: 20),
               ],
@@ -660,7 +676,11 @@ Widget _bulletBlock(String title, String value) {
         itemBuilder: (context, index) {
           final f = followerData[index];
           return ListTile(
-            leading: CircleAvatar(backgroundImage: f['profileImage'] != null ? NetworkImage(f['profileImage']) : null),
+            leading: ProfileAvatar(
+              imageUrl: f['profileImage'],
+              name: f['fullName'] ?? '${f['firstName'] ?? ''} ${f['lastName'] ?? ''}',
+              size: 40,
+            ),
             title: Text(f['fullName'] ?? '${f['firstName'] ?? ''} ${f['lastName'] ?? ''}'),
             subtitle: f['username'] != null ? Text('@${f['username']}') : null,
             onTap: () {
@@ -675,30 +695,42 @@ Widget _bulletBlock(String title, String value) {
   
   // -------------------- Build --------------------
 // -------------------- Build --------------------
+PreferredSizeWidget _buildAppBar() {
+  return AppBar(
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    centerTitle: true,
+    title: const Text(
+      "Profile",
+      style: TextStyle(
+        color: AppColors.ink,
+        fontWeight: FontWeight.bold,
+        fontSize: 20,
+      ),
+    ),
+    actions: [
+      IconButton(
+        icon: const Icon(Icons.logout, color: AppColors.ink),
+        onPressed: logout,
+      ),
+    ],
+  );
+}
+
 @override
 Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: bgColor,
+  if (_isLoading) {
+    return Scaffold(
+      backgroundColor: AppColors.paper,
+      appBar: _buildAppBar(),
+      body: const LoadingState(),
+    );
+  }
 
-    appBar: AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      centerTitle: true,
-      title: const Text(
-        "Profile",
-        style: TextStyle(
-          color: textPrimary,
-          fontWeight: FontWeight.bold,
-          fontSize: 20,
-        ),
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.logout, color: textSecondary),
-          onPressed: logout,
-        ),
-      ],
-    ),
+  return Scaffold(
+    backgroundColor: AppColors.paper,
+
+    appBar: _buildAppBar(),
     floatingActionButton: ModelXCopilot(
       pageContext: {
         'page': 'profile',
@@ -726,14 +758,15 @@ Widget build(BuildContext context) {
                 Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.paper,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0,6))],
+                    border: Border.all(color: AppColors.line),
+                    boxShadow: [BoxShadow(color: AppColors.ink.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0,6))],
                   ),
                   child: Column(
                     children: [
                       // cover strip
-                      Container(height: 12, decoration: const BoxDecoration(borderRadius: BorderRadius.vertical(top: Radius.circular(16)), color: Color(0xFFF6F2ED))),
+                      Container(height: 12, decoration: const BoxDecoration(borderRadius: BorderRadius.vertical(top: Radius.circular(16)), color: AppColors.goldBg)),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 18).copyWith(top: 0, bottom: 18),
                         child: Row(
@@ -741,13 +774,17 @@ Widget build(BuildContext context) {
                             Stack(
                               alignment: Alignment.bottomRight,
                               children: [
-                                ProfileAvatar(imageUrl: profileImageUrl.isNotEmpty ? profileImageUrl : null, size: 92),
+                                ProfileAvatar(
+                                  imageUrl: profileImageUrl.isNotEmpty ? profileImageUrl : null,
+                                  name: fullNameController.text,
+                                  size: 92,
+                                ),
                                 GestureDetector(
                                   onTap: pickAndUploadImage,
                                   child: Container(
                                     padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(color: primaryColor, shape: BoxShape.circle),
-                                    child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                                    decoration: const BoxDecoration(color: AppColors.ink, shape: BoxShape.circle),
+                                    child: const Icon(Icons.camera_alt, size: 16, color: AppColors.paper),
                                   ),
                                 ),
                               ],
@@ -757,8 +794,8 @@ Widget build(BuildContext context) {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(fullNameController.text.isEmpty ? 'Your Name' : fullNameController.text, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-                                  if (username.isNotEmpty) Text('@$username', style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
+                                  Text(fullNameController.text.isEmpty ? 'Your Name' : fullNameController.text, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.ink)),
+                                  if (username.isNotEmpty) Text('@$username', style: const TextStyle(color: AppColors.inkFaint, fontWeight: FontWeight.w500)),
                                   const SizedBox(height: 12),
                                   ProfileStats(
                                     followers: followersCount,
@@ -788,7 +825,7 @@ Widget build(BuildContext context) {
                   ? "Tell people who you are and what you do."
                   : bioController.text,
               style: const TextStyle(
-                color: textSecondary,
+                color: AppColors.inkSoft,
                 height: 1.6,
                 fontSize: 15,
               ),
@@ -801,21 +838,44 @@ Widget build(BuildContext context) {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.08),
+                  color: AppColors.goldBg,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
                   taglineController.text,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: textPrimary,
+                    color: AppColors.ink,
                   ),
+                ),
+              ),
+            ),
+
+          if (contactController.text.trim().isNotEmpty || emailController.text.trim().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              child: _sectionCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (contactController.text.trim().isNotEmpty)
+                      _contactRow(Icons.call_outlined, contactController.text.trim()),
+                    if (contactController.text.trim().isNotEmpty && emailController.text.trim().isNotEmpty)
+                      const SizedBox(height: 10),
+                    if (emailController.text.trim().isNotEmpty)
+                      _contactRow(Icons.mail_outline, emailController.text.trim()),
+                  ],
                 ),
               ),
             ),
 
           // ================= PROFILE OVERVIEW =================
           _sectionTitle("Profile Overview"),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            child: SectionHeader(title: "Basics"),
+          ),
           _sectionCard(
             child: Wrap(
               spacing: 12,
@@ -824,22 +884,46 @@ Widget build(BuildContext context) {
                 _infoCard("Location", locationController.text),
                 _infoCard("Age", ageController.text),
                 _infoCard("Gender", genderController.text),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
 
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            child: SectionHeader(title: "Measurements"),
+          ),
+          _sectionCard(
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
                 _infoCard("Height", "${heightController.text} $heightUnit"),
                 _infoCard("Weight", weightController.text),
-
                 _infoCard("Measurements", measurementsController.text),
                 _infoCard("Waist", waistController.text),
                 _infoCard("Hips", hipsController.text),
                 _infoCard("Shoulder", shoulderWidthController.text),
+                _infoCard("Shoe Size", "${shoeSizeController.text} $shoeSizeUnit"),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
 
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            child: SectionHeader(title: "Appearance"),
+          ),
+          _sectionCard(
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
                 _infoCard("Skin Tone", skinColorController.text),
                 _infoCard("Eye Color", eyeColorController.text),
                 _infoCard("Hair Color", hairColorController.text),
-
                 _infoCard("Tattoos", tattoosController.text),
                 _infoCard("Piercing", piercingController.text),
-
               ],
             ),
           ),
@@ -870,6 +954,12 @@ Widget build(BuildContext context) {
                         availabilityController.text),
                   ),
                   const SizedBox(height: 20),
+                if (achievementsController.text.isNotEmpty)
+                  _sectionCard(
+                    child: _bulletBlock(
+                        "Achievements",
+                        achievementsController.text),
+                  ),
               ],
             ),
           ),
@@ -909,7 +999,7 @@ Widget build(BuildContext context) {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: textPrimary,
+                  color: AppColors.ink,
                 ),
               ),
               IconButton(
@@ -935,18 +1025,26 @@ Widget build(BuildContext context) {
                 .snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: LoadingState(),
+                );
               }
 
               final posts = snapshot.data!.docs;
 
               if (posts.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text(
-                    "You haven’t posted anything yet.",
-                    style: TextStyle(color: textSecondary),
-                  ),
+                return EmptyState(
+                  icon: Icons.grid_on_outlined,
+                  title: "No posts yet",
+                  message: "Share your first post to start building your presence.",
+                  actionLabel: "Create post",
+                  onAction: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CreatePostPage()),
+                    );
+                  },
                 );
               }
 
@@ -979,7 +1077,7 @@ Widget build(BuildContext context) {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: textPrimary,
+                    color: AppColors.ink,
                   ),
                 ),
                 IconButton(

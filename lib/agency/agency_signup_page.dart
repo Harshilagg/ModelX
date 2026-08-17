@@ -58,7 +58,7 @@ class _AgencySignupPageState extends State<AgencySignupPage> {
 
     try {
       final userCred = await _auth.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
+        email: emailController.text.trim().toLowerCase(),
         password: passwordController.text.trim(),
       );
 
@@ -70,7 +70,7 @@ class _AgencySignupPageState extends State<AgencySignupPage> {
         await FirebaseFirestore.instance.collection('agency').doc(uid).set({
           'agencyId': uid,
           'agencyName': agencyNameController.text.trim(),
-          'email': emailController.text.trim(),
+          'email': emailController.text.trim().toLowerCase(),
           'phone': phoneController.text.trim(),
           'address': addressController.text.trim(),
           'website': websiteController.text.trim(),

@@ -100,10 +100,10 @@ service cloud.firestore {
           (
             request.auth.uid == memberId &&
             request.resource.data.uid == memberId &&
-            request.auth.token.email == request.resource.data.email &&
+            request.auth.token.email.lower() == request.resource.data.email.lower() &&
             request.resource.data.inviteToken is string &&
             get(/databases/$(database)/documents/agencyInvites/$(request.resource.data.inviteToken)).data.status == 'pending' &&
-            get(/databases/$(database)/documents/agencyInvites/$(request.resource.data.inviteToken)).data.email == request.auth.token.email &&
+            get(/databases/$(database)/documents/agencyInvites/$(request.resource.data.inviteToken)).data.email.lower() == request.auth.token.email.lower() &&
             get(/databases/$(database)/documents/agencyInvites/$(request.resource.data.inviteToken)).data.fromAgencyId == agencyId &&
             get(/databases/$(database)/documents/agencyInvites/$(request.resource.data.inviteToken)).data.role == request.resource.data.role
           )
@@ -183,27 +183,27 @@ service cloud.firestore {
         resource.data.status == 'pending' ||
         (request.auth != null && (
           request.auth.uid == resource.data.fromAgencyId ||
-          request.auth.token.email == resource.data.email ||
+          request.auth.token.email.lower() == resource.data.email.lower() ||
           exists(/databases/$(database)/documents/agency/$(resource.data.fromAgencyId)/members/$(request.auth.uid))
         ));
 
       // Invite lists stay restricted to authenticated agency participants or the recipient.
       allow list: if request.auth != null && (
         request.auth.uid == resource.data.fromAgencyId ||
-        request.auth.token.email == resource.data.email ||
+        request.auth.token.email.lower() == resource.data.email.lower() ||
         exists(/databases/$(database)/documents/agency/$(resource.data.fromAgencyId)/members/$(request.auth.uid))
       );
 
       // Management Rule
       allow delete: if request.auth != null && (
         request.auth.uid == resource.data.fromAgencyId ||
-        request.auth.token.email == resource.data.email
+        request.auth.token.email.lower() == resource.data.email.lower()
       );
 
       // Status Update (Accept/Expire)
       allow update: if request.auth != null && (
         request.auth.uid == resource.data.fromAgencyId ||
-        request.auth.token.email == resource.data.email ||
+        request.auth.token.email.lower() == resource.data.email.lower() ||
         exists(/databases/$(database)/documents/agency/$(resource.data.fromAgencyId)/members/$(request.auth.uid))
       );
     }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'state_views.dart';
 
 class PortfolioGrid extends StatelessWidget {
   final Stream<QuerySnapshot> stream;
@@ -13,12 +14,18 @@ class PortfolioGrid extends StatelessWidget {
     return StreamBuilder<QuerySnapshot>(
       stream: stream,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        if (!snapshot.hasData) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: LoadingState(),
+          );
+        }
         final docs = snapshot.data!.docs;
         if (docs.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.all(20),
-            child: Text('Add your best work to stand out.', style: TextStyle(color: Colors.grey)),
+          return const EmptyState(
+            icon: Icons.photo_library_outlined,
+            title: "No portfolio items yet",
+            message: "Add your best work to stand out.",
           );
         }
 

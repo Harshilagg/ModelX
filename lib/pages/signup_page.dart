@@ -7,6 +7,9 @@ import 'login_page.dart';
 import 'dashboard_page.dart';
 import 'create_profile_page.dart';
 import '../agency/team_access/invite_acceptance_page.dart';
+import '../ui/app_theme.dart';
+import '../widgets/app_button.dart';
+import '../widgets/app_text_field.dart';
 
 class SignupPage extends StatefulWidget {
   final String userType; // 'model'
@@ -254,48 +257,118 @@ Future<void> signupWithGoogle() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create your account')),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              _field(fullNameController, 'Full Name'),
-              _field(usernameController, 'Username'),
-              _field(emailController, 'Email',
-                  readOnly: isGoogleUser),
-              _field(phoneController, 'Phone Number',
-                  keyboard: TextInputType.phone),
-              if (!isGoogleUser)
-                _field(passwordController, 'Password',
-                    obscure: true),
-              _dobField(),
-
-              const SizedBox(height: 24),
-
-              ElevatedButton(
-                onPressed: loading ? null : signupWithEmail,
-                child: loading
-                    ? const CircularProgressIndicator()
-                    : const Text('Sign up'),
+      backgroundColor: AppColors.paper,
+      body: Column(
+        children: [
+          _buildHero(context),
+          Expanded(
+            child: SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _field(fullNameController, 'Full Name'),
+                      const SizedBox(height: 16),
+                      _field(usernameController, 'Username'),
+                      const SizedBox(height: 16),
+                      _field(emailController, 'Email', readOnly: isGoogleUser),
+                      const SizedBox(height: 16),
+                      _field(phoneController, 'Phone Number', keyboard: TextInputType.phone),
+                      if (!isGoogleUser) ...[
+                        const SizedBox(height: 16),
+                        _field(passwordController, 'Password', obscure: true),
+                      ],
+                      const SizedBox(height: 16),
+                      _dobField(),
+                      const SizedBox(height: 28),
+                      AppButton(
+                        label: 'Sign up',
+                        onPressed: loading ? null : signupWithEmail,
+                        loading: loading,
+                        expand: true,
+                      ),
+                      const SizedBox(height: 14),
+                      _orDivider(),
+                      const SizedBox(height: 14),
+                      OutlinedButton.icon(
+                        onPressed: loading ? null : signupWithGoogle,
+                        icon: const _GoogleGLogo(size: 18),
+                        label: const Text('Continue with Google'),
+                      ),
+                      const SizedBox(height: 24),
+                      _loginRedirect(),
+                    ],
+                  ),
+                ),
               ),
-
-              const SizedBox(height: 12),
-
-              OutlinedButton.icon(
-                onPressed: signupWithGoogle,
-                icon: const Icon(Icons.g_mobiledata),
-                label: const Text('Continue with Google'),
-              ),
-
-              const SizedBox(height: 20),
-
-              _loginRedirect(),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
+    );
+  }
+
+  /// Dark "backstage" hero band — first impression for the signup screen,
+  /// matching the same treatment used on login/agency/brand signup so the
+  /// app reads consistently regardless of entry point.
+  Widget _buildHero(BuildContext context) {
+    final canPop = Navigator.of(context).canPop();
+    return Container(
+      width: double.infinity,
+      color: AppColors.backstage,
+      padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 20, 24, 36),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (canPop)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 18),
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: const Icon(Icons.arrow_back, color: AppColors.onBackstage, size: AppIconSize.md),
+              ),
+            ),
+          Text.rich(
+            TextSpan(children: [
+              TextSpan(
+                text: 'Join ',
+                style: AppTypography.display.copyWith(color: AppColors.onBackstage, fontSize: 32),
+              ),
+              TextSpan(
+                text: 'ModelX',
+                style: AppTypography.displayAccent(color: AppColors.goldOnBackstage, fontSize: 34),
+              ),
+              TextSpan(
+                text: '.',
+                style: AppTypography.display.copyWith(color: AppColors.onBackstage, fontSize: 32),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Create your profile and get discovered by agencies and brands.',
+            style: AppTypography.body.copyWith(color: AppColors.onBackstageSoft, fontSize: 15),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _orDivider() {
+    return Row(
+      children: [
+        const Expanded(child: Divider(color: AppColors.line)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text('or', style: AppTypography.caption),
+        ),
+        const Expanded(child: Divider(color: AppColors.line)),
+      ],
     );
   }
 
@@ -308,30 +381,24 @@ Future<void> signupWithGoogle() async {
     TextInputType keyboard = TextInputType.text,
     String? Function(String?)? validator,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TextFormField(
-        controller: controller,
-        obscureText: obscure,
-        readOnly: readOnly,
-        keyboardType: keyboard,
-        decoration: InputDecoration(labelText: label),
-        validator: validator ?? (v) => v!.isEmpty ? 'Required' : null,
-      ),
+    return AppTextField(
+      label: label,
+      controller: controller,
+      obscureText: obscure,
+      readOnly: readOnly,
+      keyboardType: keyboard,
+      validator: validator ?? (v) => v!.isEmpty ? 'Required' : null,
     );
   }
 
   Widget _dobField() {
-    return TextFormField(
+    return AppTextField(
+      label: 'Date of Birth',
       controller: dobController,
       readOnly: true,
       onTap: pickDob,
-      decoration: const InputDecoration(
-        labelText: 'Date of Birth',
-        suffixIcon: Icon(Icons.calendar_today),
-      ),
-      validator: (_) =>
-          selectedDob == null ? 'Select date of birth' : null,
+      trailingIcon: const Icon(Icons.calendar_today, size: AppIconSize.sm, color: AppColors.inkFaint),
+      validator: (_) => selectedDob == null ? 'Select date of birth' : null,
     );
   }
 
@@ -339,8 +406,7 @@ Future<void> signupWithGoogle() async {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text('Already have an account? ',
-            style: TextStyle(color: Colors.grey)),
+        Text('Already have an account? ', style: AppTypography.body.copyWith(color: AppColors.inkSoft)),
         GestureDetector(
           onTap: () {
             Navigator.push(
@@ -348,10 +414,10 @@ Future<void> signupWithGoogle() async {
               MaterialPageRoute(builder: (_) => const LoginPage()),
             );
           },
-          child: const Text(
+          child: Text(
             'Login',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
+            style: AppTypography.bodyEmphasized.copyWith(
+              fontWeight: FontWeight.w700,
               decoration: TextDecoration.underline,
             ),
           ),
@@ -359,4 +425,90 @@ Future<void> signupWithGoogle() async {
       ],
     );
   }
+}
+
+/// The real Google "G" brand mark (official multi-color path, traced from
+/// Google's own 18x18 SVG) for the "Continue with Google" button — the
+/// standard convention for this button, not a design-system palette
+/// violation. Drawn via CustomPainter (rather than an SVG asset/package)
+/// since the project has no SVG-rendering dependency and adding one was
+/// outside this redesign batch's scope.
+class _GoogleGLogo extends StatelessWidget {
+  final double size;
+  const _GoogleGLogo({this.size = 18});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(painter: _GoogleGPainter()),
+    );
+  }
+}
+
+class _GoogleGPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final scale = size.width / 18;
+    canvas.save();
+    canvas.scale(scale, scale);
+
+    final blue = Paint()..color = const Color(0xFF4285F4);
+    final bluePath = Path()
+      ..moveTo(17.6400, 9.2045)
+      ..cubicTo(17.6400, 8.5664, 17.5827, 7.9527, 17.4764, 7.3636)
+      ..lineTo(9.0000, 7.3636)
+      ..lineTo(9.0000, 10.8450)
+      ..lineTo(13.8436, 10.8450)
+      ..cubicTo(13.6350, 11.9700, 13.0009, 12.9232, 12.0477, 13.5614)
+      ..lineTo(12.0477, 15.8195)
+      ..lineTo(14.9564, 15.8195)
+      ..cubicTo(16.6582, 14.2527, 17.6400, 11.9455, 17.6400, 9.2045)
+      ..close();
+    canvas.drawPath(bluePath, blue);
+
+    final green = Paint()..color = const Color(0xFF34A853);
+    final greenPath = Path()
+      ..moveTo(9.0000, 18.0000)
+      ..cubicTo(11.4300, 18.0000, 13.4673, 17.1940, 14.9564, 15.8195)
+      ..lineTo(12.0477, 13.5614)
+      ..cubicTo(11.2418, 14.1018, 10.2109, 14.4204, 9.0000, 14.4204)
+      ..cubicTo(6.6564, 14.4204, 4.6718, 12.8373, 3.9641, 10.7100)
+      ..lineTo(0.9573, 10.7100)
+      ..lineTo(0.9573, 13.0418)
+      ..cubicTo(2.4382, 15.9832, 5.4818, 18.0000, 9.0000, 18.0000)
+      ..close();
+    canvas.drawPath(greenPath, green);
+
+    final yellow = Paint()..color = const Color(0xFFFBBC05);
+    final yellowPath = Path()
+      ..moveTo(3.9641, 10.7100)
+      ..cubicTo(3.7841, 10.1696, 3.6814, 9.5923, 3.6814, 9.0000)
+      ..cubicTo(3.6814, 8.4077, 3.7841, 7.8304, 3.9641, 7.2900)
+      ..lineTo(3.9641, 4.9582)
+      ..lineTo(0.9573, 4.9582)
+      ..cubicTo(0.3477, 6.1732, 0.0000, 7.5477, 0.0000, 9.0000)
+      ..cubicTo(0.0000, 10.4523, 0.3477, 11.8268, 0.9573, 13.0418)
+      ..lineTo(3.9641, 10.7100)
+      ..close();
+    canvas.drawPath(yellowPath, yellow);
+
+    final red = Paint()..color = const Color(0xFFEA4335);
+    final redPath = Path()
+      ..moveTo(9.0000, 3.5795)
+      ..cubicTo(10.3214, 3.5795, 11.5077, 4.0336, 12.4405, 4.9255)
+      ..lineTo(15.0219, 2.3441)
+      ..cubicTo(13.4632, 0.8918, 11.4259, 0.0000, 9.0000, 0.0000)
+      ..cubicTo(5.4818, 0.0000, 2.4382, 2.0168, 0.9573, 4.9582)
+      ..lineTo(3.9641, 7.2900)
+      ..cubicTo(4.6718, 5.1627, 6.6564, 3.5795, 9.0000, 3.5795)
+      ..close();
+    canvas.drawPath(redPath, red);
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

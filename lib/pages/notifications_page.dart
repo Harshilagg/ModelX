@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../ui/app_theme.dart';
+import '../widgets/profile_avatar.dart';
+import '../widgets/state_views.dart';
+import '../widgets/app_skeleton.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -52,6 +56,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: const Text('Notifications')),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('connection_requests')
@@ -59,15 +64,39 @@ class _NotificationsPageState extends State<NotificationsPage> {
             .where('status', isEqualTo: 'pending')
             .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (snapshot.hasError) {
+            return const ErrorStateView(message: 'Could not load notifications.');
+          }
+
+          if (!snapshot.hasData) {
+            return ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm, horizontal: AppSpacing.md),
+              itemCount: 6,
+              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.xs),
+              itemBuilder: (_, __) => AppSkeleton.listTile(),
+            );
+          }
+
           final requests = snapshot.data!.docs;
 
           if (requests.isEmpty) {
-            return const Center(child: Text('No new connection requests.'));
+            return const EmptyState(
+              icon: Icons.notifications_none_rounded,
+              title: 'No new notifications',
+              message: 'Connection requests will show up here.',
+            );
           }
 
-          return ListView.builder(
+          return ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             itemCount: requests.length,
+            separatorBuilder: (_, __) => const Divider(
+              height: 1,
+              thickness: 1,
+              color: AppColors.line,
+              indent: 84,
+              endIndent: AppSpacing.md,
+            ),
             itemBuilder: (_, index) {
               final req = requests[index];
               final senderId = req['senderId'];
@@ -75,29 +104,44 @@ class _NotificationsPageState extends State<NotificationsPage> {
               return FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance.collection('users').doc(senderId).get(),
                 builder: (context, senderSnap) {
-                  if (!senderSnap.hasData) return const SizedBox.shrink();
+                  if (!senderSnap.hasData) {
+                    return const SizedBox(height: 0);
+                  }
 
                   final sender = senderSnap.data!;
                   final senderData = sender.data() as Map<String, dynamic>? ?? {};
+                  final name = senderData['username'] ?? senderData['fullName'] ?? 'User';
 
                   return ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: senderData['profileImage'] != null
-                          ? NetworkImage(senderData['profileImage'])
-                          : null,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.xs,
                     ),
-                    subtitle: Text(
-                      '@${senderData['username'] ?? senderData['fullName'] ?? 'User'} wants to follow you',
+                    leading: ProfileAvatar(
+                      imageUrl: senderData['profileImage'],
+                      name: senderData['fullName'] ?? senderData['username'],
+                      size: 52,
+                    ),
+                    title: Text(
+                      '@$name',
+                      style: AppTypography.bodyEmphasized.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text('Wants to follow you', style: AppTypography.caption),
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.check_circle, color: Colors.green),
+                        _RoundIconButton(
+                          icon: Icons.check_rounded,
+                          color: AppColors.success,
                           onPressed: () => _respondToRequest(req.id, senderId, true),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.cancel, color: Colors.red),
+                        const SizedBox(width: 8),
+                        _RoundIconButton(
+                          icon: Icons.close_rounded,
+                          color: AppColors.select,
                           onPressed: () => _respondToRequest(req.id, senderId, false),
                         ),
                       ],
@@ -111,5 +155,28 @@ class _NotificationsPageState extends State<NotificationsPage> {
       ),
     );
   }
-  
+}
+
+class _RoundIconButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback onPressed;
+
+  const _RoundIconButton({required this.icon, required this.color, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color.withValues(alpha: 0.1),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onPressed,
+        child: Padding(
+          padding: const EdgeInsets.all(7),
+          child: Icon(icon, size: AppIconSize.sm, color: color),
+        ),
+      ),
+    );
+  }
 }

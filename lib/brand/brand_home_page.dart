@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../ui/app_theme.dart';
 import '../agency/widgets/dashboard_card.dart';
 import '../widgets/gig_card.dart';
+import '../widgets/app_skeleton.dart';
 import 'brand_gig_applications_page.dart';
 
 class BrandHomePage extends StatelessWidget {
@@ -14,25 +16,18 @@ class BrandHomePage extends StatelessWidget {
     if (uid == null) return const SizedBox.shrink();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: AppColors.paper,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // WELCOME HEADER
-            const Text(
-              'Brand Dashboard',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
-              ),
-            ),
+            Text('Brand Dashboard', style: AppTypography.heading),
             const SizedBox(height: 4),
             Text(
               'Manage your gigs and discover talent',
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              style: AppTypography.body.copyWith(color: AppColors.inkSoft),
             ),
             const SizedBox(height: 24),
 
@@ -94,10 +89,7 @@ class BrandHomePage extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Active Gigs',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
+                Text('Active Gigs', style: AppTypography.subheading),
                 TextButton(
                   onPressed: () {
                     // Navigate to Manage Gigs tab would be better, but we are inside the tab
@@ -115,7 +107,31 @@ class BrandHomePage extends StatelessWidget {
                   .limit(3)
                   .snapshots(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) return const LinearProgressIndicator();
+                if (snapshot.hasError) {
+                  return Container(
+                    height: 100,
+                    width: double.infinity,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.paper,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: AppColors.line),
+                    ),
+                    child: Text('Could not load your gigs.', style: AppTypography.caption),
+                  );
+                }
+
+                if (!snapshot.hasData) {
+                  return Column(
+                    children: List.generate(
+                      2,
+                      (_) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: AppSkeleton.card(height: 120),
+                      ),
+                    ),
+                  );
+                }
                 final docs = snapshot.data!.docs;
 
                 if (docs.isEmpty) {
@@ -123,14 +139,14 @@ class BrandHomePage extends StatelessWidget {
                     height: 100,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey[200]!),
+                      color: AppColors.paper,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: AppColors.line),
                     ),
                     child: Center(
                       child: Text(
                         'No active gigs. Post one to get started!',
-                        style: TextStyle(color: Colors.grey[500]),
+                        style: AppTypography.caption,
                       ),
                     ),
                   );

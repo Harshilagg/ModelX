@@ -5,6 +5,9 @@ import '../../services/agency_service.dart';
 import '../../models/agency_models.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../pages/login_page.dart';
+import '../../ui/app_theme.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/state_views.dart';
 
 class InviteAcceptancePage extends StatefulWidget {
   final String token;
@@ -76,9 +79,7 @@ class _InviteAcceptancePageState extends State<InviteAcceptancePage> {
     try {
       await _agencyService.acceptInvite(widget.token, user.uid);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Successfully joined the team!'))
-        );
+        showAppToast(context, 'Successfully joined the team!');
         // Navigate to dashboard
         Navigator.popUntil(context, (route) => route.isFirst);
       }
@@ -98,11 +99,11 @@ class _InviteAcceptancePageState extends State<InviteAcceptancePage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Join Team')),
       body: Center(
-        child: _isLoading 
-          ? const CircularProgressIndicator()
-          : _error != null
-            ? _buildErrorView()
-            : _buildInviteView(),
+        child: _isLoading
+            ? const LoadingState()
+            : _error != null
+                ? _buildErrorView()
+                : _buildInviteView(),
       ),
     );
   }
@@ -113,13 +114,23 @@ class _InviteAcceptancePageState extends State<InviteAcceptancePage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 64, color: Colors.red),
-          const SizedBox(height: 16),
-          Text(_error!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
-          const SizedBox(height: 24),
-          ElevatedButton(
+          Container(
+            width: 64,
+            height: 64,
+            decoration: const BoxDecoration(color: AppColors.paperRaised, shape: BoxShape.circle),
+            child: const Icon(Icons.error_outline_rounded, size: 30, color: AppColors.select),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            _error!,
+            textAlign: TextAlign.center,
+            style: AppTypography.body.copyWith(color: AppColors.inkSoft),
+          ),
+          const SizedBox(height: 28),
+          AppButton(
+            label: 'Go Back',
+            variant: AppButtonVariant.secondary,
             onPressed: () => Navigator.pop(context),
-            child: const Text('Go Back'),
           ),
         ],
       ),
@@ -132,31 +143,30 @@ class _InviteAcceptancePageState extends State<InviteAcceptancePage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.group_add_outlined, size: 64, color: Color(0xFF0F172A)),
-          const SizedBox(height: 24),
+          Container(
+            width: 88,
+            height: 88,
+            decoration: const BoxDecoration(color: AppColors.goldBg, shape: BoxShape.circle),
+            child: const Icon(Icons.group_add_outlined, size: 40, color: AppColors.gold),
+          ),
+          const SizedBox(height: 28),
           Text(
             'Invitation from ${_invite?.fromAgencyName}',
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+            style: AppTypography.heading,
           ),
           const SizedBox(height: 8),
           Text(
             'You have been invited to join as a ${_invite?.role.toString().split('.').last.toUpperCase()}.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey[600]),
+            style: AppTypography.body.copyWith(color: AppColors.inkSoft),
           ),
           const SizedBox(height: 48),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: _acceptInvite,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0F172A),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              child: const Text('Accept and Join', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            ),
+          AppButton(
+            label: 'Accept and Join',
+            expand: true,
+            loading: _acceptInProgress,
+            onPressed: _acceptInvite,
           ),
         ],
       ),

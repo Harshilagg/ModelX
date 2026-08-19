@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../pages/login_page.dart';
 import '../ui/app_theme.dart';
-import '../widgets/app_button.dart';
+import '../widgets/app_action_bar.dart';
 import '../widgets/app_card.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/section_header.dart';
@@ -119,10 +119,16 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
     }
 
     return Scaffold(
+      backgroundColor: AppColors.paper,
       appBar: AppBar(
+        backgroundColor: AppColors.backstage,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppColors.onBackstage),
+        titleTextStyle: const TextStyle(color: AppColors.onBackstage, fontWeight: FontWeight.w700, fontSize: 18),
         title: const Text('Brand Profile'),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.onBackstage),
             onPressed: () => setState(() => isEdit = !isEdit),
             child: Text(isEdit ? 'Cancel' : 'Edit'),
           ),
@@ -132,107 +138,123 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
           ),
         ],
       ),
+      bottomNavigationBar: isEdit
+          ? AppActionBar(
+              primaryLabel: 'Save Changes',
+              primaryIcon: Icons.check,
+              onPrimary: _save,
+            )
+          : null,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            // ================= HERO =================
-            Row(
-              children: [
-                ProfileAvatar(name: brandName.text, size: 72),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    brandName.text.isEmpty ? 'Your Brand' : brandName.text,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // ================= PROGRESS =================
-            AppCard(
+            // ================= HERO (backstage) =================
+            Container(
+              width: double.infinity,
+              color: AppColors.backstage,
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  ProfileAvatar(name: brandName.text, size: 84),
+                  const SizedBox(height: 22),
                   Text(
-                    'Profile Completion ${(completion * 100).toInt()}%',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    brandName.text.isEmpty ? 'Your Brand' : brandName.text,
+                    style: AppTypography.displayAccent(fontSize: 44, color: AppColors.onBackstage),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                    child: LinearProgressIndicator(
-                      value: completion,
-                      minHeight: 8,
-                      color: AppColors.gold,
-                      backgroundColor: AppColors.line,
+                  if (industry.text.trim().isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      industry.text.trim(),
+                      style: const TextStyle(color: AppColors.onBackstageSoft, fontSize: 14.5, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ================= PROGRESS =================
+                  AppCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Profile Completion ${(completion * 100).toInt()}%',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                          child: LinearProgressIndicator(
+                            value: completion,
+                            minHeight: 8,
+                            color: AppColors.gold,
+                            backgroundColor: AppColors.line,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  SectionHeader(title: 'Basic Identity'),
+                  const SizedBox(height: AppSpacing.md),
+                  AppCard(
+                    child: Column(
+                      children: [
+                        _field('Brand Name', brandName),
+                        _field('Industry', industry, last: true),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  SectionHeader(title: 'Brand Details'),
+                  const SizedBox(height: AppSpacing.md),
+                  AppCard(
+                    child: Column(
+                      children: [
+                        _field('About Brand', about, maxLines: 6),
+                        _field('Locations (comma separated)', locations, last: true),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  SectionHeader(title: 'Online Presence'),
+                  const SizedBox(height: AppSpacing.md),
+                  AppCard(
+                    child: Column(
+                      children: [
+                        _field('Website', website),
+                        _field('Instagram', instagram),
+                        _field('LinkedIn', linkedin, last: true),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  SectionHeader(title: 'Campaign Gallery'),
+                  const SizedBox(height: AppSpacing.md),
+                  AppCard(
+                    child: _projectPlaceholder(),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xl),
                 ],
               ),
             ),
-
-            const SizedBox(height: AppSpacing.xl),
-
-            SectionHeader(title: 'Basic Identity'),
-            const SizedBox(height: AppSpacing.md),
-            AppCard(
-              child: Column(
-                children: [
-                  _field('Brand Name', brandName),
-                  _field('Industry', industry, last: true),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: AppSpacing.xl),
-
-            SectionHeader(title: 'Brand Details'),
-            const SizedBox(height: AppSpacing.md),
-            AppCard(
-              child: Column(
-                children: [
-                  _field('About Brand', about, maxLines: 6),
-                  _field('Locations (comma separated)', locations, last: true),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: AppSpacing.xl),
-
-            SectionHeader(title: 'Online Presence'),
-            const SizedBox(height: AppSpacing.md),
-            AppCard(
-              child: Column(
-                children: [
-                  _field('Website', website),
-                  _field('Instagram', instagram),
-                  _field('LinkedIn', linkedin, last: true),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: AppSpacing.xl),
-
-            SectionHeader(title: 'Campaign Gallery'),
-            const SizedBox(height: AppSpacing.md),
-            AppCard(
-              child: _projectPlaceholder(),
-            ),
-
-            const SizedBox(height: AppSpacing.xl),
-
-            if (isEdit)
-              AppButton(
-                label: 'Save Changes',
-                onPressed: _save,
-                expand: true,
-              ),
           ],
         ),
       ),

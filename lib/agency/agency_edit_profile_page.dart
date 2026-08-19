@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter_application_modelx/services/cloudinary_service.dart';
 import '../ui/app_theme.dart';
 import '../widgets/app_button.dart';
+import '../widgets/profile_avatar.dart';
 import '../widgets/state_views.dart';
 
 class AgencyEditProfilePage extends StatefulWidget {
@@ -104,6 +105,73 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
     Navigator.pop(context);
   }
 
+  /// A compact preview of the cover + logo, styled like the view screen's
+  /// dark hero — gives visual feedback for what `_pickAndUpload` selected
+  /// instead of the picker changing silently behind two plain buttons.
+  Widget _buildPreview() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 44),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            height: 130,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.backstageRaised,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: (coverUrl ?? '').isNotEmpty
+                ? Image.network(coverUrl!, fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox())
+                : const Center(child: Icon(Icons.photo_library_outlined, size: 32, color: AppColors.onBackstageSoft)),
+          ),
+          Positioned(
+            right: 12,
+            top: 12,
+            child: _previewEditButton(Icons.photo_library_outlined, () => _pickAndUpload(false)),
+          ),
+          Positioned(
+            bottom: -30,
+            left: 20,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 76,
+                  height: 76,
+                  padding: const EdgeInsets.all(3),
+                  decoration: const BoxDecoration(color: AppColors.paper, shape: BoxShape.circle),
+                  child: ProfileAvatar(
+                    imageUrl: (logoUrl ?? '').isNotEmpty ? logoUrl : null,
+                    name: agencyNameController.text,
+                    size: 70,
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: _previewEditButton(Icons.photo_outlined, () => _pickAndUpload(true)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _previewEditButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(7),
+        decoration: const BoxDecoration(color: AppColors.goldOnBackstage, shape: BoxShape.circle),
+        child: Icon(icon, size: 15, color: AppColors.backstage),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (loading) {
@@ -117,6 +185,7 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
           key: _formKey,
           child: ListView(
             children: [
+              _buildPreview(),
               TextFormField(
                 controller: agencyNameController,
                 decoration: const InputDecoration(labelText: 'Agency Name'),
@@ -154,29 +223,7 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
                   ),
                 ),
               ],
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: AppButton(
-                      label: 'Change Logo',
-                      variant: AppButtonVariant.secondary,
-                      icon: Icons.photo_outlined,
-                      onPressed: () => _pickAndUpload(true),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: AppButton(
-                      label: 'Change Cover',
-                      variant: AppButtonVariant.secondary,
-                      icon: Icons.photo_library_outlined,
-                      onPressed: () => _pickAndUpload(false),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 8),
               TextFormField(controller: bioController, decoration: const InputDecoration(labelText: 'Bio'), maxLines: 4),
               const SizedBox(height: 12),
               TextFormField(controller: specialtiesController, decoration: const InputDecoration(labelText: 'Specialties (comma separated)')),

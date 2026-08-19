@@ -3,6 +3,9 @@ import 'dashboard_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../agency/scouting/ai_scout_service.dart'; // Import AI Service
+import '../ui/app_theme.dart';
+import '../widgets/app_button.dart';
+import '../widgets/app_text_field.dart';
 
 class CreateProfilePage extends StatefulWidget {
   final VoidCallback? onComplete; // for tests or custom flows to avoid Firebase calls
@@ -113,6 +116,34 @@ class _CreateProfilePageState extends State<CreateProfilePage> {
           key: _formKey,
           child: Stepper(
             currentStep: _currentStep,
+            connectorColor: WidgetStateProperty.all(AppColors.line),
+            connectorThickness: 2,
+            controlsBuilder: (context, details) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: AppButton(
+                        label: details.stepIndex == 0 ? 'Continue' : 'Finish',
+                        onPressed: details.stepIndex == 1 && loading ? null : details.onStepContinue,
+                        loading: details.stepIndex == 1 && loading,
+                        expand: true,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: AppButton(
+                        label: 'Back',
+                        variant: AppButtonVariant.secondary,
+                        onPressed: details.onStepCancel,
+                        expand: true,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
             onStepContinue: () {
               if (_currentStep == 0) {
                 // validate first step fields
@@ -140,19 +171,22 @@ class _CreateProfilePageState extends State<CreateProfilePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (FirebaseAuth.instance.currentUser?.providerData.any((p) => p.providerId.contains('google')) == true)
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 8.0),
-                        child: Text('We retrieved some info from your Google account — please confirm or edit below.', style: TextStyle(color: Colors.black54)),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: Text(
+                          'We retrieved some info from your Google account — please confirm or edit below.',
+                          style: AppTypography.caption.copyWith(color: AppColors.inkSoft),
+                        ),
                       ),
-                    TextFormField(
+                    AppTextField(
+                      label: 'Display name',
                       controller: displayNameController,
-                      decoration: const InputDecoration(labelText: 'Display name'),
                       validator: (v) => v!.isEmpty ? 'Enter a display name' : null,
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
+                    const SizedBox(height: 16),
+                    AppTextField(
+                      label: 'Username (letters, numbers, underscores)',
                       controller: usernameController,
-                      decoration: const InputDecoration(labelText: 'Username (letters, numbers, underscores)'),
                       validator: (v) {
                         final s = v ?? '';
                             final reg = RegExp(r'^[a-zA-Z0-9_]{3,30}$');
@@ -168,19 +202,25 @@ class _CreateProfilePageState extends State<CreateProfilePage> {
               Step(
                 title: const Text('About'),
                 content: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    TextFormField(
+                    AppTextField(
+                      label: 'Short bio',
                       controller: bioController,
-                      decoration: const InputDecoration(labelText: 'Short bio'),
                       maxLines: 3,
                     ),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
+                    const SizedBox(height: 16),
+                    AppButton(
+                      label: 'Finish',
                       onPressed: loading ? null : finishProfile,
-                      child: loading ? const CircularProgressIndicator() : const Text('Finish'),
+                      loading: loading,
+                      expand: true,
                     ),
                     const SizedBox(height: 12),
-                    TextButton(
+                    AppButton(
+                      label: 'Skip for now',
+                      variant: AppButtonVariant.ghost,
+                      expand: true,
                       onPressed: loading
                           ? null
                           : () async {
@@ -198,7 +238,6 @@ class _CreateProfilePageState extends State<CreateProfilePage> {
                                 (route) => false,
                               );
                             },
-                      child: const Text('Skip for now'),
                     ),
                   ],
                 ),

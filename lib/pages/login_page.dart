@@ -7,6 +7,9 @@ import '../agency/agency_dashboard_page.dart';
 import '../agency/agency_edit_profile_page.dart';
 import '../agency/team_access/invite_acceptance_page.dart';
 import '../selectportfolio/select_portfolio_page.dart';
+import '../ui/app_theme.dart';
+import '../widgets/app_button.dart';
+import '../widgets/app_text_field.dart';
 
 class LoginPage extends StatefulWidget {
   final String? inviteToken;
@@ -227,78 +230,122 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: identifierController,
-                decoration: const InputDecoration(
-                  labelText: 'Email or Username',
-                ),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Enter email or username' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                ),
-                validator: (v) =>
-                    v == null || v.length < 6 ? 'Password too short' : null,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: loading ? null : login,
-                child: loading
-                    ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Login'),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "Don't have an account? ",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => SelectPortfolioPage(inviteToken: widget.inviteToken),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'Create your account',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        decoration: TextDecoration.underline,
+      backgroundColor: AppColors.paper,
+      body: Column(
+        children: [
+          _buildHero(context),
+          Expanded(
+            child: SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AppTextField(
+                        label: 'Email or Username',
+                        controller: identifierController,
+                        validator: (v) =>
+                            v == null || v.isEmpty ? 'Enter email or username' : null,
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      AppTextField(
+                        label: 'Password',
+                        controller: passwordController,
+                        obscureText: true,
+                        validator: (v) =>
+                            v == null || v.length < 6 ? 'Password too short' : null,
+                      ),
+                      const SizedBox(height: 28),
+                      AppButton(
+                        label: 'Login',
+                        onPressed: loading ? null : login,
+                        loading: loading,
+                        expand: true,
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Don't have an account? ",
+                            style: AppTypography.body.copyWith(color: AppColors.inkSoft),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => SelectPortfolioPage(inviteToken: widget.inviteToken),
+                                ),
+                              );
+                            },
+                            child: Text(
+                              'Create your account',
+                              style: AppTypography.bodyEmphasized.copyWith(
+                                fontWeight: FontWeight.w700,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+
+  /// Dark "backstage" hero band — first impression for the login screen.
+  /// One word of the headline ("back") carries the Bodoni Moda display
+  /// accent in the brass-on-dark tone; the rest is Archivo.
+  Widget _buildHero(BuildContext context) {
+    final canPop = Navigator.of(context).canPop();
+    return Container(
+      width: double.infinity,
+      color: AppColors.backstage,
+      padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 20, 24, 36),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (canPop)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 18),
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: const Icon(Icons.arrow_back, color: AppColors.onBackstage, size: AppIconSize.md),
+              ),
+            ),
+          Text.rich(
+            TextSpan(children: [
+              TextSpan(
+                text: 'Welcome ',
+                style: AppTypography.display.copyWith(color: AppColors.onBackstage, fontSize: 32),
+              ),
+              TextSpan(
+                text: 'back',
+                style: AppTypography.displayAccent(color: AppColors.goldOnBackstage, fontSize: 34),
+              ),
+              TextSpan(
+                text: '.',
+                style: AppTypography.display.copyWith(color: AppColors.onBackstage, fontSize: 32),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Sign in to continue to ModelX.',
+            style: AppTypography.body.copyWith(color: AppColors.onBackstageSoft, fontSize: 15),
+          ),
+        ],
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'chat_page.dart';
 import '../ui/app_theme.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/state_views.dart';
+import '../widgets/app_skeleton.dart';
 
 class ChatInboxPage extends StatelessWidget {
   const ChatInboxPage({super.key});
@@ -41,7 +42,12 @@ class ChatInboxPage extends StatelessWidget {
           }
 
           if (!snapshot.hasData) {
-            return const LoadingState();
+            return ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm, horizontal: AppSpacing.md),
+              itemCount: 6,
+              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.xs),
+              itemBuilder: (_, __) => AppSkeleton.listTile(),
+            );
           }
 
           final chats = snapshot.data!.docs;
@@ -84,11 +90,7 @@ class ChatInboxPage extends StatelessWidget {
                   peerUsername.toString().isNotEmpty
                       ? '@$peerUsername'
                       : peerName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: AppColors.ink,
-                  ),
+                  style: AppTypography.bodyEmphasized.copyWith(fontWeight: FontWeight.w700),
                 ),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 2),
@@ -96,7 +98,7 @@ class ChatInboxPage extends StatelessWidget {
                     lastMessage.toString().isNotEmpty ? lastMessage : 'No messages yet',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: AppColors.inkFaint, fontSize: 13.5),
+                    style: AppTypography.caption,
                   ),
                 ),
                 trailing: unreadCount > 0
@@ -110,11 +112,7 @@ class ChatInboxPage extends StatelessWidget {
                         child: Text(
                           unreadCount.toString(),
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.paper,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: AppTypography.label.copyWith(color: AppColors.paper),
                         ),
                       )
                     : null,

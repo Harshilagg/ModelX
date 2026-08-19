@@ -3,13 +3,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/model_card.dart';
 import '../../widgets/model_x_copilot.dart';
+import '../../ui/app_theme.dart';
+import '../../widgets/app_card.dart';
+import '../../widgets/app_text_field.dart';
 import 'scout_service.dart';
 import 'ai_scout_service.dart';
 
 class ScoutPage extends StatefulWidget {
   final bool standalone;
   final Function(List<AiScoutResult>)? onExternalResults;
-  const ScoutPage({super.key, this.standalone = true, this.onExternalResults});
+  final String role;
+  const ScoutPage({super.key, this.standalone = true, this.onExternalResults, this.role = 'Agency'});
 
   // Static bridge for external AI results (e.g. from Dashboard Copilot)
   static void Function(List<AiScoutResult>)? onAiResultsExternal;
@@ -101,16 +105,55 @@ class _ScoutPageState extends State<ScoutPage> {
   void _onAiResults(List<AiScoutResult> results) {
     setState(() {
       _aiResults = results;
-      _aiMode = true; 
+      _aiMode = true;
       _allResults = [];
       _results = [];
-      _loading = false; 
+      _loading = false;
     });
   }
 
+  /// Runs the natural-language talent search directly from this page's own
+  /// search bar — the AI pipeline previously only ran through the hidden
+  /// Copilot bottom sheet (the floating "ask anything" button), which made
+  /// it easy to miss entirely and easy to mistake the plain filter search
+  /// above for "the AI search."
+  Future<void> _aiSearch() async {
+    final query = _searchCtl.text.trim();
+    if (query.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Describe who you\'re looking for first.')));
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _allResults = [];
+      _results = [];
+    });
+
+    try {
+      final results = await _aiService.searchTalent(query);
+      if (!mounted) return;
+      setState(() {
+        _aiResults = results;
+        _aiMode = true;
+      });
+      if (results.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No AI matches found for that search — try being less specific.')));
+      }
+    } catch (e) {
+      debugPrint('AI talent search failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('AI search failed: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   Future<void> _toggleShortlist(String modelId) async {
-    final agencyId = FirebaseAuth.instance.currentUser!.uid;
-    final ref = FirebaseFirestore.instance.collection('agency').doc(agencyId).collection('shortlist').doc(modelId);
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final collection = widget.role == 'Brand' ? 'brands' : 'agency';
+    final ref = FirebaseFirestore.instance.collection(collection).doc(uid).collection('shortlist').doc(modelId);
     final doc = await ref.get();
     if (doc.exists) {
       await ref.delete();
@@ -119,6 +162,34 @@ class _ScoutPageState extends State<ScoutPage> {
       await ref.set({'modelId': modelId, 'shortlistedAt': FieldValue.serverTimestamp()});
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to shortlist')));
     }
+  }
+
+  /// A dropdown filter styled to match `AppTextField`'s label-above-field
+  /// layout, so it reads as one system with the text filters beside it.
+  Widget _buildDropdownFilter<T>({
+    required String label,
+    required T? value,
+    required String hint,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label, style: AppTypography.label.copyWith(color: AppColors.inkSoft, letterSpacing: 0.08)),
+        const SizedBox(height: 7),
+        DropdownButtonFormField<T>(
+          value: value,
+          hint: Text(hint, style: AppTypography.body.copyWith(color: AppColors.inkFaint)),
+          isExpanded: true,
+          style: AppTypography.bodyEmphasized,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.inkFaint, size: AppIconSize.sm),
+          items: items,
+          onChanged: onChanged,
+        ),
+      ],
+    );
   }
 
   @override
@@ -131,7 +202,7 @@ class _ScoutPageState extends State<ScoutPage> {
         ],
       ),
       floatingActionButton: widget.standalone ? ModelXCopilot(
-        pageContext: const {'page': 'scout', 'role': 'Agency'},
+        pageContext: {'page': 'scout', 'role': widget.role},
         onResults: _onAiResults,
       ) : null,
       body: Padding(
@@ -141,40 +212,86 @@ class _ScoutPageState extends State<ScoutPage> {
             Expanded(
               child: TextField(
                 controller: _searchCtl,
-                decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Search name, skill, location...'),
-                onSubmitted: (_) => _search(),
+                decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Try "tall models in Delhi for editorial"...'),
+                onSubmitted: (_) => _aiSearch(),
               ),
             ),
-            const SizedBox(width: 12),
-            ElevatedButton(onPressed: _search, child: const Text('Search'))
+            const SizedBox(width: 8),
+            OutlinedButton(onPressed: _search, child: const Text('Filter')),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              onPressed: _aiSearch,
+              icon: const Icon(Icons.auto_awesome, size: 16),
+              label: const Text('Ask AI'),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.ink, foregroundColor: AppColors.paper),
+            ),
           ]),
 
           const SizedBox(height: 12),
 
-          // Filters row (simple)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(children: [
-              DropdownButton<String>(
-                value: _gender,
-                hint: const Text('Gender'),
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('Any')),
-                  DropdownMenuItem(value: 'male', child: Text('Male')),
-                  DropdownMenuItem(value: 'female', child: Text('Female')),
-                  DropdownMenuItem(value: 'other', child: Text('Other')),
+          // Filters row
+          AppCard(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(width: 140, child: _buildDropdownFilter<String>(
+                    label: 'Gender',
+                    value: _gender,
+                    hint: 'Any',
+                    items: const [
+                      DropdownMenuItem(value: null, child: Text('Any')),
+                      DropdownMenuItem(value: 'male', child: Text('Male')),
+                      DropdownMenuItem(value: 'female', child: Text('Female')),
+                      DropdownMenuItem(value: 'other', child: Text('Other')),
+                    ],
+                    onChanged: (v) => setState(() => _gender = v),
+                  )),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 100,
+                    child: AppTextField(
+                      label: 'Min age',
+                      hint: 'e.g. 18',
+                      keyboardType: TextInputType.number,
+                      onChanged: (v) => _minAge = int.tryParse(v),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 100,
+                    child: AppTextField(
+                      label: 'Max age',
+                      hint: 'e.g. 35',
+                      keyboardType: TextInputType.number,
+                      onChanged: (v) => _maxAge = int.tryParse(v),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 180,
+                    child: AppTextField(
+                      label: 'Location',
+                      hint: 'City, state...',
+                      controller: _locationCtl,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(width: 150, child: _buildDropdownFilter<String>(
+                    label: 'Sort',
+                    value: _sort,
+                    hint: 'Relevance',
+                    items: const [
+                      DropdownMenuItem(value: 'relevance', child: Text('Relevance')),
+                      DropdownMenuItem(value: 'recency', child: Text('Newest')),
+                    ],
+                    onChanged: (v) => setState(() => _sort = v!),
+                  )),
                 ],
-                onChanged: (v) => setState(() => _gender = v),
               ),
-              const SizedBox(width: 12),
-              SizedBox(width: 120, child: TextField(decoration: const InputDecoration(hintText: 'Min age'), keyboardType: TextInputType.number, onChanged: (v) => _minAge = int.tryParse(v))),
-              const SizedBox(width: 8),
-              SizedBox(width: 120, child: TextField(decoration: const InputDecoration(hintText: 'Max age'), keyboardType: TextInputType.number, onChanged: (v) => _maxAge = int.tryParse(v))),
-              const SizedBox(width: 12),
-              SizedBox(width: 180, child: TextField(controller: _locationCtl, decoration: const InputDecoration(hintText: 'Location'))),
-              const SizedBox(width: 12),
-              DropdownButton<String>(value: _sort, items: const [DropdownMenuItem(value: 'relevance', child: Text('Relevance')), DropdownMenuItem(value: 'recency', child: Text('Newest'))], onChanged: (v) => setState(() => _sort = v!)),
-            ]),
+            ),
           ),
 
           const SizedBox(height: 12),

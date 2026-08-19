@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../ui/app_theme.dart';
 
 class DashboardCard extends StatelessWidget {
   final String title;
@@ -12,16 +13,17 @@ class DashboardCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0,4))],
+        color: AppColors.paper,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.line),
+        boxShadow: AppShadows.card,
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle),
-            child: Icon(icon, color: Colors.blue),
+            decoration: BoxDecoration(color: AppColors.ink.withValues(alpha: 0.06), shape: BoxShape.circle),
+            child: Icon(icon, color: AppColors.ink, size: AppIconSize.md),
           ),
           const SizedBox(width: 12),
           // make text area flexible to avoid overflow on small screens
@@ -32,14 +34,14 @@ class DashboardCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: AppTypography.caption,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 6),
                 Text(
                   value,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: AppTypography.subheading,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

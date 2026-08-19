@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../ui/app_theme.dart';
 import '../widgets/gig_card.dart';
+import '../widgets/state_views.dart';
+import '../widgets/app_skeleton.dart';
 import 'brand_gig_applications_page.dart';
 
 class BrandManageGigsPage extends StatelessWidget {
@@ -12,22 +15,35 @@ class BrandManageGigsPage extends StatelessWidget {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: AppColors.paper,
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('gigs')
             .where('brandId', isEqualTo: uid)
             .snapshots(),
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const ErrorStateView(message: 'Could not load your gigs.');
+          }
+
           if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
+            return ListView.builder(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              itemCount: 4,
+              itemBuilder: (_, __) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: AppSkeleton.card(),
+              ),
+            );
           }
 
           final docs = snapshot.data!.docs;
 
           if (docs.isEmpty) {
-            return const Center(
-              child: Text('No gigs posted yet'),
+            return const EmptyState(
+              icon: Icons.layers_outlined,
+              title: 'No gigs posted yet',
+              message: 'Gigs you post will show up here for you to manage.',
             );
           }
 
@@ -87,10 +103,14 @@ class BrandManageGigsPage extends StatelessWidget {
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (_) => AlertDialog(
-      title: const Text('Delete Gig'),
-      content: const Text(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      title: Text('Delete Gig', style: AppTypography.subheading),
+      content: Text(
         'Are you sure you want to delete this gig? '
         'This action cannot be undone.',
+        style: AppTypography.body.copyWith(color: AppColors.inkSoft),
       ),
       actions: [
         TextButton(
@@ -99,7 +119,7 @@ class BrandManageGigsPage extends StatelessWidget {
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.select,
           ),
           onPressed: () => Navigator.pop(context, true),
           child: const Text('Delete'),
@@ -114,9 +134,9 @@ class BrandManageGigsPage extends StatelessWidget {
         .doc(gigId)
         .delete();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Gig deleted')),
-    );
+    if (context.mounted) {
+      showAppToast(context, 'Gig deleted');
+    }
   }
 }
 

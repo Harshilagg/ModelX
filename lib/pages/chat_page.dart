@@ -7,6 +7,7 @@ import '../widgets/model_x_copilot.dart';
 import '../ui/app_theme.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/state_views.dart';
+import '../widgets/app_skeleton.dart';
 
 class ChatPage extends StatefulWidget {
   final String peerId;
@@ -213,6 +214,28 @@ class _ChatPageState extends State<ChatPage> {
   }
  
 
+  /// A single bubble-shaped placeholder, matching the geometry of a real
+  /// message bubble — used while the message stream's first snapshot is
+  /// still pending, instead of a bare centered spinner.
+  Widget _bubbleSkeleton({required bool isMe, required double width}) {
+    return Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
+        child: AppSkeleton(
+          width: width,
+          height: 38,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(18),
+            topRight: const Radius.circular(18),
+            bottomLeft: Radius.circular(isMe ? 18 : 4),
+            bottomRight: Radius.circular(isMe ? 4 : 18),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final messagesRef = FirebaseFirestore.instance
@@ -243,7 +266,16 @@ class _ChatPageState extends State<ChatPage> {
               stream: messagesRef.snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
-                  return const LoadingState();
+                  return ListView(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    children: [
+                      _bubbleSkeleton(isMe: false, width: 190),
+                      _bubbleSkeleton(isMe: false, width: 130),
+                      _bubbleSkeleton(isMe: true, width: 210),
+                      _bubbleSkeleton(isMe: false, width: 160),
+                      _bubbleSkeleton(isMe: true, width: 120),
+                    ],
+                  );
                 }
 
                 final docs = snapshot.data!.docs;
@@ -264,9 +296,8 @@ class _ChatPageState extends State<ChatPage> {
                     final msg = docs[index].data() as Map<String, dynamic>;
                     final isMe = (msg['senderId'] ?? '') == currentUser.uid;
                     final encrypted = msg['encryptedContent'] as String?;
-                    final bubbleTextStyle = TextStyle(
+                    final bubbleTextStyle = AppTypography.body.copyWith(
                       color: isMe ? AppColors.paper : AppColors.ink,
-                      fontSize: 14.5,
                       height: 1.35,
                     );
 

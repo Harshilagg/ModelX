@@ -122,13 +122,7 @@ class _CastingCardState extends State<CastingCard> {
             color: AppColors.paper,
             borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(color: AppColors.line),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.ink.withValues(alpha: 0.04),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            boxShadow: AppShadows.card,
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             // header

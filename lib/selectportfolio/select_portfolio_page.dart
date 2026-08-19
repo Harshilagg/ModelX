@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../pages/signup_page.dart';
 import '../brand/brand_signup_page.dart';
 import '../agency/agency_signup_page.dart';
+import '../ui/app_theme.dart';
 
 class SelectPortfolioPage extends StatelessWidget {
   final String? inviteToken;
@@ -11,17 +12,9 @@ class SelectPortfolioPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: AppColors.paper,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text(
-          "Who are you?",
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+        title: const Text("Who are you?"),
         centerTitle: true,
       ),
       body: Padding(
@@ -93,49 +86,36 @@ class SelectPortfolioPage extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          color: AppColors.paper,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.line),
+          boxShadow: AppShadows.card,
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+              decoration: const BoxDecoration(
+                color: AppColors.goldBg,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 28, color: Colors.blue),
+              child: Icon(icon, size: AppIconSize.lg, color: AppColors.gold),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  Text(title, style: AppTypography.subheading),
                   const SizedBox(height: 6),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      color: Colors.grey,
-                      height: 1.4,
-                    ),
+                    style: AppTypography.body.copyWith(color: AppColors.inkSoft, height: 1.4),
                   ),
                 ],
               ),
             ),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.inkFaint),
           ],
         ),
       ),

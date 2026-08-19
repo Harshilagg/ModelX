@@ -14,7 +14,7 @@ class ProfileAvatar extends StatelessWidget {
 
   static const _palette = [
     Color(0xFF17150F),
-    Color(0xFF93712F),
+    Color(0xFFB08A4C),
     Color(0xFFC6273A),
     Color(0xFF3A3A34),
     Color(0xFF5C5C55),

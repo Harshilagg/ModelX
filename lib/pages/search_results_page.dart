@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import '../ui/app_theme.dart';
+import '../widgets/profile_avatar.dart';
+import '../widgets/state_views.dart';
+import '../widgets/app_skeleton.dart';
 import 'search_service_impl.dart';
 import 'user_profile_page.dart';
 
@@ -35,21 +39,44 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.paper,
       appBar: AppBar(title: Text('Results for "${widget.query}"')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+              itemCount: 6,
+              itemBuilder: (context, index) => AppSkeleton.listTile(),
+            )
           : (_results.isEmpty
-              ? const Center(child: Text('No results found'))
-              : ListView.builder(
+              ? EmptyState(
+                  icon: Icons.search_off_rounded,
+                  title: 'No results found',
+                  message: 'Try a different name or username.',
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                   itemCount: _results.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.line),
                   itemBuilder: (context, index) {
                     final user = _results[index];
+                    final fullName = (user['fullName'] as String?) ??
+                        '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'.trim();
+                    final username = user['username']?.toString() ?? '';
+                    final subtitle = username.isNotEmpty ? '@$username' : (user['bio'] ?? '');
                     return ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage: user['profileImage'] != null ? NetworkImage(user['profileImage']) : null,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
+                      leading: ProfileAvatar(
+                        imageUrl: user['profileImage'] as String?,
+                        name: fullName,
+                        size: 44,
                       ),
-                      title: Text(user['fullName'] ?? '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'),
-                      subtitle: Text(user['username'] != null && user['username'].toString().isNotEmpty ? '@${user['username']}' : (user['bio'] ?? '')),
+                      title: Text(fullName, style: AppTypography.bodyEmphasized),
+                      subtitle: Text(
+                        subtitle,
+                        style: AppTypography.caption,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       onTap: () {
                         Navigator.push(
                           context,

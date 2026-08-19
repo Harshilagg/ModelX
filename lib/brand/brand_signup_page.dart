@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'brand_dashboard_page.dart';
+import '../ui/app_theme.dart';
+import '../widgets/app_button.dart';
+import '../widgets/app_text_field.dart';
 
 class BrandSignupPage extends StatefulWidget {
   const BrandSignupPage({super.key});
@@ -77,31 +80,91 @@ class _BrandSignupPageState extends State<BrandSignupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Brand Signup')),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              _field(brandNameController, 'Brand Name'),
-              _field(industryController, 'Industry'),
-              _field(locationController, 'Location'),
-              _field(emailController, 'Email'),
-              _field(passwordController, 'Password', obscure: true),
-              _field(aboutController, 'About the Brand', maxLines: 5),
-
-              const SizedBox(height: 24),
-
-              ElevatedButton(
-                onPressed: loading ? null : signupBrand,
-                child: loading
-                    ? const CircularProgressIndicator()
-                    : const Text('Sign up as Brand'),
+      backgroundColor: AppColors.paper,
+      body: Column(
+        children: [
+          _buildHero(context),
+          Expanded(
+            child: SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _field(brandNameController, 'Brand Name'),
+                      const SizedBox(height: 16),
+                      _field(industryController, 'Industry'),
+                      const SizedBox(height: 16),
+                      _field(locationController, 'Location'),
+                      const SizedBox(height: 16),
+                      _field(emailController, 'Email'),
+                      const SizedBox(height: 16),
+                      _field(passwordController, 'Password', obscure: true),
+                      const SizedBox(height: 16),
+                      _field(aboutController, 'About the Brand', maxLines: 5),
+                      const SizedBox(height: 28),
+                      AppButton(
+                        label: 'Sign up as Brand',
+                        onPressed: loading ? null : signupBrand,
+                        loading: loading,
+                        expand: true,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+
+  /// Dark "backstage" hero band, matching the treatment on login/signup/
+  /// agency-signup so the first impression is consistent across entry points.
+  Widget _buildHero(BuildContext context) {
+    final canPop = Navigator.of(context).canPop();
+    return Container(
+      width: double.infinity,
+      color: AppColors.backstage,
+      padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 20, 24, 36),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (canPop)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 18),
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: const Icon(Icons.arrow_back, color: AppColors.onBackstage, size: AppIconSize.md),
+              ),
+            ),
+          Text.rich(
+            TextSpan(children: [
+              TextSpan(
+                text: 'Join ',
+                style: AppTypography.display.copyWith(color: AppColors.onBackstage, fontSize: 32),
+              ),
+              TextSpan(
+                text: 'ModelX',
+                style: AppTypography.displayAccent(color: AppColors.goldOnBackstage, fontSize: 34),
+              ),
+              TextSpan(
+                text: '.',
+                style: AppTypography.display.copyWith(color: AppColors.onBackstage, fontSize: 32),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Set up your brand to discover and book talent.',
+            style: AppTypography.body.copyWith(color: AppColors.onBackstageSoft, fontSize: 15),
+          ),
+        ],
       ),
     );
   }
@@ -112,15 +175,12 @@ class _BrandSignupPageState extends State<BrandSignupPage> {
     bool obscure = false,
     int maxLines = 1,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TextFormField(
-        controller: controller,
-        obscureText: obscure,
-        maxLines: maxLines,
-        decoration: InputDecoration(labelText: label),
-        validator: (value) => value!.isEmpty ? 'Required' : null,
-      ),
+    return AppTextField(
+      label: label,
+      controller: controller,
+      obscureText: obscure,
+      maxLines: maxLines,
+      validator: (value) => value!.isEmpty ? 'Required' : null,
     );
   }
 }

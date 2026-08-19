@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../ui/app_theme.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/app_text_field.dart';
 import 'roster_service.dart';
 
 class AddModelPage extends StatefulWidget {
@@ -25,12 +28,14 @@ class _AddModelPageState extends State<AddModelPage> {
     setState(() => _sending = true);
     try {
       await _service.inviteModel('', email, {});
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invite sent')));
+      if (!mounted) return;
+      showAppToast(context, 'Invite sent');
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Invite failed: $e')));
+      if (!mounted) return;
+      showAppToast(context, 'Invite failed: $e', isError: true);
     }
-    setState(() => _sending = false);
+    if (mounted) setState(() => _sending = false);
   }
 
   @override
@@ -39,7 +44,25 @@ class _AddModelPageState extends State<AddModelPage> {
       appBar: AppBar(title: const Text('Invite Model')),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(children: [TextField(controller: _emailCtl, decoration: const InputDecoration(labelText: 'Model email')), const SizedBox(height: 12), ElevatedButton(onPressed: _sending ? null : _invite, child: _sending ? const CircularProgressIndicator() : const Text('Send Invite'))]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppTextField(
+              label: 'Model email',
+              hint: 'name@example.com',
+              controller: _emailCtl,
+              keyboardType: TextInputType.emailAddress,
+              leadingIcon: const Icon(Icons.mail_outline, size: AppIconSize.sm, color: AppColors.inkFaint),
+            ),
+            const SizedBox(height: 20),
+            AppButton(
+              label: 'Send Invite',
+              onPressed: _sending ? null : _invite,
+              loading: _sending,
+              expand: true,
+            ),
+          ],
+        ),
       ),
     );
   }

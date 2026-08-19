@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login_page.dart';
 import '../selectportfolio/select_portfolio_page.dart';
+import '../ui/app_theme.dart';
 
 class OnboardingPage extends StatefulWidget {
   final Future<void> Function()? onFinish;
@@ -39,7 +40,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           gradient: LinearGradient(
             begin: Alignment.topRight,
             end: Alignment.bottomLeft,
-            colors: [Color(0xFF1F2933), Color(0xFF0F172A)],
+            colors: [AppColors.backstageRaised, AppColors.backstage],
           ),
         ),
         child: SafeArea(
@@ -62,19 +63,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           Text(
                             content[i]['title']!,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: AppTypography.display.copyWith(
                               fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: AppColors.onBackstage,
                             ),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             content[i]['subtitle']!,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: AppTypography.body.copyWith(
                               fontSize: 16,
-                              color: Colors.white70,
+                              color: AppColors.onBackstageSoft,
                               height: 1.4,
                             ),
                           ),
@@ -96,7 +96,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     height: 8,
                     width: index == i ? 22 : 8,
                     decoration: BoxDecoration(
-                      color: index == i ? Colors.white : Colors.white38,
+                      color: index == i
+                          ? AppColors.onBackstage
+                          : AppColors.onBackstage.withValues(alpha: 0.24),
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
@@ -110,8 +112,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 32),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
+                    backgroundColor: AppColors.onBackstage,
                     minimumSize: const Size(double.infinity, 52),
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -158,30 +161,30 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            SizedBox(
+                          children: [
+                            const SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.black,
+                                color: AppColors.ink,
                               ),
                             ),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Text(
                               'Please wait...',
-                              style: TextStyle(
-                                color: Colors.black,
+                              style: AppTypography.bodyEmphasized.copyWith(
+                                color: AppColors.ink,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 1,
                               ),
                             ),
                           ],
                         )
-                      : const Text(
+                      : Text(
                           'Sign up / Login',
-                          style: TextStyle(
-                            color: Colors.black,
+                          style: AppTypography.bodyEmphasized.copyWith(
+                            color: AppColors.ink,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 1,
                           ),
@@ -195,10 +198,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
+                  Text(
                     'Already have an account? ',
-                    style: TextStyle(
-                      color: Colors.white70,
+                    style: AppTypography.body.copyWith(
+                      color: AppColors.onBackstageSoft,
                       fontSize: 14,
                     ),
                   ),
@@ -212,10 +215,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         ),
                       );
                     },
-                    child: const Text(
+                    child: Text(
                       'Login',
-                      style: TextStyle(
-                        color: Colors.white,
+                      style: AppTypography.bodyEmphasized.copyWith(
+                        color: AppColors.onBackstage,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         decoration: TextDecoration.underline,

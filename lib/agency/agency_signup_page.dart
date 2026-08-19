@@ -5,6 +5,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_application_modelx/services/cloudinary_service.dart';
 import 'agency_dashboard_page.dart';
+import '../ui/app_theme.dart';
+import '../widgets/app_button.dart';
+import '../widgets/app_text_field.dart';
 
 class AgencySignupPage extends StatefulWidget {
   const AgencySignupPage({super.key});
@@ -123,39 +126,136 @@ class _AgencySignupPageState extends State<AgencySignupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Agency Signup')),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(controller: agencyNameController, decoration: const InputDecoration(labelText: 'Agency Name'), validator: (v) => v==null||v.isEmpty? 'Required' : null,),
-              TextFormField(controller: emailController, decoration: const InputDecoration(labelText: 'Email'), validator: (v) => v==null||v.isEmpty? 'Required' : null,),
-              TextFormField(controller: passwordController, decoration: const InputDecoration(labelText: 'Password'), obscureText: true, validator: (v) => v==null||v.length<6? 'Min 6 chars' : null,),
-              TextFormField(controller: phoneController, decoration: const InputDecoration(labelText: 'Phone')),
-              TextFormField(controller: addressController, decoration: const InputDecoration(labelText: 'Address')),
-              TextFormField(controller: websiteController, decoration: const InputDecoration(labelText: 'Website')),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  ElevatedButton.icon(onPressed: () => _pickAndUpload(true), icon: const Icon(Icons.photo), label: const Text('Upload Logo')),
-                  const SizedBox(width: 12),
-                  ElevatedButton.icon(onPressed: () => _pickAndUpload(false), icon: const Icon(Icons.photo_library), label: const Text('Upload Cover')),
-                ],
+      backgroundColor: AppColors.paper,
+      body: Column(
+        children: [
+          _buildHero(context),
+          Expanded(
+            child: SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AppTextField(
+                        label: 'Agency Name',
+                        controller: agencyNameController,
+                        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      AppTextField(
+                        label: 'Email',
+                        controller: emailController,
+                        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      AppTextField(
+                        label: 'Password',
+                        controller: passwordController,
+                        obscureText: true,
+                        validator: (v) => v == null || v.length < 6 ? 'Min 6 chars' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      AppTextField(label: 'Phone', controller: phoneController),
+                      const SizedBox(height: 16),
+                      AppTextField(label: 'Address', controller: addressController),
+                      const SizedBox(height: 16),
+                      AppTextField(label: 'Website', controller: websiteController),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AppButton(
+                              label: 'Upload Logo',
+                              icon: Icons.photo,
+                              variant: AppButtonVariant.secondary,
+                              onPressed: () => _pickAndUpload(true),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: AppButton(
+                              label: 'Upload Cover',
+                              icon: Icons.photo_library,
+                              variant: AppButtonVariant.secondary,
+                              onPressed: () => _pickAndUpload(false),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      AppTextField(label: 'Bio', controller: bioController, maxLines: 4),
+                      const SizedBox(height: 16),
+                      AppTextField(label: 'Specialties (comma separated)', controller: specialtiesController),
+                      const SizedBox(height: 16),
+                      AppTextField(label: 'Services (comma separated)', controller: servicesController),
+                      const SizedBox(height: 16),
+                      AppTextField(label: 'Instagram handle', controller: instagramController),
+                      const SizedBox(height: 16),
+                      AppTextField(label: 'LinkedIn URL', controller: linkedinController),
+                      const SizedBox(height: 28),
+                      AppButton(
+                        label: 'Sign up as Agency',
+                        onPressed: loading ? null : signupAgency,
+                        loading: loading,
+                        expand: true,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 12),
-              TextFormField(controller: bioController, decoration: const InputDecoration(labelText: 'Bio'), maxLines: 4),
-              const SizedBox(height: 8),
-              TextFormField(controller: specialtiesController, decoration: const InputDecoration(labelText: 'Specialties (comma separated)'),),
-              TextFormField(controller: servicesController, decoration: const InputDecoration(labelText: 'Services (comma separated)'),),
-              TextFormField(controller: instagramController, decoration: const InputDecoration(labelText: 'Instagram handle')),              
-              TextFormField(controller: linkedinController, decoration: const InputDecoration(labelText: 'LinkedIn URL')),
-              const SizedBox(height: 18),
-              ElevatedButton(onPressed: loading? null : signupAgency, child: loading? const CircularProgressIndicator() : const Text('Sign up as Agency')),
-            ],
+            ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+
+  /// Dark "backstage" hero band, matching the treatment on login/signup/
+  /// brand-signup so the first impression is consistent across entry points.
+  Widget _buildHero(BuildContext context) {
+    final canPop = Navigator.of(context).canPop();
+    return Container(
+      width: double.infinity,
+      color: AppColors.backstage,
+      padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 20, 24, 36),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (canPop)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 18),
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: const Icon(Icons.arrow_back, color: AppColors.onBackstage, size: AppIconSize.md),
+              ),
+            ),
+          Text.rich(
+            TextSpan(children: [
+              TextSpan(
+                text: 'Join ',
+                style: AppTypography.display.copyWith(color: AppColors.onBackstage, fontSize: 32),
+              ),
+              TextSpan(
+                text: 'ModelX',
+                style: AppTypography.displayAccent(color: AppColors.goldOnBackstage, fontSize: 34),
+              ),
+              TextSpan(
+                text: '.',
+                style: AppTypography.display.copyWith(color: AppColors.onBackstage, fontSize: 32),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Set up your agency to manage talent and bookings.',
+            style: AppTypography.body.copyWith(color: AppColors.onBackstageSoft, fontSize: 15),
+          ),
+        ],
       ),
     );
   }

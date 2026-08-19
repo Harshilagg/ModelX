@@ -5,6 +5,7 @@ import 'user_profile_page.dart';
 import '../ui/app_theme.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/state_views.dart';
+import '../widgets/app_skeleton.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -24,7 +25,11 @@ class HomePage extends StatelessWidget {
         }
 
         if (!snapshot.hasData) {
-          return const LoadingState();
+          return ListView.builder(
+            padding: const EdgeInsets.only(top: 8, bottom: 80),
+            itemCount: 3,
+            itemBuilder: (_, __) => AppSkeleton.card(height: 250),
+          );
         }
 
         final posts = snapshot.data!.docs;
@@ -428,15 +433,32 @@ class _PostCard extends StatelessWidget {
     required this.postData,
   });
 
+  String _timeAgo(dynamic createdAt) {
+    if (createdAt is! Timestamp) return '';
+    final diff = DateTime.now().difference(createdAt.toDate());
+    if (diff.inDays > 0) return '${diff.inDays}d';
+    if (diff.inHours > 0) return '${diff.inHours}h';
+    if (diff.inMinutes > 0) return '${diff.inMinutes}m';
+    return 'now';
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasImage = postData['imageUrl'] != null &&
         postData['imageUrl'].toString().isNotEmpty;
     final hasCaption = postData['caption'] != null &&
         postData['caption'].toString().isNotEmpty;
+    final timeAgo = _timeAgo(postData['createdAt']);
 
     return Container(
-      color: AppColors.paper,
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.paper,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.line),
+        boxShadow: AppShadows.card,
+      ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -453,24 +475,26 @@ class _PostCard extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
-                AppSpacing.sm,
+                AppSpacing.sm + 2,
                 AppSpacing.md,
-                AppSpacing.sm,
+                AppSpacing.sm + 2,
               ),
               child: Row(
                 children: [
                   ProfileAvatar(
                     imageUrl: postData['userImage'],
                     name: postData['username'],
-                    size: 40,
+                    size: 42,
                   ),
-                  const SizedBox(width: AppSpacing.sm + 2),
+                  const SizedBox(width: AppSpacing.sm + 4),
                   Expanded(
                     child: Text(
                       postData['username'] ?? '',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: AppTypography.bodyEmphasized.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
+                  if (timeAgo.isNotEmpty)
+                    Text(timeAgo, style: AppTypography.metadata),
                 ],
               ),
             ),
@@ -520,7 +544,7 @@ class _PostCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
-              AppSpacing.sm,
+              AppSpacing.sm + 4,
               AppSpacing.md,
               0,
             ),
@@ -541,20 +565,17 @@ class _PostCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
-                AppSpacing.sm,
+                AppSpacing.sm + 2,
                 AppSpacing.md,
-                AppSpacing.sm,
+                AppSpacing.sm + 4,
               ),
               child: Text(
                 postData['caption'],
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: AppTypography.body,
               ),
             )
           else
-            const SizedBox(height: AppSpacing.sm),
-
-          // ===== SEPARATOR BETWEEN FEED ITEMS =====
-          Container(height: AppSpacing.sm, color: AppColors.paperRaised),
+            const SizedBox(height: AppSpacing.sm + 4),
         ],
       ),
     );

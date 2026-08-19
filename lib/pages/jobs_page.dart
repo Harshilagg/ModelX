@@ -5,7 +5,10 @@ import '../ui/app_theme.dart';
 import '../widgets/gig_card.dart';
 import '../widgets/status_pill.dart';
 import '../widgets/state_views.dart';
+import '../widgets/app_grid_layout.dart';
 import '../agency/widgets/casting_card.dart';
+import 'gig_full_detail_page.dart';
+import 'casting_full_detail_page.dart';
 
 class _JobCardWrapper extends StatelessWidget {
   final String gigId;
@@ -128,6 +131,155 @@ class _JobCardWrapper extends StatelessWidget {
   }
 }
 
+/// A compact mosaic-tile rendering of a gig, used for every item in the
+/// feed except the featured one — `GigCard` is too tall/detailed (chips,
+/// full description, meta row) to fit a grid cell, so this shows the same
+/// core facts (title, brand, live application status) at a smaller size
+/// instead of dropping them. Reuses the exact same applications stream
+/// `_JobCardWrapper` uses, so status tracking is identical.
+class _GigTile extends StatelessWidget {
+  final String gigId;
+  final String modelId;
+  final String brandName;
+  final Map<String, dynamic> gigData;
+  final int recipe;
+
+  const _GigTile({
+    required this.gigId,
+    required this.modelId,
+    required this.brandName,
+    required this.gigData,
+    required this.recipe,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final appRef = FirebaseFirestore.instance.collection('gigs').doc(gigId).collection('applications').doc(modelId);
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: appRef.snapshots(),
+      builder: (context, snapshot) {
+        final appDoc = snapshot.data;
+        final hasApplied = appDoc?.exists ?? false;
+        String? appStatus;
+        if (hasApplied) {
+          final appData = appDoc?.data() as Map<String, dynamic>?;
+          appStatus = appData?['status'] ?? 'Applied';
+        }
+        return _MosaicTile(
+          title: gigData['projectTitle'] ?? '',
+          subtitle: brandName,
+          statusLabel: appStatus,
+          recipe: recipe,
+        );
+      },
+    );
+  }
+}
+
+/// The casting equivalent of [_GigTile] — same idea, wraps the applicants
+/// lookup `CastingCard` already uses.
+class _CastingTile extends StatelessWidget {
+  final String castingId;
+  final String modelId;
+  final String posterName;
+  final Map<String, dynamic> data;
+  final int recipe;
+
+  const _CastingTile({
+    required this.castingId,
+    required this.modelId,
+    required this.posterName,
+    required this.data,
+    required this.recipe,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('castings').doc(castingId).collection('applicants').doc(modelId).get(),
+      builder: (context, appSnap) {
+        final appDoc = appSnap.data;
+        final hasApplied = appDoc?.exists ?? false;
+        String? appStatus;
+        if (hasApplied) {
+          final appData = appDoc?.data() as Map<String, dynamic>?;
+          appStatus = appData?['status'] ?? 'Applied';
+        }
+        return _MosaicTile(
+          title: data['title'] ?? data['projectTitle'] ?? '',
+          subtitle: posterName,
+          statusLabel: appStatus,
+          recipe: recipe,
+        );
+      },
+    );
+  }
+}
+
+/// The shared compact-tile look — a duotone gradient panel (standing in
+/// for imagery, since gigs/castings don't carry photos) with title/poster
+/// bottom-anchored, matching the mosaic treatment already approved for
+/// this screen's featured-item-plus-grid direction.
+class _MosaicTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String? statusLabel;
+  final int recipe;
+
+  const _MosaicTile({required this.title, required this.subtitle, required this.statusLabel, required this.recipe});
+
+  static const _gradients = [
+    LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF17150F), Color(0xFFB08A4C)]),
+    LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFB08A4C), Color(0xFF17150F)]),
+    LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF3A3A34), Color(0xFF0A0A0A)]),
+    LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF0A0A0A), Color(0xFFC6273A)]),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        gradient: _gradients[recipe % _gradients.length],
+      ),
+      padding: const EdgeInsets.all(AppSpacing.sm + 2),
+      child: Stack(
+        children: [
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AppColors.onBackstage, fontSize: 13, fontWeight: FontWeight.w700, height: 1.15),
+                ),
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: AppColors.onBackstageSoft, fontSize: 11),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (statusLabel != null)
+            Positioned(top: 0, right: 0, child: StatusPill(status: statusLabel!)),
+        ],
+      ),
+    );
+  }
+}
+
 class JobsPage extends StatefulWidget {
   const JobsPage({super.key});
 
@@ -213,76 +365,126 @@ class _JobsPageState extends State<JobsPage> {
                   );
                 }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(AppSpacing.md),
+                final featuredItem = items.first;
+                final restItems = items.skip(1).toList();
+
+                return SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    if (item.isGig) {
-                      final data = item.data;
-                      final roleReq = data['roleRequirements'] as Map<String, dynamic>? ?? {};
-                      final physical = roleReq['physicalAttributes'] as Map<String, dynamic>? ?? {};
-
-                      return _JobCardWrapper(
-                        gigId: item.doc.id,
-                        modelId: modelId,
-                        brandName: data['brandName'] ?? '',
-                        gigData: data,
-                        physical: physical,
-                      );
-                    }
-
-                    final data = item.data;
-                    final applicants = data['applicationsCount'] ?? data['applicantsCount'] ?? 0;
-                    final posterName = data['agencyName'] ?? data['agency'] ?? data['posterName'] ?? '';
-
-                    return FutureBuilder<DocumentSnapshot>(
-                      future: FirebaseFirestore.instance
-                          .collection('castings')
-                          .doc(item.doc.id)
-                          .collection('applicants')
-                          .doc(modelId)
-                          .get(),
-                      builder: (context, appSnap) {
-                        final appDoc = appSnap.data;
-                        final hasApplied = appDoc?.exists ?? false;
-
-                        String appStatus = 'Apply';
-                        if (hasApplied) {
-                          final appData = appDoc?.data() as Map<String, dynamic>?;
-                          appStatus = appData?['status'] ?? 'Applied';
-                        }
-
-                        return CastingCard(
-                          id: item.doc.id,
-                          title: data['title'] ?? data['projectTitle'] ?? '',
-                          description: data['description'] ?? '',
-                          posterName: posterName,
-                          location: data['location'] ?? '',
-                          timeline: data['timeline'] ?? '',
-                          budgetType: data['budgetType'] ?? '',
-                          budgetAmount: data['budgetAmount']?.toString() ?? '',
-                          media: List<String>.from(data['media'] ?? []),
-                          applicants: applicants,
-                          status: data['status'] ?? 'open',
-                          createdAt: item.createdAt,
-                          compensationMin: data['compensationMin']?.toString(),
-                          compensationMax: data['compensationMax']?.toString(),
-                          shootingStart: (data['shootingStart'] is Timestamp) ? (data['shootingStart'] as Timestamp).toDate() : null,
-                          shootingEnd: (data['shootingEnd'] is Timestamp) ? (data['shootingEnd'] as Timestamp).toDate() : null,
-                          talentRequirements: (data['talentRequirements'] is Map) ? Map<String, dynamic>.from(data['talentRequirements'] as Map) : null,
-                          showApply: !hasApplied,
-                          actionWidget: hasApplied ? StatusPill(status: appStatus) : null,
-                        );
-                      },
-                    );
-                  },
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: AppFeaturedGrid(
+                    featured: _buildFullCard(context, featuredItem, modelId),
+                    tiles: [
+                      for (var i = 0; i < restItems.length; i++)
+                        _buildTile(restItems[i], modelId, i),
+                    ],
+                  ),
                 );
               },
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildFullCard(BuildContext context, _FeedItem item, String modelId) {
+    if (item.isGig) {
+      final data = item.data;
+      final roleReq = data['roleRequirements'] as Map<String, dynamic>? ?? {};
+      final physical = roleReq['physicalAttributes'] as Map<String, dynamic>? ?? {};
+      final brandName = data['brandName'] ?? '';
+
+      return GestureDetector(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => GigFullDetailPage(gigId: item.doc.id, data: data, brandName: brandName)),
+        ),
+        child: _JobCardWrapper(
+          gigId: item.doc.id,
+          modelId: modelId,
+          brandName: brandName,
+          gigData: data,
+          physical: physical,
+        ),
+      );
+    }
+
+    final data = item.data;
+    final applicants = data['applicationsCount'] ?? data['applicantsCount'] ?? 0;
+    final posterName = data['agencyName'] ?? data['agency'] ?? data['posterName'] ?? '';
+
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('castings').doc(item.doc.id).collection('applicants').doc(modelId).get(),
+      builder: (context, appSnap) {
+        final appDoc = appSnap.data;
+        final hasApplied = appDoc?.exists ?? false;
+
+        String appStatus = 'Apply';
+        if (hasApplied) {
+          final appData = appDoc?.data() as Map<String, dynamic>?;
+          appStatus = appData?['status'] ?? 'Applied';
+        }
+
+        return CastingCard(
+          id: item.doc.id,
+          title: data['title'] ?? data['projectTitle'] ?? '',
+          description: data['description'] ?? '',
+          posterName: posterName,
+          location: data['location'] ?? '',
+          timeline: data['timeline'] ?? '',
+          budgetType: data['budgetType'] ?? '',
+          budgetAmount: data['budgetAmount']?.toString() ?? '',
+          media: List<String>.from(data['media'] ?? []),
+          applicants: applicants,
+          status: data['status'] ?? 'open',
+          createdAt: item.createdAt,
+          compensationMin: data['compensationMin']?.toString(),
+          compensationMax: data['compensationMax']?.toString(),
+          shootingStart: (data['shootingStart'] is Timestamp) ? (data['shootingStart'] as Timestamp).toDate() : null,
+          shootingEnd: (data['shootingEnd'] is Timestamp) ? (data['shootingEnd'] as Timestamp).toDate() : null,
+          talentRequirements: (data['talentRequirements'] is Map) ? Map<String, dynamic>.from(data['talentRequirements'] as Map) : null,
+          showApply: !hasApplied,
+          actionWidget: hasApplied ? StatusPill(status: appStatus) : null,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => CastingFullDetailPage(castingId: item.doc.id, data: data, posterName: posterName)),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTile(_FeedItem item, String modelId, int index) {
+    if (item.isGig) {
+      final data = item.data;
+      final brandName = data['brandName'] ?? '';
+      return GestureDetector(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => GigFullDetailPage(gigId: item.doc.id, data: data, brandName: brandName)),
+        ),
+        child: _GigTile(
+          gigId: item.doc.id,
+          modelId: modelId,
+          brandName: brandName,
+          gigData: data,
+          recipe: index,
+        ),
+      );
+    }
+    final data = item.data;
+    final posterName = data['agencyName'] ?? data['agency'] ?? data['posterName'] ?? '';
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => CastingFullDetailPage(castingId: item.doc.id, data: data, posterName: posterName)),
+      ),
+      child: _CastingTile(
+        castingId: item.doc.id,
+        modelId: modelId,
+        posterName: posterName,
+        data: data,
+        recipe: index,
       ),
     );
   }

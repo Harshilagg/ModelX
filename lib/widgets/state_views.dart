@@ -65,7 +65,11 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-/// Consistent centered loading indicator.
+/// A centered spinner — kept for small inline loads (e.g. inside
+/// `AppButton(loading: true)`, a single-row refresh). For a whole
+/// screen or section fetching data, prefer `AppSkeleton` instead —
+/// the spec calls for skeleton loaders, not bare spinners, wherever a
+/// screen's real content shape is already known.
 class LoadingState extends StatelessWidget {
   const LoadingState({super.key});
 

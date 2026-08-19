@@ -11,6 +11,8 @@ import 'brand_manage_gigs_page.dart';
 import '../agency/scouting/scout_page.dart';
 import '../pages/home_page.dart';
 import '../widgets/model_x_copilot.dart';
+import '../ui/app_theme.dart';
+import '../widgets/app_search_bar.dart';
 
 class BrandDashboardPage extends StatefulWidget {
   const BrandDashboardPage({super.key});
@@ -38,7 +40,7 @@ class _BrandDashboardPageState extends State<BrandDashboardPage> {
     final currentUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: AppColors.paper,
       body: Column(
         children: [
           // ================= PREMIUM TOP BAR =================
@@ -49,7 +51,8 @@ class _BrandDashboardPageState extends State<BrandDashboardPage> {
                 children: [
                   // PROFILE
                   IconButton(
-                    icon: Icon(Icons.business_center, color: Theme.of(context).primaryColor),
+                    icon: const Icon(Icons.business_center, color: AppColors.ink),
+                    iconSize: AppIconSize.md,
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -62,35 +65,9 @@ class _BrandDashboardPageState extends State<BrandDashboardPage> {
 
                   // MODERN SEARCH BAR
                   Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.search, color: Colors.grey, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              controller: _searchController,
-                              decoration: const InputDecoration(
-                                hintText: 'Search models, skills...',
-                                border: InputBorder.none,
-                                isDense: true,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: AppSearchBar(
+                      controller: _searchController,
+                      hintText: 'Search models, skills...',
                     ),
                   ),
 
@@ -117,7 +94,8 @@ class _BrandDashboardPageState extends State<BrandDashboardPage> {
                           clipBehavior: Clip.none,
                           children: [
                             IconButton(
-                              icon: Icon(Icons.chat_bubble_outline, color: Theme.of(context).primaryColor),
+                              icon: const Icon(Icons.chat_bubble_outline, color: AppColors.ink),
+                              iconSize: AppIconSize.md,
                               onPressed: () {
                                 Navigator.push(
                                   context,
@@ -131,12 +109,12 @@ class _BrandDashboardPageState extends State<BrandDashboardPage> {
                                 top: 6,
                                 child: Container(
                                   padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                  decoration: const BoxDecoration(color: AppColors.select, shape: BoxShape.circle),
                                   constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                                   child: Center(
                                     child: Text(
                                       unreadTotal > 9 ? '9+' : unreadTotal.toString(),
-                                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                      style: const TextStyle(color: AppColors.paper, fontSize: 10, fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                 ),
@@ -148,11 +126,12 @@ class _BrandDashboardPageState extends State<BrandDashboardPage> {
 
                   // AI SCOUT
                   IconButton(
-                    icon: const Icon(Icons.auto_awesome_outlined, color: Color(0xFF0F172A)),
+                    icon: const Icon(Icons.auto_awesome_outlined, color: AppColors.ink),
+                    iconSize: AppIconSize.md,
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const ScoutPage()),
+                        MaterialPageRoute(builder: (_) => const ScoutPage(role: 'Brand')),
                       );
                     },
                   ),
@@ -168,24 +147,13 @@ class _BrandDashboardPageState extends State<BrandDashboardPage> {
 
       // ================= PREMIUM BOTTOM NAV =================
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
+        decoration: BoxDecoration(color: AppColors.paper, boxShadow: AppShadows.raised),
         child: SafeArea(
           child: BottomNavigationBar(
             currentIndex: _selectedIndex,
             onTap: (i) => setState(() => _selectedIndex = i),
             type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white,
-            selectedItemColor: const Color(0xFF0F172A), // Midnight Navy
-            unselectedItemColor: Colors.grey[400],
+            iconSize: AppIconSize.md,
             selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
             unselectedLabelStyle: const TextStyle(fontSize: 11),
             elevation: 0,

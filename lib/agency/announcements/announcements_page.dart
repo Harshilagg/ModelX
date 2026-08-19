@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../widgets/post_card.dart';
+import '../../ui/app_theme.dart';
+import '../../widgets/post_card.dart';
+import '../../widgets/section_header.dart';
 
 class AnnouncementsPage extends StatelessWidget {
   const AnnouncementsPage({super.key});
@@ -7,14 +9,30 @@ class AnnouncementsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(onPressed: () {}, child: const Icon(Icons.add)),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Announcements', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 12),
-          Expanded(child: ListView.separated(itemCount: 8, separatorBuilder: (_,__) => const SizedBox(height: 12), itemBuilder: (context, index) => const PostCard())),
-        ]),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        backgroundColor: AppColors.ink,
+        foregroundColor: AppColors.paper,
+        child: const Icon(Icons.add),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SectionHeader(title: 'Announcements'),
+              const SizedBox(height: AppSpacing.md),
+              Expanded(
+                child: ListView.separated(
+                  itemCount: 8,
+                  separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+                  itemBuilder: (context, index) => const PostCard(),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

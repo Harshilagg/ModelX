@@ -5,6 +5,7 @@ import '../../pages/chat_page.dart';
 import '../../ui/app_theme.dart';
 import '../../widgets/profile_avatar.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/app_skeleton.dart';
 
 class ConversationListPage extends StatelessWidget {
   const ConversationListPage({super.key});
@@ -31,7 +32,14 @@ class ConversationListPage extends StatelessWidget {
           if (snapshot.hasError) {
             return const ErrorStateView(message: 'Failed to load conversations');
           }
-          if (!snapshot.hasData) return const LoadingState();
+          if (!snapshot.hasData) {
+            return ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm, horizontal: AppSpacing.md),
+              itemCount: 6,
+              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.xs),
+              itemBuilder: (_, __) => AppSkeleton.listTile(),
+            );
+          }
 
           final docs = snapshot.data!.docs;
           if (docs.isEmpty) {
@@ -70,11 +78,7 @@ class ConversationListPage extends StatelessWidget {
                 leading: ProfileAvatar(imageUrl: peerImage, name: peerName, size: 52),
                 title: Text(
                   peerUsername.toString().isNotEmpty ? '@$peerUsername' : peerName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: AppColors.ink,
-                  ),
+                  style: AppTypography.bodyEmphasized.copyWith(fontWeight: FontWeight.w700),
                 ),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 2),
@@ -82,7 +86,7 @@ class ConversationListPage extends StatelessWidget {
                     lastMessage.toString().isNotEmpty ? lastMessage : 'No messages yet',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: AppColors.inkFaint, fontSize: 13.5),
+                    style: AppTypography.caption,
                   ),
                 ),
                 trailing: unreadCount > 0
@@ -96,11 +100,7 @@ class ConversationListPage extends StatelessWidget {
                         child: Text(
                           unreadCount.toString(),
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.paper,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: AppTypography.label.copyWith(color: AppColors.paper),
                         ),
                       )
                     : null,

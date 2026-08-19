@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../pages/login_page.dart';
 import '../ui/app_theme.dart';
 import '../widgets/app_card.dart';
+import '../widgets/app_stat_row.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/section_header.dart';
 import '../widgets/state_views.dart';
@@ -56,38 +57,87 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label copied')));
   }
 
-  Widget _buildCover(BuildContext context) {
+  /// The cover-photo-plus-overlapping-avatar hero, recast onto the dark
+  /// `backstage` surface: a photographic band on top (or a backstage
+  /// placeholder), the logo overlapping the seam, and the agency name in
+  /// `displayAccent` on a continuation of the same dark panel below.
+  Widget _buildHero(String agencyName, String website) {
     final cover = (data['coverImageUrl'] ?? '').toString();
     final logo = (data['logoUrl'] ?? '').toString();
-    final agencyName = (data['agencyName'] ?? '').toString();
 
-    return Stack(
-      alignment: Alignment.center,
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          height: 160,
-          width: double.infinity,
-          color: AppColors.paperRaised,
-          child: cover.isNotEmpty
-              ? Image.network(cover, fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox())
-              : const Center(child: Icon(Icons.photo_library_outlined, size: 44, color: AppColors.inkFaint)),
-        ),
-        Positioned(
-          bottom: -40,
-          child: Container(
-            width: 88,
-            height: 88,
-            padding: const EdgeInsets.all(4),
-            decoration: const BoxDecoration(color: AppColors.paper, shape: BoxShape.circle),
-            child: ProfileAvatar(
-              imageUrl: logo.isNotEmpty ? logo : null,
-              name: agencyName,
-              size: 80,
+    return Container(
+      width: double.infinity,
+      color: AppColors.backstage,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.bottomCenter,
+            children: [
+              Container(
+                height: 150,
+                width: double.infinity,
+                color: AppColors.backstageRaised,
+                child: cover.isNotEmpty
+                    ? Image.network(cover, fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox())
+                    : const Center(child: Icon(Icons.photo_library_outlined, size: 40, color: AppColors.onBackstageSoft)),
+              ),
+              Positioned(
+                bottom: -36,
+                child: Container(
+                  width: 88,
+                  height: 88,
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(color: AppColors.backstage, shape: BoxShape.circle),
+                  child: ProfileAvatar(
+                    imageUrl: logo.isNotEmpty ? logo : null,
+                    name: agencyName,
+                    size: 80,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 46),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 26),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  agencyName.isNotEmpty ? agencyName : 'Unnamed Agency',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.displayAccent(fontSize: 38, color: AppColors.onBackstage),
+                ),
+                if (data['isVerified'] == true) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.backstageRaised,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      border: Border.all(color: AppColors.goldOnBackstage.withValues(alpha: 0.5)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.verified, color: AppColors.goldOnBackstage, size: 15),
+                        SizedBox(width: 5),
+                        Text('Verified', style: TextStyle(color: AppColors.goldOnBackstage, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+                ],
+                if (website.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Text(website, style: const TextStyle(color: AppColors.onBackstageSoft, fontSize: 13.5)),
+                ],
+              ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -119,7 +169,12 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
     final isFreshProfile = agencyName.isEmpty && bio.isEmpty;
 
     return Scaffold(
+      backgroundColor: AppColors.paper,
       appBar: AppBar(
+        backgroundColor: AppColors.backstage,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppColors.onBackstage),
+        titleTextStyle: const TextStyle(color: AppColors.onBackstage, fontWeight: FontWeight.w700, fontSize: 18),
         title: Text(agencyName.isNotEmpty ? agencyName : 'Agency'),
         actions: [
           IconButton(
@@ -145,45 +200,24 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildCover(context),
-            const SizedBox(height: 56),
+            _buildHero(agencyName, website),
+
+            // Glanceable scale-at-a-glance row, built only from real
+            // existing list fields (their counts) — the agency has no
+            // roster-size/years-active fields to show instead.
+            AppStatRow(
+              stats: [
+                AppStat('Specialties', specialties.length.toString()),
+                AppStat('Services', services.length.toString()),
+                AppStat('Portfolio', portfolio.length.toString()),
+              ],
+            ),
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Column(
-                      children: [
-                        Text(
-                          agencyName.isNotEmpty ? agencyName : 'Unnamed Agency',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 8),
-                        if (data['isVerified'] == true)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.goldBg,
-                              borderRadius: BorderRadius.circular(AppRadius.pill),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(Icons.verified, color: AppColors.gold, size: 15),
-                                SizedBox(width: 5),
-                                Text('Verified', style: TextStyle(color: AppColors.gold, fontSize: 12.5, fontWeight: FontWeight.w700)),
-                              ],
-                            ),
-                          ),
-                        if (website.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Text(website, style: const TextStyle(color: AppColors.inkSoft, fontSize: 13.5)),
-                        ]
-                      ],
-                    ),
-                  ),
-
                   if (isFreshProfile) ...[
                     const SizedBox(height: 16),
                     EmptyState(
@@ -195,13 +229,16 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
                     ),
                   ],
 
-                  const SizedBox(height: 12),
-                  if (bio.isNotEmpty)
+                  const SizedBox(height: 24),
+                  if (bio.isNotEmpty) ...[
+                    const SectionHeader(title: 'About'),
+                    const SizedBox(height: 12),
                     AppCard(
                       child: Text(bio, style: const TextStyle(height: 1.6, color: AppColors.ink, fontSize: 14.5)),
                     ),
+                    const SizedBox(height: 20),
+                  ],
 
-                  const SizedBox(height: 20),
                   if (specialties.isNotEmpty) ...[
                     const SectionHeader(title: 'Specialties'),
                     const SizedBox(height: 12),
@@ -235,29 +272,30 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
                   if (portfolio.isNotEmpty) ...[
                     const SectionHeader(title: 'Portfolio'),
                     const SizedBox(height: 12),
-                    SizedBox(
-                      height: 120,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemBuilder: (context, index) {
-                          final item = portfolio[index];
-                          final url = item is String ? item : (item is Map && item['url'] != null ? item['url'].toString() : '');
-                          return ClipRRect(
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                            child: url.isNotEmpty
-                                ? Image.network(
-                                    url,
-                                    width: 160,
-                                    height: 120,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Container(width: 160, height: 120, color: AppColors.paperRaised),
-                                  )
-                                : Container(width: 160, height: 120, color: AppColors.paperRaised),
-                          );
-                        },
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
-                        itemCount: portfolio.length,
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: portfolio.length,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 14,
+                        crossAxisSpacing: 14,
+                        childAspectRatio: 1.1,
                       ),
+                      itemBuilder: (context, index) {
+                        final item = portfolio[index];
+                        final url = item is String ? item : (item is Map && item['url'] != null ? item['url'].toString() : '');
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          child: url.isNotEmpty
+                              ? Image.network(
+                                  url,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(color: AppColors.paperRaised),
+                                )
+                              : Container(color: AppColors.paperRaised),
+                        );
+                      },
                     ),
                     const SizedBox(height: 20),
                   ],

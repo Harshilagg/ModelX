@@ -9,7 +9,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter_application_modelx/services/cloudinary_service.dart';
 import '../agency/scouting/ai_scout_service.dart'; // Import AI Service
 import '../widgets/profile_avatar.dart';
-import '../widgets/profile_stats.dart';
 import 'create_post_page.dart';
 import '../widgets/portfolio_grid.dart';
 import '../widgets/model_x_copilot.dart';
@@ -18,6 +17,9 @@ import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
 import '../widgets/section_header.dart';
 import '../widgets/state_views.dart';
+import '../widgets/app_skeleton.dart';
+import '../widgets/app_stat_row.dart';
+import '../widgets/app_action_bar.dart';
 
 
 class ProfilePage extends StatefulWidget {
@@ -225,7 +227,7 @@ class _ProfilePageState extends State<ProfilePage> {
       };
 
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set(profileData, SetOptions(merge: true));
-      
+
       // AUTO-SYNC: Update AI Vector Index in background
       AiScoutService().indexProfile(user.uid, profileData).catchError((e) {
         debugPrint('AI Sync failed: $e');
@@ -284,19 +286,14 @@ class _ProfilePageState extends State<ProfilePage> {
   );
 }
 
-  Widget _sectionTitle(String title) {
-  return Padding(
-    padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
-    child: Text(
-      title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-        color: AppColors.ink,
-      ),
-    ),
-  );
-}
+  /// Formats a stat value for [AppStatRow]: trims, appends an optional
+  /// unit suffix, and falls back to an em dash when empty — matching
+  /// `_infoCard`'s empty-state convention.
+  String _statValue(String raw, [String suffix = '']) {
+    final value = raw.trim();
+    if (value.isEmpty) return '—';
+    return suffix.isEmpty ? value : '$value $suffix';
+  }
 
 Widget _sectionCard({required Widget child}) {
   return Padding(
@@ -307,10 +304,6 @@ Widget _sectionCard({required Widget child}) {
     ),
   );
 }
-
-// Removed legacy _statItem in favor of `ProfileStats` widget.
-
-// Legacy _chip removed; UI uses Section cards and ProfileStats widget.
 
 Widget _bulletBlock(String title, String value) {
   if (value.trim().isEmpty) return const SizedBox();
@@ -357,6 +350,33 @@ Widget _contactRow(IconData icon, String value) {
     ],
   );
 }
+
+  /// A single hero-band stat (followers/following) — value + label inline,
+  /// styled for the dark `backstage` surface. Distinct from `AppStatRow`,
+  /// which is reserved for the profile's primary physical facts.
+  Widget _heroStat(String value, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+        child: RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: '$value  ',
+                style: const TextStyle(color: AppColors.onBackstage, fontSize: 14, fontWeight: FontWeight.w700),
+              ),
+              TextSpan(
+                text: label,
+                style: const TextStyle(color: AppColors.onBackstageSoft, fontSize: 12.5, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
 
   // -------------------- Edit Profile Modal --------------------
@@ -498,7 +518,7 @@ Widget _contactRow(IconData icon, String value) {
                 const SizedBox(height: 16),
 
                 // Projects & Agencies
-                Align(alignment: Alignment.centerLeft, child: Text('Experience', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.inkSoft))),
+                Align(alignment: Alignment.centerLeft, child: Text('Career History', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.inkSoft))),
                 const SizedBox(height: 8),
                 TextField(controller: projectsController, decoration: const InputDecoration(labelText: 'Projects (one per line)', border: OutlineInputBorder()), maxLines: 3),
                 const SizedBox(height: 12),
@@ -528,6 +548,16 @@ Widget _contactRow(IconData icon, String value) {
                 ),
                 const SizedBox(height: 12),
 
+                TextField(
+                  controller: experienceController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Experience',
+                    hintText: 'Years active, notable experience',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
 
                 TextField(
                   controller: preferredWorkController,
@@ -577,7 +607,7 @@ Widget _contactRow(IconData icon, String value) {
       ),
     );
   }
-  
+
   // -------------------- Portfolio Upload --------------------
   Future<void> _uploadPortfolioMedia() async {
   final picker = ImagePicker();
@@ -601,7 +631,7 @@ Widget _contactRow(IconData icon, String value) {
     'uid': user.uid,
     'mediaUrl': imageUrl,
     'mediaType': 'image',
-    'cloudinaryPublicId': publicId, 
+    'cloudinaryPublicId': publicId,
     'timestamp': FieldValue.serverTimestamp(),
     'isPublic': true,
   });
@@ -692,30 +722,71 @@ Widget _contactRow(IconData icon, String value) {
       ),
     );
   }
-  
+
   // -------------------- Build --------------------
-// -------------------- Build --------------------
 PreferredSizeWidget _buildAppBar() {
   return AppBar(
-    backgroundColor: Colors.transparent,
+    backgroundColor: AppColors.backstage,
     elevation: 0,
     centerTitle: true,
+    iconTheme: const IconThemeData(color: AppColors.onBackstage),
     title: const Text(
       "Profile",
       style: TextStyle(
-        color: AppColors.ink,
+        color: AppColors.onBackstage,
         fontWeight: FontWeight.bold,
         fontSize: 20,
       ),
     ),
     actions: [
       IconButton(
-        icon: const Icon(Icons.logout, color: AppColors.ink),
+        icon: const Icon(Icons.logout, color: AppColors.onBackstage),
         onPressed: logout,
       ),
     ],
   );
 }
+
+  /// Skeleton placeholder shown while `_loadUserData()` is in flight —
+  /// mirrors the real layout's shape (avatar + name + stat row + a couple
+  /// of section cards) instead of popping content in with no indication.
+  Widget _buildLoadingSkeleton() {
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              AppSkeleton.circle(84),
+              const SizedBox(width: 18),
+              Expanded(child: AppSkeleton.text(lines: 2)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const AppSkeleton(width: 220, height: 40),
+          const SizedBox(height: 28),
+          Row(
+            children: List.generate(4, (i) {
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: i == 3 ? 0 : 10),
+                  child: const AppSkeleton(height: 52),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 32),
+          AppSkeleton.card(height: 90),
+          const SizedBox(height: 16),
+          AppSkeleton.card(height: 140),
+          const SizedBox(height: 16),
+          AppSkeleton.card(height: 140),
+        ],
+      ),
+    );
+  }
 
 @override
 Widget build(BuildContext context) {
@@ -723,7 +794,7 @@ Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.paper,
       appBar: _buildAppBar(),
-      body: const LoadingState(),
+      body: _buildLoadingSkeleton(),
     );
   }
 
@@ -742,6 +813,11 @@ Widget build(BuildContext context) {
         }
       },
     ),
+    bottomNavigationBar: AppActionBar(
+      primaryLabel: 'Edit Profile',
+      primaryIcon: Icons.edit_outlined,
+      onPrimary: () => _showEditProfileModal(context),
+    ),
 
     body: SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -749,76 +825,110 @@ Widget build(BuildContext context) {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          // ================= HERO =================
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+          // ================= HERO (backstage) =================
+          Container(
+            width: double.infinity,
+            color: AppColors.backstage,
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Modern card-style hero area
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppColors.paper,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.line),
-                    boxShadow: [BoxShadow(color: AppColors.ink.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0,6))],
-                  ),
-                  child: Column(
-                    children: [
-                      // cover strip
-                      Container(height: 12, decoration: const BoxDecoration(borderRadius: BorderRadius.vertical(top: Radius.circular(16)), color: AppColors.goldBg)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 18).copyWith(top: 0, bottom: 18),
-                        child: Row(
-                          children: [
-                            Stack(
-                              alignment: Alignment.bottomRight,
-                              children: [
-                                ProfileAvatar(
-                                  imageUrl: profileImageUrl.isNotEmpty ? profileImageUrl : null,
-                                  name: fullNameController.text,
-                                  size: 92,
-                                ),
-                                GestureDetector(
-                                  onTap: pickAndUploadImage,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: const BoxDecoration(color: AppColors.ink, shape: BoxShape.circle),
-                                    child: const Icon(Icons.camera_alt, size: 16, color: AppColors.paper),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(fullNameController.text.isEmpty ? 'Your Name' : fullNameController.text, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.ink)),
-                                  if (username.isNotEmpty) Text('@$username', style: const TextStyle(color: AppColors.inkFaint, fontWeight: FontWeight.w500)),
-                                  const SizedBox(height: 12),
-                                  ProfileStats(
-                                    followers: followersCount,
-                                    following: followingCount,
-                                    onFollowers: _showFollowersList,
-                                    onFollowing: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ConnectedUsersPage())),
-                                    onEdit: () => _showEditProfileModal(context),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        ProfileAvatar(
+                          imageUrl: profileImageUrl.isNotEmpty ? profileImageUrl : null,
+                          name: fullNameController.text,
+                          size: 84,
                         ),
+                        Positioned(
+                          bottom: -2,
+                          right: -2,
+                          child: GestureDetector(
+                            onTap: pickAndUploadImage,
+                            child: Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: const BoxDecoration(color: AppColors.goldOnBackstage, shape: BoxShape.circle),
+                              child: const Icon(Icons.camera_alt, size: 14, color: AppColors.backstage),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 18),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (username.isNotEmpty)
+                            Text(
+                              '@$username',
+                              style: const TextStyle(color: AppColors.onBackstageSoft, fontSize: 13, fontWeight: FontWeight.w600),
+                            ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              _heroStat(followersCount.toString(), 'Followers', _showFollowersList),
+                              const SizedBox(width: 22),
+                              _heroStat(
+                                followingCount.toString(),
+                                'Following',
+                                () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ConnectedUsersPage())),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  fullNameController.text.isEmpty ? 'Your Name' : fullNameController.text,
+                  style: AppTypography.displayAccent(fontSize: 44, color: AppColors.onBackstage),
+                ),
+                if (taglineController.text.trim().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    taglineController.text.trim(),
+                    style: const TextStyle(color: AppColors.onBackstageSoft, fontSize: 14.5, height: 1.4),
+                  ),
+                ],
+                if (locationController.text.trim().isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 15, color: AppColors.goldOnBackstage),
+                      const SizedBox(width: 5),
+                      Text(
+                        locationController.text.trim(),
+                        style: const TextStyle(color: AppColors.onBackstageSoft, fontSize: 13, fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
-                ),
+                ],
               ],
             ),
           ),
 
+          // ================= PRIMARY STATS (anchored to hero) =================
+          AppStatRow(
+            stats: [
+              AppStat('Height', _statValue(heightController.text, heightUnit)),
+              AppStat('Measurements', _statValue(measurementsController.text)),
+              AppStat('Shoe Size', _statValue(shoeSizeController.text, shoeSizeUnit)),
+              AppStat('Availability', _statValue(availabilityController.text)),
+            ],
+          ),
+
           // ================= ABOUT =================
-          _sectionTitle("About"),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
+            child: SectionHeader(title: "About"),
+          ),
           _sectionCard(
             child: Text(
               bioController.text.isEmpty
@@ -832,48 +942,29 @@ Widget build(BuildContext context) {
             ),
           ),
 
-          if (taglineController.text.isNotEmpty)
+          if (contactController.text.trim().isNotEmpty || emailController.text.trim().isNotEmpty) ...[
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.goldBg,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  taglineController.text,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.ink,
-                  ),
-                ),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+              child: SectionHeader(title: "Contact"),
+            ),
+            _sectionCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (contactController.text.trim().isNotEmpty)
+                    _contactRow(Icons.call_outlined, contactController.text.trim()),
+                  if (contactController.text.trim().isNotEmpty && emailController.text.trim().isNotEmpty)
+                    const SizedBox(height: 10),
+                  if (emailController.text.trim().isNotEmpty)
+                    _contactRow(Icons.mail_outline, emailController.text.trim()),
+                ],
               ),
             ),
+          ],
 
-          if (contactController.text.trim().isNotEmpty || emailController.text.trim().isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: _sectionCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (contactController.text.trim().isNotEmpty)
-                      _contactRow(Icons.call_outlined, contactController.text.trim()),
-                    if (contactController.text.trim().isNotEmpty && emailController.text.trim().isNotEmpty)
-                      const SizedBox(height: 10),
-                    if (emailController.text.trim().isNotEmpty)
-                      _contactRow(Icons.mail_outline, emailController.text.trim()),
-                  ],
-                ),
-              ),
-            ),
-
-          // ================= PROFILE OVERVIEW =================
-          _sectionTitle("Profile Overview"),
-
+          // ================= BASICS =================
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
             child: SectionHeader(title: "Basics"),
           ),
           _sectionCard(
@@ -881,7 +972,6 @@ Widget build(BuildContext context) {
               spacing: 12,
               runSpacing: 12,
               children: [
-                _infoCard("Location", locationController.text),
                 _infoCard("Age", ageController.text),
                 _infoCard("Gender", genderController.text),
               ],
@@ -889,6 +979,7 @@ Widget build(BuildContext context) {
           ),
           const SizedBox(height: 20),
 
+          // ================= MEASUREMENTS (secondary) =================
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
             child: SectionHeader(title: "Measurements"),
@@ -898,18 +989,16 @@ Widget build(BuildContext context) {
               spacing: 12,
               runSpacing: 12,
               children: [
-                _infoCard("Height", "${heightController.text} $heightUnit"),
                 _infoCard("Weight", weightController.text),
-                _infoCard("Measurements", measurementsController.text),
                 _infoCard("Waist", waistController.text),
                 _infoCard("Hips", hipsController.text),
                 _infoCard("Shoulder", shoulderWidthController.text),
-                _infoCard("Shoe Size", "${shoeSizeController.text} $shoeSizeUnit"),
               ],
             ),
           ),
           const SizedBox(height: 20),
 
+          // ================= APPEARANCE =================
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
             child: SectionHeader(title: "Appearance"),
@@ -929,79 +1018,63 @@ Widget build(BuildContext context) {
           ),
 
           // ================= PROFESSIONAL =================
-          _sectionTitle("Professional"),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
+            child: SectionHeader(title: "Professional"),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               children: [
-                if (skillsController.text.isNotEmpty)
-                  _sectionCard(
-                    child: _bulletBlock(
-                        "Skills", skillsController.text),
-                  ),
+                if (skillsController.text.isNotEmpty) ...[
+                  _sectionCard(child: _bulletBlock("Skills", skillsController.text)),
                   const SizedBox(height: 20),
-                if (preferredWorkController.text.isNotEmpty)
-                  _sectionCard(
-                    child: _bulletBlock(
-                        "Preferred Work",
-                        preferredWorkController.text),
-                  ),
+                ],
+                if (experienceController.text.isNotEmpty) ...[
+                  _sectionCard(child: _bulletBlock("Experience", experienceController.text)),
                   const SizedBox(height: 20),
-                if (availabilityController.text.isNotEmpty)
-                  _sectionCard(
-                    child: _bulletBlock(
-                        "Availability",
-                        availabilityController.text),
-                  ),
+                ],
+                if (preferredWorkController.text.isNotEmpty) ...[
+                  _sectionCard(child: _bulletBlock("Preferred Work", preferredWorkController.text)),
                   const SizedBox(height: 20),
+                ],
+                if (availabilityController.text.isNotEmpty) ...[
+                  _sectionCard(child: _bulletBlock("Availability", availabilityController.text)),
+                  const SizedBox(height: 20),
+                ],
                 if (achievementsController.text.isNotEmpty)
-                  _sectionCard(
-                    child: _bulletBlock(
-                        "Achievements",
-                        achievementsController.text),
-                  ),
+                  _sectionCard(child: _bulletBlock("Achievements", achievementsController.text)),
               ],
             ),
           ),
 
-          // ================= EXPERIENCE =================
-          _sectionTitle("Experience"),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                if (projectsController.text.trim().isNotEmpty)
-                  _sectionCard(
-                    child: _bulletBlock(
-                      "Projects",
-                      projectsController.text,
-                    ),
-                  ),
-                const SizedBox(height: 20),
-                if (agenciesController.text.trim().isNotEmpty)
-                  _sectionCard(
-                    child: _bulletBlock(
-                      "Agency Associations",
-                      agenciesController.text,
-                    ),
-                  ),
-              ],
+          // ================= CAREER HISTORY =================
+          if (projectsController.text.trim().isNotEmpty || agenciesController.text.trim().isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
+              child: SectionHeader(title: "Career History"),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  if (projectsController.text.trim().isNotEmpty) ...[
+                    _sectionCard(child: _bulletBlock("Projects", projectsController.text)),
+                    const SizedBox(height: 20),
+                  ],
+                  if (agenciesController.text.trim().isNotEmpty)
+                    _sectionCard(child: _bulletBlock("Agency Associations", agenciesController.text)),
+                ],
+              ),
+            ),
+          ],
           // ================= POSTS =================
           Padding(
           padding: const EdgeInsets.fromLTRB(20, 32, 20, 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                "Posts",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink,
-                ),
-              ),
+              Text("Posts", style: AppTypography.heading.copyWith(fontSize: 20)),
               IconButton(
                           icon: const Icon(Icons.add_box_outlined),
                           onPressed: () {
@@ -1072,14 +1145,7 @@ Widget build(BuildContext context) {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "Portfolio",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.ink,
-                  ),
-                ),
+                Text("Portfolio", style: AppTypography.heading.copyWith(fontSize: 20)),
                 IconButton(
                   icon: const Icon(Icons.add_circle_outline),
                   onPressed: _uploadPortfolioMedia,
@@ -1097,7 +1163,7 @@ Widget build(BuildContext context) {
             ),
           ),
 
-          const SizedBox(height: 80),
+          const SizedBox(height: 32),
         ],
       ),
     ),

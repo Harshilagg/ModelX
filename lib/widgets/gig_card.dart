@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../ui/app_theme.dart';
 import 'status_pill.dart';
+import 'app_tag.dart';
 
 /// Job card for brand-posted gigs, shown to models in the jobs feed and to
 /// brands in their own gig management screens. Shares its visual language
@@ -55,13 +56,7 @@ class GigCard extends StatelessWidget {
         color: AppColors.paper,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.line),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.ink.withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        boxShadow: AppShadows.card,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,18 +151,9 @@ class GigCard extends StatelessWidget {
   // ================= CHIPS =================
 
   Widget _chip(String text) {
-    return Container(
-      margin: const EdgeInsets.only(right: AppSpacing.sm),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.paperRaised,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.inkSoft),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSpacing.sm),
+      child: AppTag(text),
     );
   }
 

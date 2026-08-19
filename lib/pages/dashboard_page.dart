@@ -12,6 +12,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/model_x_copilot.dart';
+import '../ui/app_theme.dart';
+import '../widgets/app_search_bar.dart';
 
 
 
@@ -151,40 +153,25 @@ class _DashboardPageState extends State<DashboardPage> {
                         });
                         Navigator.push(context, MaterialPageRoute(builder: (_) => ProfilePage()));
                       },
-                      icon: Icon(Icons.person, color: Theme.of(context).primaryColor),
+                      icon: const Icon(Icons.person, color: AppColors.ink),
+                      iconSize: AppIconSize.md,
                     ),
 
                     const SizedBox(width: 12),
 
-                    // Search field with subtle card
+                    // Search field with shared raised chrome
                     Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0,4))],
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.search, color: Colors.grey),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: TextField(
-                                controller: _searchController,
-                                focusNode: _searchFocus,
-                                onChanged: onSearchChanged,
-                                onTap: () {
-                                  if (_searchController.text.trim().isEmpty) {
-                                    _loadRecentSearches();
-                                    setState(() => showRecent = true);
-                                  }
-                                },
-                                decoration: const InputDecoration(border: InputBorder.none, hintText: 'Search users or @username'),
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: AppSearchBar(
+                        controller: _searchController,
+                        focusNode: _searchFocus,
+                        hintText: 'Search users or @username',
+                        onChanged: onSearchChanged,
+                        onTap: () {
+                          if (_searchController.text.trim().isEmpty) {
+                            _loadRecentSearches();
+                            setState(() => showRecent = true);
+                          }
+                        },
                       ),
                     ),
 
@@ -210,7 +197,8 @@ class _DashboardPageState extends State<DashboardPage> {
                           clipBehavior: Clip.none,
                           children: [
                             IconButton(
-                              icon: Icon(Icons.chat_bubble_outline, color: Theme.of(context).primaryColor),
+                              icon: const Icon(Icons.chat_bubble_outline, color: AppColors.ink),
+                              iconSize: AppIconSize.md,
                               onPressed: () {
                                 setState(() {
                                   searchResults = [];
@@ -225,9 +213,9 @@ class _DashboardPageState extends State<DashboardPage> {
                                 top: -4,
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle, boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)]),
+                                  decoration: BoxDecoration(color: AppColors.select, shape: BoxShape.circle, boxShadow: AppShadows.card),
                                   constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-                                  child: Center(child: Text(unreadTotal.toString(), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
+                                  child: Center(child: Text(unreadTotal.toString(), style: const TextStyle(color: AppColors.paper, fontSize: 11, fontWeight: FontWeight.bold))),
                                 ),
                               ),
                           ],
@@ -380,7 +368,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
         // Bottom Navigation Bar (modern)
         bottomNavigationBar: Container(
-          decoration: BoxDecoration(color: Theme.of(context).cardColor, boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 12)]),
+          decoration: BoxDecoration(color: AppColors.paper, boxShadow: AppShadows.raised),
           child: SafeArea(
             child: BottomNavigationBar(
               currentIndex: _selectedIndex,
@@ -391,10 +379,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 showRecent = false;
                 FocusScope.of(context).unfocus();
               }),
-              selectedItemColor: Theme.of(context).primaryColor,
-              unselectedItemColor: Colors.grey[600],
               type: BottomNavigationBarType.fixed,
-              backgroundColor: Theme.of(context).cardColor,
+              iconSize: AppIconSize.md,
               items: const [
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                 BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),

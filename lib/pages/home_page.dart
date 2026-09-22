@@ -1,73 +1,745 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'user_profile_page.dart';
-import '../ui/app_theme.dart';
-import '../widgets/profile_avatar.dart';
+import '../services/board_departures.dart';
+import '../ui/board_theme.dart';
+import '../widgets/board_widgets.dart';
 import '../widgets/state_views.dart';
 import '../widgets/app_skeleton.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+/// Home — the board first, the feed second (style board 5a).
+///
+/// The board answers the only urgent question a working model has on
+/// open: what's next, where, and am I booked. Collapsing it folds it to
+/// the single next call so feed-first people still get their scroll.
+///
+/// Everything on the board is assembled from data the app already
+/// stores: open gigs/castings plus this model's own application document
+/// under each. There is no per-model "bookings" collection, and the
+/// security rules forbid a collection-group query over applications, so
+/// the board reads the same way [JobsPage] does rather than inventing a
+/// new backend shape.
+class HomePage extends StatefulWidget {
+  /// Switches the shell to the Jobs tab. The board's "all departures"
+  /// exit belongs on the Jobs destination, not on a pushed duplicate of
+  /// it, so the shell hands Home a way to move the selection.
+  final VoidCallback? onOpenJobs;
+
+  const HomePage({super.key, this.onOpenJobs});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  bool _boardOpen = true;
+  int _feedFilter = 0; // 0 All · 1 Shots · 2 Notes
+
+  /// Last time this device saw the feed. Stored locally rather than on
+  /// the user document so counting "new" posts costs no schema change.
+  DateTime? _lastSeen;
+
+  /// Held in a field, not rebuilt inline. `.snapshots()` returns a new
+  /// Stream each call and a StreamBuilder resubscribes when its stream
+  /// identity changes, so an inline stream blanks itself on every parent
+  /// rebuild — a tab switch, a filter tap, a setState.
+  late final Stream<QuerySnapshot> _posts = FirebaseFirestore.instance
+      .collection('posts')
+      .orderBy('createdAt', descending: true)
+      .snapshots();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLastSeen();
+  }
+
+  Future<void> _loadLastSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    final millis = prefs.getInt('feed_last_seen');
+    if (!mounted) return;
+    setState(() {
+      _lastSeen = millis == null ? null : DateTime.fromMillisecondsSinceEpoch(millis);
+    });
+    // Mark seen after the current frame so the count the user just saw
+    // doesn't vanish underneath them mid-build.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await prefs.setInt('feed_last_seen', DateTime.now().millisecondsSinceEpoch);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          key: const ValueKey('board'),
+          child: _BoardPanel(
+            open: _boardOpen,
+            onToggle: () => setState(() => _boardOpen = !_boardOpen),
+            onOpenJobs: widget.onOpenJobs,
+          ),
+        ),
+        SliverToBoxAdapter(key: const ValueKey('feed-header'), child: _feedHeader()),
+        _feedBody(),
+      ],
+    );
+  }
+
+  Widget _feedHeader() {
+    const labels = ['All', 'Shots', 'Notes'];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Row(
+              children: List.generate(labels.length, (i) {
+                final active = i == _feedFilter;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() => _feedFilter = i),
+                    child: Container(
+                      padding: const EdgeInsets.only(bottom: 5),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: active ? BoardColors.brass : Colors.transparent,
+                            width: 3,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        labels[i].toUpperCase(),
+                        style: BoardType.title(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1,
+                          color: active ? BoardColors.ink : BoardColors.inkSoft,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+          _NewPostsTile(since: _lastSeen),
+        ],
+      ),
+    );
+  }
+
+  Widget _feedBody() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('posts')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
+      stream: _posts,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return const ErrorStateView(
-            message: 'Could not load the feed. Please try again.',
+          return const SliverFillRemaining(
+            key: ValueKey('feed-error'),
+            hasScrollBody: false,
+            child: ErrorStateView(message: 'Could not load the feed. Please try again.'),
           );
         }
 
         if (!snapshot.hasData) {
-          return ListView.builder(
-            padding: const EdgeInsets.only(top: 8, bottom: 80),
-            itemCount: 3,
-            itemBuilder: (_, __) => AppSkeleton.card(height: 250),
+          return SliverPadding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 110),
+            sliver: SliverList.builder(
+              itemCount: 3,
+              itemBuilder: (_, __) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: AppSkeleton.card(height: 220),
+              ),
+            ),
           );
         }
 
-        final posts = snapshot.data!.docs;
+        final all = snapshot.data!.docs;
+        final posts = all.where((d) {
+          if (_feedFilter == 0) return true;
+          final data = d.data() as Map<String, dynamic>;
+          final hasImage = (data['imageUrl'] ?? '').toString().isNotEmpty;
+          return _feedFilter == 1 ? hasImage : !hasImage;
+        }).toList();
 
         if (posts.isEmpty) {
-          return const EmptyState(
-            icon: Icons.photo_camera_outlined,
-            title: 'No posts yet',
-            message: 'When people you follow share something,\nit will show up here.',
+          return const SliverFillRemaining(
+            key: ValueKey('feed-empty'),
+            hasScrollBody: false,
+            child: EmptyState(
+              icon: Icons.photo_camera_outlined,
+              title: 'Nothing on the wire',
+              message: 'Shots and notes from people you follow show up here.',
+            ),
           );
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.only(top: 8, bottom: 80),
-          itemCount: posts.length,
-          itemBuilder: (context, index) {
-            final post = posts[index];
-            final data = post.data() as Map<String, dynamic>;
+        // Two-column masonry. Posts alternate columns so a tall shot in
+        // one column doesn't push the other column's content down with
+        // it — which is exactly what a uniform GridView would do, and
+        // why text-only notes currently read as broken photo posts.
+        //
+        // This builds every card up front. True masonry can't be lazy
+        // without a custom sliver, and the underlying query is unbounded
+        // anyway, so the fix when the feed grows is to page the query —
+        // see the note on the stream above.
+        final left = <Widget>[];
+        final right = <Widget>[];
+        for (var i = 0; i < posts.length; i++) {
+          final doc = posts[i];
+          final card = Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _FeedCard(
+              postId: doc.id,
+              postData: doc.data() as Map<String, dynamic>,
+              noteRecipe: i,
+            ),
+          );
+          (i.isEven ? left : right).add(card);
+        }
 
-            return _PostCard(
-              postId: post.id,
-              postData: data,
-            );
-          },
+        return SliverPadding(
+          key: const ValueKey('feed'),
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 110),
+          sliver: SliverToBoxAdapter(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: Column(mainAxisSize: MainAxisSize.min, children: left)),
+                const SizedBox(width: 8),
+                Expanded(child: Column(mainAxisSize: MainAxisSize.min, children: right)),
+              ],
+            ),
+          ),
         );
       },
     );
   }
 }
 
-/////////////////////////LIKE////////////////////////////////
+/// ---------------------------------------------------------------------
+/// The board
+/// ---------------------------------------------------------------------
+
+class _BoardPanel extends StatelessWidget {
+  final bool open;
+  final VoidCallback onToggle;
+  final VoidCallback? onOpenJobs;
+
+  const _BoardPanel({required this.open, required this.onToggle, this.onOpenJobs});
+
+  @override
+  Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+      padding: const EdgeInsets.fromLTRB(13, 13, 13, 12),
+      decoration: BoxDecoration(
+        color: BoardColors.ink,
+        borderRadius: BorderRadius.circular(BoardRadius.panel),
+      ),
+      child: uid == null
+          ? _header(context, const [], 'NOT SIGNED IN')
+          : BoardDepartures(
+              uid: uid,
+              builder: (departures, loading) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _header(context, departures, _countdown(departures)),
+                    if (departures.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Text(
+                          'Nothing on your board yet. Applying to a job puts it here.',
+                          style: BoardType.body(fontSize: 12.5, color: BoardColors.onInkSoft),
+                        ),
+                      )
+                    else if (open)
+                      _openBoard(context, departures)
+                    else
+                      _shutBoard(context, departures.first),
+                  ],
+                );
+              },
+            ),
+    );
+  }
+
+  String _countdown(List<Departure> departures) {
+    final next = departures
+        .where((d) => d.start != null && d.start!.isAfter(DateTime.now()))
+        .toList();
+    if (next.isEmpty) return 'NO CALL SCHEDULED';
+    final diff = next.first.start!.difference(DateTime.now());
+    if (diff.inDays > 0) return 'NEXT CALL IN ${diff.inDays}D ${diff.inHours % 24}H';
+    if (diff.inHours > 0) return 'NEXT CALL IN ${diff.inHours}H ${diff.inMinutes % 60}M';
+    return 'NEXT CALL IN ${diff.inMinutes}M';
+  }
+
+  Widget _header(BuildContext context, List<Departure> departures, String eyebrow) {
+    return GestureDetector(
+      onTap: departures.isEmpty ? null : onToggle,
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  eyebrow,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: BoardType.mono(fontSize: 9.5, color: BoardColors.brass, letterSpacing: 1.15),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'YOUR BOARD',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: BoardType.display(fontSize: 25, color: BoardColors.onInk, height: 0.9),
+                ),
+              ],
+            ),
+          ),
+          if (departures.isNotEmpty) ...[
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                '${departures.length} DEPARTURE${departures.length == 1 ? '' : 'S'}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+                style: BoardType.mono(fontSize: 9.5, color: BoardColors.onInkFaint, letterSpacing: 0.95),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 26,
+              height: 26,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: open ? BoardColors.onInkWell : BoardColors.brass,
+              ),
+              child: Icon(
+                open ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                size: 17,
+                color: open ? BoardColors.onInk : BoardColors.ink,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _openBoard(BuildContext context, List<Departure> departures) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 52,
+                child: Text('TIME', style: BoardType.mono(fontSize: 9.5, color: BoardColors.onInkFaint, letterSpacing: 1.15)),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('JOB / BRAND', style: BoardType.mono(fontSize: 9.5, color: BoardColors.onInkFaint, letterSpacing: 1.15)),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 76,
+                child: Text('STATUS', style: BoardType.mono(fontSize: 9.5, color: BoardColors.onInkFaint, letterSpacing: 1.15)),
+              ),
+            ],
+          ),
+        ),
+        Container(height: 1, color: BoardColors.onInkLine),
+        for (final d in departures.take(4)) _row(context, d),
+        const SizedBox(height: 10),
+        Container(height: 1, color: BoardColors.onInkLine),
+        const SizedBox(height: 10),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onOpenJobs,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'ALL DEPARTURES',
+                  style: BoardType.mono(fontSize: 9.5, color: BoardColors.brass, letterSpacing: 0.95),
+                ),
+              ),
+              Container(
+                width: 24,
+                height: 24,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(shape: BoxShape.circle, color: BoardColors.brass),
+                child: const Icon(Icons.arrow_outward_rounded, size: 13, color: BoardColors.ink),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _row(BuildContext context, Departure d) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => d.open(context),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 9),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(width: 52, child: FlapTile(text: d.timeLabel, fontSize: 12)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    d.title.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: BoardType.title(fontSize: 15, color: BoardColors.onInk, letterSpacing: 0.3),
+                  ),
+                  if (d.subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      d.subtitle.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: BoardType.mono(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w400,
+                        color: BoardColors.onInkFaint,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(width: 76, child: FlapTile.status(d.status)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _shutBoard(BuildContext context, Departure d) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 10),
+        Container(height: 1, color: BoardColors.onInkLine),
+        const SizedBox(height: 10),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => d.open(context),
+          child: Row(
+            children: [
+              FlapTile(text: d.timeLabel, fontSize: 12, padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 9)),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  d.title.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: BoardType.title(fontSize: 15, color: BoardColors.onInk, letterSpacing: 0.3),
+                ),
+              ),
+              const SizedBox(width: 9),
+              FlapTile.status(d.status),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// ---------------------------------------------------------------------
+/// The feed
+/// ---------------------------------------------------------------------
+
+/// Counts posts newer than this device's last visit, shown as a flap
+/// tile rather than a banner so the feed never gets pushed down.
+class _NewPostsTile extends StatelessWidget {
+  final DateTime? since;
+  const _NewPostsTile({required this.since});
+
+  @override
+  Widget build(BuildContext context) {
+    if (since == null) return const SizedBox.shrink();
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('posts')
+          .where('createdAt', isGreaterThan: Timestamp.fromDate(since!))
+          .snapshots(),
+      builder: (context, snapshot) {
+        final count = snapshot.data?.docs.length ?? 0;
+        if (count == 0) return const SizedBox.shrink();
+        return FlapTile(
+          text: '$count NEW',
+          background: BoardColors.ink,
+          foreground: BoardColors.brass,
+          fontSize: 9,
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+        );
+      },
+    );
+  }
+}
+
+/// A post in the masonry — a shot (photo) or a note (text only). Notes
+/// get a filled dark block so they stop reading as a photo post that
+/// failed to load.
+class _FeedCard extends StatelessWidget {
+  final String postId;
+  final Map<String, dynamic> postData;
+  final int noteRecipe;
+
+  const _FeedCard({
+    required this.postId,
+    required this.postData,
+    required this.noteRecipe,
+  });
+
+  static String _timeAgo(dynamic createdAt) {
+    if (createdAt is! Timestamp) return '';
+    final diff = DateTime.now().difference(createdAt.toDate());
+    if (diff.inDays > 0) return '${diff.inDays}D';
+    if (diff.inHours > 0) return '${diff.inHours}H';
+    if (diff.inMinutes > 0) return '${diff.inMinutes}M';
+    return 'NOW';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl = (postData['imageUrl'] ?? '').toString();
+    final caption = (postData['caption'] ?? '').toString();
+    final username = (postData['username'] ?? '').toString();
+    final time = _timeAgo(postData['createdAt']);
+    final likes = List<String>.from(postData['likes'] ?? const []);
+
+    if (imageUrl.isEmpty) {
+      return _note(context, caption, username, time, likes);
+    }
+    return _shot(context, imageUrl, caption, username, time, likes);
+  }
+
+  Widget _shot(
+    BuildContext context,
+    String imageUrl,
+    String caption,
+    String username,
+    String time,
+    List<String> likes,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: BoardColors.card,
+        borderRadius: BorderRadius.circular(BoardRadius.card),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _author(context, username, time, dark: false),
+          // A fixed pixel height would crop tall portraits and letterbox
+          // wide ones; a ratio lets the masonry column find its own
+          // height instead.
+          AspectRatio(
+            aspectRatio: 0.82,
+            child: BoardMedia(url: imageUrl),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(9, 8, 9, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _actions(context, likes, onDark: false),
+                if (caption.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    caption,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: BoardType.body(fontSize: 12, height: 1.35),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _note(
+    BuildContext context,
+    String caption,
+    String username,
+    String time,
+    List<String> likes,
+  ) {
+    // Notes alternate between the two dark panels so a run of text posts
+    // doesn't become a wall of one colour. Neither is brass: this palette
+    // spends brass on money and the comp card, and a text post wearing it
+    // would outrank the job cards it scrolls past.
+    final onSlate = noteRecipe.isEven;
+    final bg = onSlate ? BoardColors.slate : BoardColors.ink;
+    const onDark = true;
+
+    return Container(
+      padding: const EdgeInsets.all(11),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(BoardRadius.card),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _author(context, username, time, dark: onDark, flat: true),
+          const SizedBox(height: 8),
+          Text(
+            caption.isEmpty ? '—' : caption,
+            maxLines: 8,
+            overflow: TextOverflow.ellipsis,
+            style: BoardType.body(
+              fontSize: 12.5,
+              height: 1.4,
+              color: BoardColors.onInk.withValues(alpha: 0.9),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // A liked heart is the one coloured mark on a note, so on slate
+          // it takes the brass tint rather than sinking into the panel.
+          _actions(
+            context,
+            likes,
+            onDark: onDark,
+            accent: onSlate ? BoardColors.brassText : BoardColors.brass,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _author(BuildContext context, String username, String time, {required bool dark, bool flat = false}) {
+    final fg = dark ? BoardColors.onInk : BoardColors.ink;
+    final meta = dark ? BoardColors.onInkFaint : BoardColors.inkSoft;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        final uid = postData['uid'];
+        if (uid == null) return;
+        Navigator.push(context, MaterialPageRoute(builder: (_) => UserProfilePage(uid: uid)));
+      },
+      child: Padding(
+        padding: flat ? EdgeInsets.zero : const EdgeInsets.fromLTRB(9, 8, 9, 7),
+        child: Row(
+          children: [
+            SizedBox(
+              width: flat ? 18 : 20,
+              height: flat ? 18 : 20,
+              child: ClipOval(
+                child: BoardMedia(url: (postData['userImage'] ?? '').toString(), dark: dark),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                username.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: BoardType.title(fontSize: flat ? 11.5 : 12, color: fg, letterSpacing: 0.35),
+              ),
+            ),
+            if (time.isNotEmpty) ...[
+              const SizedBox(width: 4),
+              Text(
+                time,
+                style: BoardType.mono(fontSize: 9.5, fontWeight: FontWeight.w400, color: meta),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _actions(
+    BuildContext context,
+    List<String> likes, {
+    required bool onDark,
+    Color accent = BoardColors.brass,
+  }) {
+    final fg = onDark ? BoardColors.onInk : BoardColors.ink;
+    final meta = onDark ? BoardColors.onInkFaint : BoardColors.inkSoft;
+
+    return Row(
+      children: [
+        _LikeButton(postId: postId, likes: likes, foreground: fg, accent: accent),
+        const SizedBox(width: 10),
+        Flexible(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => showCommentsSheet(context, postId),
+            child: Text(
+              'COMMENT',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: BoardType.mono(fontSize: 9.5, color: meta, letterSpacing: 0.6),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// ---------------------------------------------------------------------
+/// Like + comments
+/// ---------------------------------------------------------------------
+
 class _LikeButton extends StatefulWidget {
   final String postId;
   final List<String> likes;
+  final Color foreground;
+  final Color accent;
 
   const _LikeButton({
     required this.postId,
     required this.likes,
+    required this.foreground,
+    required this.accent,
   });
 
   @override
@@ -81,10 +753,7 @@ class _LikeButtonState extends State<_LikeButton> with SingleTickerProviderState
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 220),
-    );
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
     _scale = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween(begin: 1.0, end: 1.35).chain(CurveTween(curve: Curves.easeOut)),
@@ -111,13 +780,11 @@ class _LikeButtonState extends State<_LikeButton> with SingleTickerProviderState
       _controller.forward(from: 0);
     }
 
-    final postRef =
-        FirebaseFirestore.instance.collection('posts').doc(widget.postId);
+    final postRef = FirebaseFirestore.instance.collection('posts').doc(widget.postId);
 
-    // Run as a transaction so rapid double-taps read the latest
-    // server state instead of racing off this widget's (possibly
-    // stale) `likes` prop — avoids the like count drifting out of
-    // sync with the `likes` array.
+    // Run as a transaction so rapid double-taps read the latest server
+    // state instead of racing off this widget's (possibly stale) `likes`
+    // prop — avoids the count drifting out of sync with the array.
     await FirebaseFirestore.instance.runTransaction((tx) async {
       final snap = await tx.get(postRef);
       final data = snap.data() ?? {};
@@ -151,18 +818,14 @@ class _LikeButtonState extends State<_LikeButton> with SingleTickerProviderState
             scale: _scale,
             child: Icon(
               isLiked ? Icons.favorite : Icons.favorite_border,
-              color: isLiked ? AppColors.select : AppColors.inkFaint,
-              size: 24,
+              color: isLiked ? widget.accent : widget.foreground.withValues(alpha: 0.72),
+              size: 14,
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
           Text(
             widget.likes.length.toString(),
-            style: const TextStyle(
-              color: AppColors.inkSoft,
-              fontWeight: FontWeight.w600,
-              fontSize: 13.5,
-            ),
+            style: BoardType.mono(fontSize: 10, color: widget.foreground),
           ),
         ],
       ),
@@ -170,47 +833,20 @@ class _LikeButtonState extends State<_LikeButton> with SingleTickerProviderState
   }
 }
 
-/////////////////////////COMMENT////////////////////////////////
-class _CommentButton extends StatelessWidget {
-  final String postId;
-
-  const _CommentButton({required this.postId});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: AppColors.paper,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
-          ),
-          builder: (_) => _CommentsSheet(postId: postId),
-        );
-      },
-      behavior: HitTestBehavior.opaque,
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.mode_comment_outlined, color: AppColors.inkFaint, size: 22),
-          SizedBox(width: 6),
-          Text(
-            "Comment",
-            style: TextStyle(
-              color: AppColors.inkSoft,
-              fontWeight: FontWeight.w600,
-              fontSize: 13.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+/// Opens the comments for a post. Exposed so the profile's own post list
+/// can lift the same sheet rather than duplicating it.
+void showCommentsSheet(BuildContext context, String postId) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: BoardColors.paper,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(BoardRadius.sheet)),
+    ),
+    builder: (_) => _CommentsSheet(postId: postId),
+  );
 }
 
-/////////////////////////COMMENTS SHEET////////////////////////////////
 class _CommentsSheet extends StatefulWidget {
   final String postId;
   const _CommentsSheet({required this.postId});
@@ -235,11 +871,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     if (text.isEmpty) return;
 
     try {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-
+      final userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
       final userData = userDoc.data() ?? {};
 
       await FirebaseFirestore.instance
@@ -267,31 +900,36 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SafeArea(
         top: false,
         child: SizedBox(
           height: MediaQuery.of(context).size.height * 0.7,
           child: Column(
             children: [
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: 10),
               Container(
-                width: 36,
+                width: 44,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.line,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  color: BoardColors.inkLineStrong,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                "Comments",
-                style: Theme.of(context).textTheme.titleMedium,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'COMMENTS',
+                        style: BoardType.display(fontSize: 24, height: 1),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: AppSpacing.sm),
-              const Divider(height: 1),
+              Container(height: 1, color: BoardColors.inkLine),
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
@@ -302,74 +940,60 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
-                      return const ErrorStateView(
-                        message: 'Could not load comments.',
-                      );
+                      return const ErrorStateView(message: 'Could not load comments.');
                     }
-
-                    if (!snapshot.hasData) {
-                      return const LoadingState();
-                    }
+                    if (!snapshot.hasData) return const LoadingState();
 
                     final comments = snapshot.data!.docs;
-
                     if (comments.isEmpty) {
                       return const EmptyState(
                         icon: Icons.mode_comment_outlined,
-                        title: "No comments yet",
-                        message: "Be the first to share your thoughts.",
+                        title: 'No comments yet',
+                        message: 'Be the first to say something.',
                       );
                     }
 
                     return ListView.builder(
-                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                       itemCount: comments.length,
                       itemBuilder: (context, index) {
-                        final data =
-                            comments[index].data() as Map<String, dynamic>;
+                        final data = comments[index].data() as Map<String, dynamic>;
                         return InkWell(
                           onTap: () {
+                            if (data['uid'] == null) return;
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                builder: (_) => UserProfilePage(uid: data['uid']),
-                              ),
+                              MaterialPageRoute(builder: (_) => UserProfilePage(uid: data['uid'])),
                             );
                           },
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.md,
-                              vertical: AppSpacing.xs,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                ProfileAvatar(
-                                  imageUrl: data['profileImage'],
-                                  name: data['username'],
-                                  size: 32,
+                                SizedBox(
+                                  width: 30,
+                                  height: 34,
+                                  child: BoardMedia(
+                                    url: (data['profileImage'] ?? '').toString(),
+                                    cut: 8,
+                                  ),
                                 ),
-                                const SizedBox(width: AppSpacing.sm),
+                                const SizedBox(width: 10),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        data['username'] ?? '',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 13,
-                                          color: AppColors.ink,
-                                        ),
+                                        (data['username'] ?? '').toString().toUpperCase(),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: BoardType.title(fontSize: 14, letterSpacing: 0.4),
                                       ),
-                                      const SizedBox(height: 2),
+                                      const SizedBox(height: 3),
                                       Text(
-                                        data['text'] ?? '',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          color: AppColors.inkSoft,
-                                          height: 1.3,
-                                        ),
+                                        (data['text'] ?? '').toString(),
+                                        style: BoardType.body(fontSize: 13, color: BoardColors.inkSoft),
                                       ),
                                     ],
                                   ),
@@ -384,33 +1008,47 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
+                padding: const EdgeInsets.all(12),
                 child: Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: _controller,
                         textCapitalization: TextCapitalization.sentences,
+                        style: BoardType.body(fontSize: 13),
                         decoration: InputDecoration(
-                          hintText: "Add a comment...",
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md,
-                            vertical: 12,
-                          ),
+                          hintText: 'Add a comment…',
+                          hintStyle: BoardType.body(fontSize: 13, color: BoardColors.inkSoft),
+                          filled: true,
+                          fillColor: BoardColors.shell,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                            borderRadius: BorderRadius.circular(BoardRadius.pill),
                             borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(BoardRadius.pill),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(BoardRadius.pill),
+                            borderSide: const BorderSide(color: BoardColors.ink, width: 1.4),
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Material(
-                      color: AppColors.ink,
-                      shape: const CircleBorder(),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_upward_rounded, color: AppColors.paper, size: 20),
-                        onPressed: _addComment,
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: _addComment,
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                          color: BoardColors.ink,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.arrow_upward_rounded, color: BoardColors.onInk, size: 19),
                       ),
                     ),
                   ],
@@ -419,164 +1057,6 @@ class _CommentsSheetState extends State<_CommentsSheet> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-//////////////////////////POST CARD STYLE OF POST////////////////////////////////
-class _PostCard extends StatelessWidget {
-  final String postId;
-  final Map<String, dynamic> postData;
-  const _PostCard({
-    required this.postId,
-    required this.postData,
-  });
-
-  String _timeAgo(dynamic createdAt) {
-    if (createdAt is! Timestamp) return '';
-    final diff = DateTime.now().difference(createdAt.toDate());
-    if (diff.inDays > 0) return '${diff.inDays}d';
-    if (diff.inHours > 0) return '${diff.inHours}h';
-    if (diff.inMinutes > 0) return '${diff.inMinutes}m';
-    return 'now';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final hasImage = postData['imageUrl'] != null &&
-        postData['imageUrl'].toString().isNotEmpty;
-    final hasCaption = postData['caption'] != null &&
-        postData['caption'].toString().isNotEmpty;
-    final timeAgo = _timeAgo(postData['createdAt']);
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: AppColors.paper,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.line),
-        boxShadow: AppShadows.card,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ===== POST HEADER =====
-          InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => UserProfilePage(uid: postData['uid']),
-                ),
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm + 2,
-                AppSpacing.md,
-                AppSpacing.sm + 2,
-              ),
-              child: Row(
-                children: [
-                  ProfileAvatar(
-                    imageUrl: postData['userImage'],
-                    name: postData['username'],
-                    size: 42,
-                  ),
-                  const SizedBox(width: AppSpacing.sm + 4),
-                  Expanded(
-                    child: Text(
-                      postData['username'] ?? '',
-                      style: AppTypography.bodyEmphasized.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  if (timeAgo.isNotEmpty)
-                    Text(timeAgo, style: AppTypography.metadata),
-                ],
-              ),
-            ),
-          ),
-
-          // ===== POST IMAGE =====
-          if (hasImage)
-            AspectRatio(
-              aspectRatio: 1,
-              child: Image.network(
-                postData['imageUrl'],
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return Container(
-                    color: AppColors.paperRaised,
-                    alignment: Alignment.center,
-                    child: SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.2,
-                        color: AppColors.inkFaint,
-                        value: progress.expectedTotalBytes != null
-                            ? progress.cumulativeBytesLoaded /
-                                progress.expectedTotalBytes!
-                            : null,
-                      ),
-                    ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: AppColors.paperRaised,
-                    alignment: Alignment.center,
-                    child: const Icon(
-                      Icons.broken_image_outlined,
-                      color: AppColors.inkFaint,
-                      size: 32,
-                    ),
-                  );
-                },
-              ),
-            ),
-
-          // ===== LIKE / COMMENT ROW =====
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.sm + 4,
-              AppSpacing.md,
-              0,
-            ),
-            child: Row(
-              children: [
-                _LikeButton(
-                  postId: postId,
-                  likes: List<String>.from(postData['likes'] ?? []),
-                ),
-                const SizedBox(width: 20),
-                _CommentButton(postId: postId),
-              ],
-            ),
-          ),
-
-          // ===== CAPTION =====
-          if (hasCaption)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm + 2,
-                AppSpacing.md,
-                AppSpacing.sm + 4,
-              ),
-              child: Text(
-                postData['caption'],
-                style: AppTypography.body,
-              ),
-            )
-          else
-            const SizedBox(height: AppSpacing.sm + 4),
-        ],
       ),
     );
   }

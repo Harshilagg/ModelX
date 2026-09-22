@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../ui/app_theme.dart';
-import '../widgets/app_card.dart';
-import '../widgets/app_action_bar.dart';
-import '../widgets/app_tag.dart';
-import '../widgets/status_pill.dart';
+import '../ui/app_theme.dart' show showAppToast;
+import '../widgets/job_detail_view.dart';
 
-/// Full, untruncated detail view of a brand-posted gig for a model deciding
-/// whether to apply — the destination for taps on a gig in [JobsPage]'s
-/// feed, which today only ever shows the compact browsing card (and, for
-/// grid tiles, no detail at all).
+/// Full detail of a brand-posted gig for a model deciding whether to
+/// apply — the destination for a tap on a gig in the Jobs feed.
+///
+/// Rendered through [BoardJobDetail] so it reads identically to a
+/// casting; only the field mapping differs, because the two collections
+/// store their facts under different keys.
 class GigFullDetailPage extends StatefulWidget {
   final String gigId;
   final Map<String, dynamic> data;
@@ -62,149 +61,41 @@ class _GigFullDetailPageState extends State<GigFullDetailPage> {
     if (mounted) setState(() => _applying = false);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final data = widget.data;
-    final modelId = FirebaseAuth.instance.currentUser?.uid;
-    final roleReq = data['roleRequirements'] as Map<String, dynamic>? ?? {};
-    final physical = roleReq['physicalAttributes'] as Map<String, dynamic>? ?? {};
-
-    return Scaffold(
-      backgroundColor: AppColors.paper,
-      appBar: AppBar(title: Text(data['projectTitle'] ?? 'Gig')),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        children: [
-          Row(children: [
-            Expanded(
-              child: Text(
-                data['projectTitle'] ?? '',
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.ink),
-              ),
-            ),
-            StatusPill(status: (data['status'] ?? 'open').toString()),
-          ]),
-          const SizedBox(height: 4),
-          Text(widget.brandName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.inkSoft)),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            data['description'] ?? '',
-            style: const TextStyle(fontSize: 14.5, color: AppColors.inkSoft, height: 1.5),
-          ),
-
-          const SizedBox(height: AppSpacing.lg),
-          const Text('Job details', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.inkFaint, letterSpacing: 0.3)),
-          const SizedBox(height: AppSpacing.sm + 2),
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _metaRow(Icons.schedule_outlined, 'Timeline', _orDash(data['timeline'])),
-                _metaDivider(),
-                _metaRow(Icons.hourglass_bottom_rounded, 'Duration', '${data['durationHours'] ?? '—'} hrs'),
-                _metaDivider(),
-                _metaRow(Icons.payments_outlined, 'Budget', _budget(data)),
-              ],
-            ),
-          ),
-
-          if (physical.isNotEmpty || (data['eyeColor'] != null) || (roleReq['eyeColor'] != null)) ...[
-            const SizedBox(height: AppSpacing.lg),
-            const Text('Talent requirements', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.inkFaint, letterSpacing: 0.3)),
-            const SizedBox(height: AppSpacing.sm + 2),
-            AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _chipSection('Eye color', List<String>.from(physical['eyeColor'] ?? const [])),
-                  _chipSection('Hair color', List<String>.from(physical['hairColor'] ?? const [])),
-                  _chipSection('Skin complexion', List<String>.from(physical['skinComplexion'] ?? const [])),
-                  _measurements(physical),
-                ],
-              ),
-            ),
-          ],
-          const SizedBox(height: AppSpacing.xl),
-        ],
-      ),
-      bottomNavigationBar: modelId == null
-          ? null
-          : StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('gigs')
-                  .doc(widget.gigId)
-                  .collection('applications')
-                  .doc(modelId)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                final hasApplied = snapshot.data?.exists ?? false;
-                return AppActionBar(
-                  primaryLabel: hasApplied ? 'Applied' : 'Apply now',
-                  onPrimary: hasApplied ? null : _apply,
-                  primaryLoading: _applying,
-                );
-              },
-            ),
-    );
-  }
-
   String _orDash(dynamic v) {
     final s = (v ?? '').toString().trim();
     return s.isEmpty ? '—' : s;
   }
 
-  String _budget(Map<String, dynamic> data) {
-    final type = (data['budgetType'] ?? '').toString();
-    final amount = (data['budgetAmount'] ?? '').toString();
+  String _budget() {
+    final type = (widget.data['budgetType'] ?? '').toString();
+    final amount = (widget.data['budgetAmount'] ?? '').toString();
     if (type.isEmpty && amount.isEmpty) return '—';
-    return '$type: ₹$amount';
+    if (amount.isEmpty) return type.toUpperCase();
+    return type.isEmpty ? '₹$amount' : '${type.toUpperCase()} · ₹$amount';
   }
 
-  Widget _metaRow(IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 20, color: AppColors.inkFaint),
-        const SizedBox(width: AppSpacing.sm + 4),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(fontSize: 12, color: AppColors.inkFaint)),
-              const SizedBox(height: 3),
-              Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink)),
-            ],
-          ),
-        ),
-      ],
-    );
+  static String _stamp(dynamic v) {
+    if (v is! Timestamp) return 'NOT SET';
+    final d = v.toDate().toLocal();
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    final hh = d.hour.toString().padLeft(2, '0');
+    final mm = d.minute.toString().padLeft(2, '0');
+    return '${d.day.toString().padLeft(2, '0')} ${months[d.month - 1]} ${d.year} · $hh:$mm';
   }
 
-  Widget _metaDivider() => const Padding(
-        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
-        child: Divider(height: 1),
-      );
-
-  Widget _chipSection(String label, List<String> values) {
-    if (values.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm + 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: AppColors.inkFaint)),
-          const SizedBox(height: 6),
-          Wrap(spacing: 8, runSpacing: 8, children: values.map((v) => AppTag(v)).toList()),
-        ],
-      ),
-    );
+  List<String> _strings(dynamic v) {
+    if (v is List) return v.map((e) => e.toString()).where((s) => s.trim().isNotEmpty).toList();
+    final s = (v ?? '').toString().trim();
+    return s.isEmpty ? const [] : [s];
   }
 
-  Widget _measurements(Map<String, dynamic> physical) {
-    final rows = <Widget>[];
-    void addRange(String label, Map<String, dynamic>? range, String unit) {
-      if (range == null || range['min'] == null || range['max'] == null) return;
-      rows.add(AppTag('$label: ${range['min']}–${range['max']} $unit'));
+  List<String> _measurements(Map<String, dynamic> physical) {
+    final rows = <String>[];
+    void addRange(String label, dynamic range, String unit) {
+      if (range is! Map) return;
+      final min = range['min'], max = range['max'];
+      if (min == null || max == null) return;
+      rows.add('$label $min–$max $unit');
     }
 
     addRange('Height', physical['height'], 'cm');
@@ -213,15 +104,107 @@ class _GigFullDetailPageState extends State<GigFullDetailPage> {
     addRange('Hips', physical['hips'], 'in');
     addRange('Shoulder', physical['shoulderWidth'], 'in');
     addRange('Inseam', physical['inseam'], 'in');
+    return rows;
+  }
 
-    if (rows.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Measurements', style: TextStyle(fontSize: 12, color: AppColors.inkFaint)),
-        const SizedBox(height: 6),
-        Wrap(spacing: 8, runSpacing: 8, children: rows),
-      ],
+  @override
+  Widget build(BuildContext context) {
+    final data = widget.data;
+    final modelId = FirebaseAuth.instance.currentUser?.uid;
+    final roleReq = data['roleRequirements'] as Map<String, dynamic>? ?? {};
+    final physical = roleReq['physicalAttributes'] as Map<String, dynamic>? ?? {};
+
+    // Gigs store `city` and `jobLocations`, not `location` — that key
+    // belongs to castings.
+    final locations = data['jobLocations'];
+    final location = [
+      (data['location'] ?? '').toString().trim(),
+      (data['city'] ?? '').toString().trim(),
+      if (locations is List && locations.isNotEmpty) locations.first.toString().trim(),
+    ].firstWhere((v) => v.isNotEmpty, orElse: () => '');
+    final posterLine = [
+      widget.brandName.trim(),
+      if (location.isNotEmpty) location,
+    ].where((s) => s.isNotEmpty).join(' · ');
+
+    final details = <(String, String)>[
+      if (location.isNotEmpty) ('Location', location.toUpperCase()),
+      ('Budget', _budget()),
+      ('Timeline', _orDash(data['timeline']).toUpperCase()),
+      if ((data['durationHours'] ?? '').toString().isNotEmpty)
+        ('Duration', '${data['durationHours']} HRS'),
+      if (data['shootingStart'] is Timestamp)
+        ('Shooting starts', _stamp(data['shootingStart'])),
+      if (data['shootingEnd'] is Timestamp)
+        ('Shooting ends', _stamp(data['shootingEnd'])),
+      if ((data['outfitRequirements'] ?? '').toString().trim().isNotEmpty)
+        ('Outfit', data['outfitRequirements'].toString().toUpperCase()),
+    ];
+
+    final gender = (roleReq['gender'] ?? data['gender'] ?? '').toString().trim();
+    final minAge = roleReq['minAge'] ?? data['minAge'];
+    final maxAge = roleReq['maxAge'] ?? data['maxAge'];
+    final highlights = <(String, String)>[
+      if (gender.isNotEmpty) ('Gender', gender.toUpperCase()),
+      if (minAge != null || maxAge != null)
+        ('Age range', '${minAge ?? '—'} – ${maxAge ?? '—'}'),
+    ];
+
+    final applications = data['applicationsCount'] ?? 0;
+    final createdAt = data['createdAt'];
+    final ago = createdAt is Timestamp
+        ? '${DateTime.now().difference(createdAt.toDate()).inDays}D AGO'
+        : '';
+
+    BoardJobDetail detail({required bool hasApplied, required String appliedLabel}) {
+      return BoardJobDetail(
+        title: (data['projectTitle'] ?? 'Gig').toString(),
+        posterLine: posterLine,
+        description: (data['description'] ?? '').toString(),
+        status: (data['status'] ?? 'open').toString(),
+        details: details,
+        highlights: highlights,
+        chipGroups: [
+          ('Eye color', _strings(physical['eyeColor'])),
+          ('Hair color', _strings(physical['hairColor'])),
+          ('Skin complexion', _strings(physical['skinComplexion'])),
+          ('Preferred looks', _strings(roleReq['looks'])),
+          ('Required skills', _strings(roleReq['skills'])),
+        ],
+        measurements: _measurements(physical),
+        applicationsLine:
+            '$applications application${applications == 1 ? '' : 's'}${ago.isEmpty ? '' : ' · posted $ago'}',
+        depValue: data['shootingStart'] is Timestamp
+            ? _stamp(data['shootingStart'])
+            : _orDash(data['timeline']),
+        hasApplied: hasApplied,
+        applying: _applying,
+        onApply: modelId == null ? null : _apply,
+        appliedLabel: appliedLabel,
+      );
+    }
+
+    if (modelId == null) {
+      return detail(hasApplied: false, appliedLabel: 'Applied');
+    }
+
+    // The Applied state tracks the application document live, so the bar
+    // flips the moment the write lands rather than on the next rebuild.
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('gigs')
+          .doc(widget.gigId)
+          .collection('applications')
+          .doc(modelId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final hasApplied = snapshot.data?.exists ?? false;
+        final status = hasApplied
+            ? ((snapshot.data!.data() as Map<String, dynamic>?)?['status'] ?? 'applied')
+                .toString()
+            : 'Applied';
+        return detail(hasApplied: hasApplied, appliedLabel: status);
+      },
     );
   }
 }

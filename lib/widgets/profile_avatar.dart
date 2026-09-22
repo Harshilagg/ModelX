@@ -39,6 +39,7 @@ class ProfileAvatar extends StatelessWidget {
           width: size,
           height: size,
           fit: BoxFit.cover,
+          alignment: const Alignment(0, -0.35),
           errorBuilder: (_, __, ___) => _initialsCircle(initial, trimmedName),
         ),
       );

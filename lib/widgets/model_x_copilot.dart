@@ -3,15 +3,23 @@ import 'package:flutter/material.dart';
 import '../services/ai_copilot_service.dart';
 import '../agency/scouting/ai_scout_service.dart';
 import '../agency/scouting/scout_page.dart';
+import '../ui/board_theme.dart';
 
 class ModelXCopilot extends StatefulWidget {
   final Map<String, dynamic> pageContext;
   final Function(List<AiScoutResult>)? onResults;
 
+  /// When set, the launcher is drawn in the board language — an ink
+  /// rounded square with the mark in this screen's accent — instead of
+  /// the default circular FAB. The brand and agency dashboards still run
+  /// on the older theme, so they keep the FAB and are left alone.
+  final Color? accent;
+
   const ModelXCopilot({
     super.key,
     required this.pageContext,
     this.onResults,
+    this.accent,
   });
 
   @override
@@ -65,15 +73,45 @@ class _ModelXCopilotState extends State<ModelXCopilot> with TickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final accent = widget.accent;
+
     return AnimatedBuilder(
       animation: _glowAnimation,
       builder: (context, child) {
+        if (accent != null) {
+          return Semantics(
+            button: true,
+            label: 'ModelX copilot',
+            child: GestureDetector(
+              onTap: _showCopilotSheet,
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                width: 46,
+                height: 46,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: BoardColors.ink,
+                  borderRadius: BorderRadius.circular(13),
+                  boxShadow: [
+                    BoxShadow(
+                      color: BoardColors.ink.withValues(alpha: 0.4),
+                      blurRadius: _glowAnimation.value,
+                      spreadRadius: _glowAnimation.value / 4,
+                    ),
+                  ],
+                ),
+                child: Icon(Icons.auto_awesome, color: accent, size: 20),
+              ),
+            ),
+          );
+        }
+
         return Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF0F172A).withOpacity(0.4),
+                color: const Color(0xFF0F172A).withValues(alpha: 0.4),
                 blurRadius: _glowAnimation.value,
                 spreadRadius: _glowAnimation.value / 4,
               ),

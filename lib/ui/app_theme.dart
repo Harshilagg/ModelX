@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'board_theme.dart';
 
 /// ModelX brand palette — reasoned independently for the app itself
 /// (fashion, casting, portfolios), not copied from the companion
@@ -138,7 +139,7 @@ void showAppToast(BuildContext context, String message, {bool isError = false}) 
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(message),
-      backgroundColor: isError ? AppColors.select : AppColors.ink,
+      backgroundColor: isError ? BoardColors.rejected : BoardColors.ink,
     ),
   );
 }
@@ -158,39 +159,55 @@ class AppTheme {
       labelSmall: AppTypography.label,
     );
 
+    // Frame-level chrome — scaffold grounds, dialogs, snackbars, text
+    // fields, progress — is pulled onto the Slate Nude palette so the
+    // furniture Flutter draws for us matches the screens we draw
+    // ourselves. AppColors itself is left alone: the brand and agency
+    // sides still reference those constants directly, and retuning them
+    // would restyle screens this redesign hasn't covered yet.
     return base.copyWith(
-      scaffoldBackgroundColor: AppColors.paper,
-      primaryColor: AppColors.ink,
-      cardColor: AppColors.paper,
-      dividerColor: AppColors.line,
+      scaffoldBackgroundColor: BoardColors.paper,
+      primaryColor: BoardColors.ink,
+      canvasColor: BoardColors.paper,
+      cardColor: BoardColors.card,
+      dividerColor: BoardColors.inkLine,
       textTheme: textTheme,
       colorScheme: base.colorScheme.copyWith(
-        primary: AppColors.ink,
-        onPrimary: AppColors.paper,
-        secondary: AppColors.gold,
-        onSecondary: AppColors.ink,
-        surface: AppColors.paper,
-        onSurface: AppColors.ink,
-        error: AppColors.select,
+        primary: BoardColors.ink,
+        onPrimary: BoardColors.onInk,
+        secondary: BoardColors.brass,
+        onSecondary: BoardColors.ink,
+        surface: BoardColors.paper,
+        onSurface: BoardColors.ink,
+        error: BoardColors.rejected,
+        onError: BoardColors.onInk,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: BoardColors.paper,
+        surfaceTintColor: Colors.transparent,
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: BoardColors.paper,
+        surfaceTintColor: Colors.transparent,
       ),
       appBarTheme: AppBarTheme(
         elevation: 0,
         scrolledUnderElevation: 0,
-        backgroundColor: AppColors.paper,
+        backgroundColor: BoardColors.paper,
         surfaceTintColor: Colors.transparent,
-        foregroundColor: AppColors.ink,
+        foregroundColor: BoardColors.ink,
         centerTitle: false,
         iconTheme: const IconThemeData(color: AppColors.ink),
         titleTextStyle: GoogleFonts.archivo(
-          color: AppColors.ink,
+          color: BoardColors.ink,
           fontSize: 18,
           fontWeight: FontWeight.w700,
         ),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.paper,
-        selectedItemColor: AppColors.ink,
-        unselectedItemColor: AppColors.inkFaint,
+        backgroundColor: BoardColors.paper,
+        selectedItemColor: BoardColors.ink,
+        unselectedItemColor: BoardColors.mushroom,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
       ),
@@ -205,10 +222,10 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.ink,
-          foregroundColor: AppColors.paper,
-          disabledBackgroundColor: AppColors.lineStrong,
-          disabledForegroundColor: AppColors.paper,
+          backgroundColor: BoardColors.ink,
+          foregroundColor: BoardColors.onInk,
+          disabledBackgroundColor: BoardColors.mushroom,
+          disabledForegroundColor: BoardColors.onInk,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
@@ -236,7 +253,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.paperRaised,
+        fillColor: BoardColors.shell,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -258,11 +275,11 @@ class AppTheme {
         labelStyle: GoogleFonts.archivo(color: AppColors.inkSoft, fontSize: 14),
       ),
       iconTheme: const IconThemeData(color: AppColors.ink),
-      dividerTheme: const DividerThemeData(color: AppColors.line, thickness: 1, space: 1),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(color: AppColors.ink),
+      dividerTheme: DividerThemeData(color: BoardColors.inkLine, thickness: 1, space: 1),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(color: BoardColors.ink),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: AppColors.ink,
-        contentTextStyle: GoogleFonts.archivo(color: AppColors.paper, fontSize: 13.5),
+        backgroundColor: BoardColors.ink,
+        contentTextStyle: GoogleFonts.archivo(color: BoardColors.onInk, fontSize: 13.5),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
       ),

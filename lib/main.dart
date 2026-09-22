@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,6 +19,19 @@ import 'agency/team_access/invite_acceptance_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Flutter prints the full details — the error-causing widget and the
+  // stack — only for the *first* occurrence of an exception, and
+  // abbreviates every repeat to "Another exception was thrown: ...".
+  // In a widget that rebuilds, the useful report scrolls away and only
+  // the useless one-liner keeps appearing. forceReport prints all of it,
+  // every time, in debug builds only.
+  if (kDebugMode) {
+    FlutterError.onError = (details) {
+      FlutterError.dumpErrorToConsole(details, forceReport: true);
+    };
+  }
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );

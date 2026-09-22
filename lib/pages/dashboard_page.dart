@@ -12,11 +12,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/model_x_copilot.dart';
-import '../ui/app_theme.dart';
-import '../widgets/app_search_bar.dart';
+import '../ui/board_theme.dart';
+import '../widgets/board_widgets.dart';
 
-
-
+/// The app shell for the model side.
+///
+/// Five destinations on the floating pill bar — Home, Notifications,
+/// Network, Jobs, Profile. Profile used to be a pushed route reached from
+/// the avatar; the board design gives it a slot on the bar instead, so
+/// "me" is always one tap away rather than buried behind a header icon.
+///
+/// The search field, the unread-message count and the nav bar live here
+/// so the four board screens don't each re-implement them.
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
   @override
@@ -26,22 +33,33 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   int _selectedIndex = 0;
   DateTime? _lastBackPress;
-  final _pages = [
-    const HomePage(),
-    const NotificationsPage(),
-    const NetworkPage(),
-    const JobsPage(),
-  ];
+
   final SearchService _searchService = SearchService();
   List<Map<String, dynamic>> searchResults = [];
   bool searching = false;
   String _userType = 'User';
+  String _avatarUrl = '';
+  String _displayName = '';
 
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
   List<String> recentSearches = [];
   bool showRecent = false;
   static const int _suggestionLimit = 5;
+
+  /// Slate Nude carries a single accent. The old board ran a different
+  /// hue per destination; this palette gives brass to money and the comp
+  /// card, and reserves green/amber/red for status alone — so a screen is
+  /// now told apart by its content, not by being tinted.
+  static const _accent = BoardColors.brass;
+
+  static const _searchHints = [
+    'SEARCH USERS OR @USERNAME',
+    'SEARCH USERS OR @USERNAME',
+    'SEARCH USERS OR @USERNAME',
+    'SEARCH JOBS, BRANDS, CITIES',
+    'SEARCH USERS OR @USERNAME',
+  ];
 
   @override
   void initState() {
@@ -59,12 +77,16 @@ class _DashboardPageState extends State<DashboardPage> {
     if (user != null) {
       final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
       if (mounted && doc.exists) {
-        setState(() => _userType = doc.data()?['userType'] ?? 'User');
+        final data = doc.data() ?? {};
+        setState(() {
+          _userType = data['userType'] ?? 'User';
+          _avatarUrl = (data['profileImage'] ?? '').toString();
+          _displayName = (data['fullName'] ?? data['username'] ?? '').toString();
+        });
       }
     }
   }
 
-  
   void onSearchChanged(String query) async {
     final q = query.trim();
     // Normalize common username input: strip leading '@' so we search stored usernames
@@ -82,7 +104,7 @@ class _DashboardPageState extends State<DashboardPage> {
       showRecent = false;
     });
 
-    final results = await _search_service_search(normalized);
+    final results = await _runSearch(normalized);
     if (!mounted) return;
 
     setState(() {
@@ -92,7 +114,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // wrapper to call search service and handle exceptions
-  Future<List<Map<String, dynamic>>> _search_service_search(String q) async {
+  Future<List<Map<String, dynamic>>> _runSearch(String q) async {
     try {
       return await _searchService.searchUsers(q);
     } catch (e) {
@@ -121,281 +143,279 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() => recentSearches = list);
   }
 
+  void _dismissSearch() {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      searchResults = [];
+      showRecent = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        final now = DateTime.now();
-        if (_lastBackPress == null || now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
-          _lastBackPress = now;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Press back again to exit')),
-          );
-          return false;
+    const accent = _accent;
+    final navBottom = MediaQuery.of(context).padding.bottom + 14;
+    // Profile carries its own ink header (back/title/exit), so the shared
+    // search bar would be a second, competing header on that tab.
+    final showTopBar = _selectedIndex != 4;
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_selectedIndex != 0) {
+          setState(() => _selectedIndex = 0);
+          return;
         }
-        return true; // allow app exit
+        final now = DateTime.now();
+        if (_lastBackPress == null ||
+            now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
+          _lastBackPress = now;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Press back again to exit')));
+          return;
+        }
+        Navigator.of(context).maybePop();
       },
       child: Scaffold(
-        body: Column(
-          
+        backgroundColor: BoardColors.paper,
+        body: Stack(
           children: [
-            // Persistent Top Bar (modern neutral style)
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        setState(() {
-                          searchResults = [];
-                          showRecent = false;
-                        });
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => ProfilePage()));
-                      },
-                      icon: const Icon(Icons.person, color: AppColors.ink),
-                      iconSize: AppIconSize.md,
-                    ),
-
-                    const SizedBox(width: 12),
-
-                    // Search field with shared raised chrome
-                    Expanded(
-                      child: AppSearchBar(
+            Column(
+              children: [
+                if (showTopBar)
+                  SafeArea(
+                    bottom: false,
+                    child: _UnreadCount(
+                      builder: (unread) => BoardTopBar(
+                        avatarUrl: _avatarUrl,
+                        initial: _displayName.isNotEmpty ? _displayName[0] : '?',
+                        hint: _searchHints[_selectedIndex],
+                        unread: unread,
                         controller: _searchController,
                         focusNode: _searchFocus,
-                        hintText: 'Search users or @username',
                         onChanged: onSearchChanged,
-                        onTap: () {
+                        onAvatar: () {
+                          _dismissSearch();
+                          setState(() => _selectedIndex = 4);
+                        },
+                        onSearch: () {
                           if (_searchController.text.trim().isEmpty) {
                             _loadRecentSearches();
                             setState(() => showRecent = true);
                           }
                         },
+                        onMessages: () {
+                          _dismissSearch();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const ChatInboxPage()),
+                          );
+                        },
                       ),
                     ),
-
-                    const SizedBox(width: 12),
-
-                    // Chat button with badge
-                    StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('user_chats')
-                          .doc(FirebaseAuth.instance.currentUser!.uid)
-                          .collection('chats')
-                          .where('unreadCount', isGreaterThan: 0)
-                          .snapshots(),
-                      builder: (context, snapshot) {
-                        int unreadTotal = 0;
-                        if (snapshot.hasData) {
-                          for (var doc in snapshot.data!.docs) {
-                            unreadTotal += (doc['unreadCount'] ?? 0) as int;
-                          }
-                        }
-
-                        return Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.chat_bubble_outline, color: AppColors.ink),
-                              iconSize: AppIconSize.md,
-                              onPressed: () {
-                                setState(() {
-                                  searchResults = [];
-                                  showRecent = false;
-                                });
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => ChatInboxPage()));
-                              },
-                            ),
-                            if (unreadTotal > 0)
-                              Positioned(
-                                right: 2,
-                                top: -4,
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(color: AppColors.select, shape: BoxShape.circle, boxShadow: AppShadows.card),
-                                  constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-                                  child: Center(child: Text(unreadTotal.toString(), style: const TextStyle(color: AppColors.paper, fontSize: 11, fontWeight: FontWeight.bold))),
-                                ),
-                              ),
-                          ],
-                        );
-                      },
+                  ),
+                Expanded(
+                  // Inset the page area by the system's bottom padding so
+                  // each screen's own bottom padding is measured from
+                  // above the home indicator. The floating bar needs
+                  // `inset + 14 + 68` of clearance; the screens pad a flat
+                  // 110, which only covers that once the inset is taken
+                  // out here.
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTap: _dismissSearch,
+                      child: IndexedStack(
+                        index: _selectedIndex,
+                        children: [
+                          HomePage(onOpenJobs: () => setState(() => _selectedIndex = 3)),
+                          const NotificationsPage(),
+                          const NetworkPage(),
+                          const JobsPage(),
+                          const ProfilePage(embedded: true),
+                        ],
+                      ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-
-            // Page content
-            Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: () {
-                  // dismiss keyboard and search results when tapping anywhere
-                  FocusScope.of(context).unfocus();
-                  setState(() {
-                    searchResults.clear();
-                    showRecent = false;
-                  });
-                },
-                child: Stack(
-                  children: [
-                    _pages[_selectedIndex],
-
-                    // Tap-catcher: when overlay is visible, capture taps outside it to dismiss
-                    if (showRecent || searchResults.isNotEmpty)
-                      Positioned.fill(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.translucent,
-                          onTap: () {
-                            FocusScope.of(context).unfocus();
-                            setState(() {
-                              searchResults = [];
-                              showRecent = false;
-                            });
-                          },
-                          child: Container(color: Colors.transparent),
-                        ),
-                      ),
-
-                    // Search / Recent Results Overlay (positioned under top bar)
-                    if (showRecent || searchResults.isNotEmpty)
-                      Positioned(
-                        left: 8,
-                        right: 8,
-                        top: 20,
-                        child: Material(
-                          elevation: 4,
-                          borderRadius: BorderRadius.circular(8),
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxHeight: 380),
-                            child: Container(
-                              color: Colors.white,
-                              child: Builder(builder: (context) {
-                                if (showRecent && _searchController.text.trim().isEmpty) {
-                                  if (recentSearches.isEmpty) {
-                                    return const Padding(
-                                      padding: EdgeInsets.all(12.0),
-                                      child: Text('No recent searches'),
-                                    );
-                                  }
-                                  return ListView.builder(
-                                    shrinkWrap: true,
-                                    itemCount: recentSearches.length,
-                                    itemBuilder: (_, i) {
-                                      final q = recentSearches[i];
-                                      return ListTile(
-                                        leading: const Icon(Icons.history),
-                                        title: Text(q),
-                                        onTap: () {
-                                          _searchController.text = q;
-                                          onSearchChanged(q);
-                                          _addRecentSearch(q);
-                                        },
-                                      );
-                                    },
-                                  );
-                                }
-
-                                return ListView.builder(
-                                  shrinkWrap: true,
-                                  itemCount: searchResults.length + 1,
-                                  itemBuilder: (_, index) {
-                                    if (index < searchResults.length) {
-                                      final user = searchResults[index];
-                                      return ListTile(
-                                        leading: CircleAvatar(
-                                          backgroundImage: user['profileImage'] != null
-                                              ? NetworkImage(user['profileImage'])
-                                              : null,
-                                        ),
-                                        title: Text(user['fullName'] ?? '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'),
-                                        subtitle: Text(user['username'] != null && user['username'].toString().isNotEmpty ? '@${user['username']}' : (user['bio'] ?? '')),
-                                        onTap: () async {
-                                        final uid = user['uid'];
-
-                                          FocusScope.of(context).unfocus();
-
-                                          await Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => UserProfilePage(uid: uid),
-                                            ),
-                                          );
-
-                                          if (!mounted) return;
-                                          _addRecentSearch(_searchController.text.trim());
-                                          setState(() {
-                                            searchResults.clear();
-                                            showRecent = false;
-                                          });
-                                        }
-                                      );
-                                    }
-
-                                    return ListTile(
-                                      leading: const Icon(Icons.search),
-                                      title: const Text('See all results'),
-                                      onTap: () {
-                                        final q = _searchController.text.trim();
-                                        if (q.isEmpty) return;
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(builder: (_) => SearchResultsPage(query: q)),
-                                        );
-                                        _addRecentSearch(q);
-                                        setState(() {
-                                          searchResults = [];
-                                          showRecent = false;
-                                        });
-                                      },
-                                    );
-                                  },
-                                );
-                              }),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-
-          ],
-        ),
-
-        // Bottom Navigation Bar (modern)
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(color: AppColors.paper, boxShadow: AppShadows.raised),
-          child: SafeArea(
-            child: BottomNavigationBar(
-              currentIndex: _selectedIndex,
-              onTap: (i) => setState(() {
-                _selectedIndex = i;
-                // hide search overlay when switching tabs
-                searchResults = [];
-                showRecent = false;
-                FocusScope.of(context).unfocus();
-              }),
-              type: BottomNavigationBarType.fixed,
-              iconSize: AppIconSize.md,
-              items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
-                BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Network'),
-                BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
               ],
             ),
-          ),
+
+            // Tap-catcher behind the suggestion overlay.
+            if (showRecent || searchResults.isNotEmpty)
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: _dismissSearch,
+                  child: const SizedBox.expand(),
+                ),
+              ),
+
+            if (showTopBar && (showRecent || searchResults.isNotEmpty)) _searchOverlay(),
+
+            // The copilot sits in the Stack rather than in the Scaffold's
+            // floatingActionButton slot: the nav bar below is a Positioned
+            // child, not a bottomNavigationBar, so the Scaffold has no way
+            // to know it's there and would drop the FAB straight on top of
+            // it. Anchoring both to the same bottom inset keeps them
+            // stacked no matter the device's safe area.
+            Positioned(
+              right: 16,
+              bottom: navBottom + BoardNavBar.height + 12,
+              child: ModelXCopilot(
+                accent: accent,
+                pageContext: {
+                  'page': 'home',
+                  'role': _userType,
+                  'tab': const [
+                    'Home',
+                    'Notifications',
+                    'Network',
+                    'Jobs',
+                    'Profile',
+                  ][_selectedIndex],
+                },
+              ),
+            ),
+
+            // The floating pill bar rides above the content rather than
+            // taking a row of its own, which is why every board screen
+            // pads its scroll view clear of it at the bottom.
+            Positioned(
+              left: 14,
+              right: 14,
+              bottom: navBottom,
+              child: BoardNavBar(
+                currentIndex: _selectedIndex,
+                accent: accent,
+                onTap: (i) {
+                  _dismissSearch();
+                  setState(() => _selectedIndex = i);
+                },
+              ),
+            ),
+          ],
         ),
-        floatingActionButton: ModelXCopilot(
-          pageContext: {
-            'page': 'home',
-            'role': _userType,
-            'tab': ['Home', 'Notifications', 'Network', 'Jobs'][_selectedIndex],
-          },
+      ),
+    );
+  }
+
+  Widget _searchOverlay() {
+    return Positioned(
+      left: 16,
+      right: 16,
+      top: MediaQuery.of(context).padding.top + 52,
+      child: Material(
+        color: BoardColors.card,
+        borderRadius: BorderRadius.circular(BoardRadius.card),
+        elevation: 6,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 380),
+          child: Builder(
+            builder: (context) {
+              if (showRecent && _searchController.text.trim().isEmpty) {
+                if (recentSearches.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Text(
+                      'NO RECENT SEARCHES',
+                      style: BoardType.mono(color: BoardColors.inkSoft),
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: recentSearches.length,
+                  itemBuilder: (_, i) {
+                    final q = recentSearches[i];
+                    return ListTile(
+                      dense: true,
+                      title: Text(q, style: BoardType.body(fontSize: 13)),
+                      onTap: () {
+                        _searchController.text = q;
+                        onSearchChanged(q);
+                        _addRecentSearch(q);
+                      },
+                    );
+                  },
+                );
+              }
+
+              return ListView.builder(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                itemCount: searchResults.length + 1,
+                itemBuilder: (_, index) {
+                  if (index < searchResults.length) {
+                    final user = searchResults[index];
+                    final name =
+                        (user['fullName'] ?? '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}')
+                            .toString()
+                            .trim();
+                    final sub = (user['username'] != null && user['username'].toString().isNotEmpty)
+                        ? '@${user['username']}'
+                        : (user['bio'] ?? '').toString();
+                    return ListTile(
+                      dense: true,
+                      leading: SizedBox(
+                        width: 34,
+                        height: 40,
+                        child: BoardMedia(url: user['profileImage']?.toString(), cut: 9),
+                      ),
+                      title: Text(
+                        name.isEmpty ? 'User' : name.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: BoardType.title(fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+                      subtitle: Text(
+                        sub,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: BoardType.mono(fontSize: 10, color: BoardColors.inkSoft),
+                      ),
+                      onTap: () async {
+                        final uid = user['uid'];
+                        FocusScope.of(context).unfocus();
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => UserProfilePage(uid: uid)),
+                        );
+                        if (!mounted) return;
+                        _addRecentSearch(_searchController.text.trim());
+                        setState(() {
+                          searchResults.clear();
+                          showRecent = false;
+                        });
+                      },
+                    );
+                  }
+
+                  return ListTile(
+                    dense: true,
+                    title: Text('SEE ALL RESULTS', style: BoardType.mono(fontSize: 10.5)),
+                    onTap: () {
+                      final q = _searchController.text.trim();
+                      if (q.isEmpty) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => SearchResultsPage(query: q)),
+                      );
+                      _addRecentSearch(q);
+                      setState(() {
+                        searchResults = [];
+                        showRecent = false;
+                      });
+                    },
+                  );
+                },
+              );
+            },
+          ),
         ),
       ),
     );
@@ -406,5 +426,58 @@ class _DashboardPageState extends State<DashboardPage> {
     _searchController.dispose();
     _searchFocus.dispose();
     super.dispose();
+  }
+}
+
+/// Totals unread messages across every chat and hands the count to the
+/// top bar. Kept as its own widget so a snapshot only rebuilds the bar,
+/// not the whole shell (and therefore not the visible page).
+class _UnreadCount extends StatefulWidget {
+  final Widget Function(int unread) builder;
+  const _UnreadCount({required this.builder});
+
+  @override
+  State<_UnreadCount> createState() => _UnreadCountState();
+}
+
+class _UnreadCountState extends State<_UnreadCount> {
+  /// Held in a field, not rebuilt inline. `.snapshots()` returns a new
+  /// Stream each call and a StreamBuilder resubscribes when its stream
+  /// identity changes, so an inline stream blanks itself on every parent
+  /// rebuild — a tab switch, a filter tap, a setState.
+  Stream<QuerySnapshot>? _chats;
+
+  @override
+  void initState() {
+    super.initState();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      _chats = FirebaseFirestore.instance
+          .collection('user_chats')
+          .doc(uid)
+          .collection('chats')
+          .where('unreadCount', isGreaterThan: 0)
+          .snapshots();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_chats == null) return widget.builder(0);
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: _chats,
+      builder: (context, snapshot) {
+        var total = 0;
+        if (snapshot.hasData) {
+          for (final doc in snapshot.data!.docs) {
+            final data = doc.data() as Map<String, dynamic>?;
+            final raw = data?['unreadCount'];
+            if (raw is int) total += raw;
+          }
+        }
+        return widget.builder(total);
+      },
+    );
   }
 }

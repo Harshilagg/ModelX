@@ -81,6 +81,19 @@ flutter:
   uses-material-design: true
   assets:
     - assets/avatar.jpg
+    - assets/onboarding/roles/
+    - assets/onboarding/masonry/
+
+  # Albert Sans is bundled rather than fetched by google_fonts at runtime.
+  # The splash is dark and text-first, so a runtime fetch shows a frame of
+  # fallback type on first launch and never resolves at all on a cold
+  # offline start. This is the variable font -- Google publishes no static
+  # instances -- so weights are driven with FontVariation in AppType
+  # alongside fontWeight, not by declaring the file once per weight.
+  fonts:
+    - family: Albert Sans
+      fonts:
+        - asset: assets/fonts/AlbertSans-Variable.ttf
 
 
   # To add assets to your application, add an assets section, like this:

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'app_type.dart';
+import 'board_palette.dart';
 import 'board_theme.dart';
 
 /// ModelX brand palette — reasoned independently for the app itself
@@ -146,18 +148,19 @@ void showAppToast(BuildContext context, String message, {bool isError = false}) 
 
 class AppTheme {
   static ThemeData light() {
+    final palette = BoardPalette.day();
     final base = ThemeData(useMaterial3: true, brightness: Brightness.light);
-    final textTheme = GoogleFonts.archivoTextTheme(base.textTheme).copyWith(
-      displaySmall: AppTypography.display,
-      headlineSmall: AppTypography.heading,
-      titleLarge: AppTypography.subheading,
-      titleMedium: GoogleFonts.archivo(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
-      bodyLarge: AppTypography.bodyEmphasized,
-      bodyMedium: AppTypography.body,
-      bodySmall: AppTypography.caption,
-      labelLarge: GoogleFonts.archivo(fontSize: 13, fontWeight: FontWeight.w600),
-      labelSmall: AppTypography.label,
-    );
+
+    // Only the *type* moves here; every colour below is untouched.
+    //
+    // This is the furniture Flutter draws for us -- dialogs, snackbars,
+    // pickers, the text inside Material buttons -- not the screens,
+    // which still ask BoardType for their styles until they are
+    // retyped. Pulling it off google_fonts now is worth doing early:
+    // that package resolves Archivo over the network on first run, so
+    // it sat on the startup path and made this theme impossible to
+    // build offline or in a test at all.
+    final textTheme = AppType.textTheme(palette);
 
     // Frame-level chrome — scaffold grounds, dialogs, snackbars, text
     // fields, progress — is pulled onto the Slate Nude palette so the
@@ -198,11 +201,7 @@ class AppTheme {
         foregroundColor: BoardColors.ink,
         centerTitle: false,
         iconTheme: const IconThemeData(color: AppColors.ink),
-        titleTextStyle: GoogleFonts.archivo(
-          color: BoardColors.ink,
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-        ),
+        titleTextStyle: AppType.heading(fontSize: 18, color: BoardColors.ink),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: BoardColors.paper,
@@ -216,8 +215,8 @@ class AppTheme {
         indicatorSize: TabBarIndicatorSize.label,
         labelColor: AppColors.ink,
         unselectedLabelColor: AppColors.inkFaint,
-        labelStyle: AppTypography.label.copyWith(letterSpacing: 0.2),
-        unselectedLabelStyle: AppTypography.label.copyWith(letterSpacing: 0.2, fontWeight: FontWeight.w600),
+        labelStyle: AppType.label(color: AppColors.ink),
+        unselectedLabelStyle: AppType.label(color: AppColors.inkFaint),
         dividerColor: AppColors.line,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -231,7 +230,7 @@ class AppTheme {
           ),
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
           elevation: 0,
-          textStyle: GoogleFonts.archivo(fontWeight: FontWeight.w600, fontSize: 14.5),
+          textStyle: AppType.label(fontSize: 14.5, fontWeight: FontWeight.w600),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -242,13 +241,13 @@ class AppTheme {
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-          textStyle: GoogleFonts.archivo(fontWeight: FontWeight.w600, fontSize: 14.5),
+          textStyle: AppType.label(fontSize: 14.5, fontWeight: FontWeight.w600),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.ink,
-          textStyle: GoogleFonts.archivo(fontWeight: FontWeight.w600, fontSize: 14),
+          textStyle: AppType.label(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -271,18 +270,153 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: const BorderSide(color: AppColors.select),
         ),
-        hintStyle: GoogleFonts.archivo(color: AppColors.inkFaint, fontSize: 14.5),
-        labelStyle: GoogleFonts.archivo(color: AppColors.inkSoft, fontSize: 14),
+        hintStyle: AppType.body(fontSize: 14.5, color: AppColors.inkFaint),
+        labelStyle: AppType.label(fontSize: 14, color: AppColors.inkSoft),
       ),
       iconTheme: const IconThemeData(color: AppColors.ink),
       dividerTheme: DividerThemeData(color: BoardColors.inkLine, thickness: 1, space: 1),
       progressIndicatorTheme: const ProgressIndicatorThemeData(color: BoardColors.ink),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: BoardColors.ink,
-        contentTextStyle: GoogleFonts.archivo(color: BoardColors.onInk, fontSize: 13.5),
+        contentTextStyle: AppType.body(fontSize: 13.5, color: BoardColors.onInk),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
       ),
+      extensions: <ThemeExtension<dynamic>>[palette],
     );
   }
+
+  /// Night.
+  ///
+  /// Built from [BoardPalette.night] and [AppType] rather than from the
+  /// constants above, because [AppColors] has no dark half -- its `ink`
+  /// and `line` are light-mode values and would read as mud on ink.
+  ///
+  /// This is deliberately not a shared builder with [light]. That one is
+  /// still a hybrid: its furniture sits on the Slate Nude palette but its
+  /// type and several of its component themes still reach into
+  /// [AppColors], and unpicking that is what retyping the screens does.
+  /// Folding the two together now would mean changing light on the way
+  /// past, which is exactly the visible regression this step must not
+  /// have. They converge once the screens are migrated.
+  ///
+  /// Not reachable while `kThemeSwitchingEnabled` is false. Onboarding
+  /// uses it directly all the same, through a local [Theme] override, so
+  /// it is exercised from the day it lands rather than sitting unproven
+  /// until the flag flips.
+  static ThemeData night() {
+    final palette = BoardPalette.night();
+    final base = ThemeData(useMaterial3: true, brightness: Brightness.dark);
+    final textTheme = AppType.textTheme(palette);
+
+    return base.copyWith(
+      scaffoldBackgroundColor: palette.surface,
+      primaryColor: palette.onSurface,
+      canvasColor: palette.surface,
+      cardColor: palette.surfaceRaised,
+      dividerColor: palette.line,
+      textTheme: textTheme,
+      colorScheme: base.colorScheme.copyWith(
+        primary: palette.onSurface,
+        onPrimary: palette.surface,
+        secondary: palette.brass,
+        onSecondary: palette.ink,
+        surface: palette.surface,
+        onSurface: palette.onSurface,
+        // The tint, not the fill: full-strength rejected is a block
+        // colour and goes muddy as a word on ink.
+        error: palette.rejectedText,
+        onError: palette.ink,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: palette.surfaceRaised,
+        surfaceTintColor: Colors.transparent,
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: palette.surfaceRaised,
+        surfaceTintColor: Colors.transparent,
+      ),
+      appBarTheme: AppBarTheme(
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: palette.surface,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: palette.onSurface,
+        centerTitle: false,
+        iconTheme: IconThemeData(color: palette.onSurface),
+        titleTextStyle: AppType.heading(fontSize: 18, color: palette.onSurface),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: palette.surface,
+        selectedItemColor: palette.onSurface,
+        unselectedItemColor: palette.onSurfaceFaint,
+        type: BottomNavigationBarType.fixed,
+        elevation: 0,
+      ),
+      tabBarTheme: TabBarThemeData(
+        indicatorColor: palette.onSurface,
+        indicatorSize: TabBarIndicatorSize.label,
+        labelColor: palette.onSurface,
+        unselectedLabelColor: palette.onSurfaceFaint,
+        labelStyle: AppType.label(color: palette.onSurface),
+        unselectedLabelStyle: AppType.label(color: palette.onSurfaceFaint),
+        dividerColor: palette.line,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: palette.onSurface,
+          foregroundColor: palette.surface,
+          disabledBackgroundColor: palette.well,
+          disabledForegroundColor: palette.onSurfaceFaint,
+          shape: const StadiumBorder(),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          elevation: 0,
+          textStyle: AppType.label(fontSize: 15),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: palette.onSurface,
+          side: BorderSide(color: palette.lineStrong),
+          shape: const StadiumBorder(),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          textStyle: AppType.label(fontSize: 15),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: palette.onSurface,
+          textStyle: AppType.label(fontSize: 14),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: palette.surfaceField,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: _nightBorder(palette.line),
+        enabledBorder: _nightBorder(palette.line),
+        focusedBorder: _nightBorder(palette.onSurfaceSoft, width: 1.4),
+        errorBorder: _nightBorder(palette.rejectedText),
+        focusedErrorBorder: _nightBorder(palette.rejectedText, width: 1.4),
+        hintStyle: AppType.body(fontSize: 16, color: palette.onSurfaceFaint),
+        labelStyle: AppType.label(color: palette.onSurfaceSoft),
+      ),
+      iconTheme: IconThemeData(color: palette.onSurface),
+      dividerTheme: DividerThemeData(color: palette.line, thickness: 1, space: 1),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: palette.onSurface),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: palette.surfaceRaised,
+        contentTextStyle: AppType.body(color: palette.onSurface),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(BoardRadius.panel)),
+      ),
+      extensions: <ThemeExtension<dynamic>>[palette],
+    );
+  }
+
+  static OutlineInputBorder _nightBorder(Color color, {double width = 1}) =>
+      OutlineInputBorder(
+        borderRadius: BorderRadius.circular(BoardRadius.panel),
+        borderSide: BorderSide(color: color, width: width),
+      );
 }

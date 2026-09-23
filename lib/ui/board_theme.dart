@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'board_palette.dart';
+
 /// "The Board" — the departures-board design language from the style
 /// board (option 1a, "quiet colour").
 ///
@@ -95,6 +97,21 @@ class BoardColors {
 
   /// Scrim behind a spec sheet.
   static final Color scrim = const Color(0xFF141513).withValues(alpha: 0.55);
+
+  // ---- Brightness-aware access ---------------------------------------
+
+  /// The palette for the ambient theme.
+  ///
+  /// The constants above cannot answer to a brightness -- they bind once
+  /// at class-load -- so anything that has to work in both themes reads
+  /// through here instead: `BoardColors.ink` becomes
+  /// `BoardColors.of(context).onSurface`.
+  ///
+  /// Falls back to the day palette rather than throwing if the extension
+  /// is missing, so a widget pumped in a bare [MaterialApp] -- which is
+  /// most of the widget tests -- still renders what it renders today.
+  static BoardPalette of(BuildContext context) =>
+      Theme.of(context).extension<BoardPalette>() ?? BoardPalette.day();
 }
 
 /// The three type roles. Nothing in this design system uses a font

@@ -102,8 +102,7 @@ class AuthRouter {
         "That email and password don't match. Try again or reset your password.",
       'invalid-email' => 'That email address does not look right.',
       'user-disabled' => 'That account has been disabled.',
-      'too-many-requests' =>
-        'Too many attempts. Wait a moment and try again.',
+      'too-many-requests' => 'Too many attempts. Wait a moment and try again.',
       'network-request-failed' =>
         'No connection. Check your network and try again.',
       _ => error.message ?? 'Something went wrong. Please try again.',

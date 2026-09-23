@@ -14,6 +14,7 @@ class AppColors {
   static const Color paperRaised = Color(0xFFFAFAF8);
   static const Color ink = Color(0xFF0A0A0A);
   static const Color inkSoft = Color(0xFF5C5C55);
+
   /// Secondary text.
   ///
   /// Darkened from #8C8C83, which measured 3.03:1 on paper -- readable

@@ -14,7 +14,13 @@ class AppColors {
   static const Color paperRaised = Color(0xFFFAFAF8);
   static const Color ink = Color(0xFF0A0A0A);
   static const Color inkSoft = Color(0xFF5C5C55);
-  static const Color inkFaint = Color(0xFF8C8C83);
+  /// Secondary text.
+  ///
+  /// Darkened from #8C8C83, which measured 3.03:1 on paper -- readable
+  /// as an icon, but below the 4.5:1 that small text needs, and this is
+  /// used as a text colour in about thirty places. This measures 5.23:1
+  /// on paper and 4.44:1 on shell, the tightest surface it lands on.
+  static const Color inkFaint = Color(0xFF656561);
   static const Color line = Color(0xFFE3E3DC);
   static const Color lineStrong = Color(0xFFC7C7BC);
 
@@ -219,7 +225,11 @@ class AppTheme {
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: BoardColors.paper,
         selectedItemColor: BoardColors.ink,
-        unselectedItemColor: BoardColors.mushroom,
+        // Mushroom measured 1.97:1 against shell and 2.33:1 against
+        // paper -- below even the 3:1 a non-text glyph needs. It is a
+        // fill colour, which is what the palette says it is, and never
+        // a legible foreground.
+        unselectedItemColor: AppColors.inkFaint,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
       ),

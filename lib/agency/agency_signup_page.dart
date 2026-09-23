@@ -5,12 +5,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_application_modelx/services/cloudinary_service.dart';
 import 'agency_dashboard_page.dart';
+import 'team_access/invite_acceptance_page.dart';
 import '../ui/app_theme.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_text_field.dart';
 
 class AgencySignupPage extends StatefulWidget {
-  const AgencySignupPage({super.key});
+  /// Carried through from an invite deep link. The role picker used to
+  /// pass this to model signup only, so an invited agency arrived as an
+  /// ordinary signup with the invitation lost.
+  final String? inviteToken;
+
+  const AgencySignupPage({super.key, this.inviteToken});
 
   @override
   State<AgencySignupPage> createState() => _AgencySignupPageState();
@@ -99,7 +105,14 @@ class _AgencySignupPageState extends State<AgencySignupPage> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Agency account created')));
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const AgencyDashboardPage()),
+          MaterialPageRoute(
+            builder: (_) => widget.inviteToken != null
+                ? InviteAcceptancePage(
+                    token: widget.inviteToken!,
+                    autoAcceptOnLoad: true,
+                  )
+                : const AgencyDashboardPage(),
+          ),
           (_) => false,
         );
       } catch (fireErr) {

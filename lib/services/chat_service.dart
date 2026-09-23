@@ -13,7 +13,11 @@ class ChatService {
     return list.join('--');
   }
 
-  Future<String> createChat(String castingId, String modelId, String agencyId) async {
+  Future<String> createChat(
+    String castingId,
+    String modelId,
+    String agencyId,
+  ) async {
     final chatId = _chatIdFor(modelId, agencyId);
 
     final docRef = _db.collection('chats').doc(chatId);
@@ -36,21 +40,45 @@ class ChatService {
     // Fetch user display data for inbox entries
     final modelUserDoc = await _db.collection('users').doc(modelId).get();
     final agencyUserDoc = await _db.collection('users').doc(agencyId).get();
-    final modelName = modelUserDoc.data()?['fullName'] ?? modelUserDoc.data()?['displayName'] ?? '';
+    final modelName =
+        modelUserDoc.data()?['fullName'] ??
+        modelUserDoc.data()?['displayName'] ??
+        '';
     final modelUsername = modelUserDoc.data()?['username'] ?? '';
-    final modelImage = modelUserDoc.data()?['profileImage'] ?? modelUserDoc.data()?['avatarUrl'] ?? '';
-    final agencyName = agencyUserDoc.data()?['fullName'] ?? agencyUserDoc.data()?['displayName'] ?? '';
+    final modelImage =
+        modelUserDoc.data()?['profileImage'] ??
+        modelUserDoc.data()?['avatarUrl'] ??
+        '';
+    final agencyName =
+        agencyUserDoc.data()?['fullName'] ??
+        agencyUserDoc.data()?['displayName'] ??
+        '';
     final agencyUsername = agencyUserDoc.data()?['username'] ?? '';
-    final agencyImage = agencyUserDoc.data()?['profileImage'] ?? agencyUserDoc.data()?['avatarUrl'] ?? '';
+    final agencyImage =
+        agencyUserDoc.data()?['profileImage'] ??
+        agencyUserDoc.data()?['avatarUrl'] ??
+        '';
 
     final batch = _db.batch();
     batch.set(docRef, chatData, SetOptions(merge: true));
 
-    final applicantRef = _db.collection('castings').doc(castingId).collection('applicants').doc(modelId);
+    final applicantRef = _db
+        .collection('castings')
+        .doc(castingId)
+        .collection('applicants')
+        .doc(modelId);
     batch.update(applicantRef, {'status': 'NEGOTIATING'});
 
-    final agencyInboxRef = _db.collection('user_chats').doc(agencyId).collection('chats').doc(chatId);
-    final modelInboxRef = _db.collection('user_chats').doc(modelId).collection('chats').doc(chatId);
+    final agencyInboxRef = _db
+        .collection('user_chats')
+        .doc(agencyId)
+        .collection('chats')
+        .doc(chatId);
+    final modelInboxRef = _db
+        .collection('user_chats')
+        .doc(modelId)
+        .collection('chats')
+        .doc(chatId);
     batch.set(agencyInboxRef, {
       'peerId': modelId,
       'peerName': modelName,
@@ -70,7 +98,11 @@ class ChatService {
     return chatId;
   }
 
-  Future<String> createGigChat(String gigId, String modelId, String brandId) async {
+  Future<String> createGigChat(
+    String gigId,
+    String modelId,
+    String brandId,
+  ) async {
     final chatId = _chatIdFor(modelId, brandId);
 
     final docRef = _db.collection('chats').doc(chatId);
@@ -92,21 +124,45 @@ class ChatService {
 
     final modelUserDoc = await _db.collection('users').doc(modelId).get();
     final brandUserDoc = await _db.collection('users').doc(brandId).get();
-    final modelName = modelUserDoc.data()?['fullName'] ?? modelUserDoc.data()?['displayName'] ?? '';
+    final modelName =
+        modelUserDoc.data()?['fullName'] ??
+        modelUserDoc.data()?['displayName'] ??
+        '';
     final modelUsername = modelUserDoc.data()?['username'] ?? '';
-    final modelImage = modelUserDoc.data()?['profileImage'] ?? modelUserDoc.data()?['avatarUrl'] ?? '';
-    final brandName = brandUserDoc.data()?['fullName'] ?? brandUserDoc.data()?['displayName'] ?? '';
+    final modelImage =
+        modelUserDoc.data()?['profileImage'] ??
+        modelUserDoc.data()?['avatarUrl'] ??
+        '';
+    final brandName =
+        brandUserDoc.data()?['fullName'] ??
+        brandUserDoc.data()?['displayName'] ??
+        '';
     final brandUsername = brandUserDoc.data()?['username'] ?? '';
-    final brandImage = brandUserDoc.data()?['profileImage'] ?? brandUserDoc.data()?['avatarUrl'] ?? '';
+    final brandImage =
+        brandUserDoc.data()?['profileImage'] ??
+        brandUserDoc.data()?['avatarUrl'] ??
+        '';
 
     final batch = _db.batch();
     batch.set(docRef, chatData, SetOptions(merge: true));
 
-    final applicantRef = _db.collection('gigs').doc(gigId).collection('applications').doc(modelId);
+    final applicantRef = _db
+        .collection('gigs')
+        .doc(gigId)
+        .collection('applications')
+        .doc(modelId);
     batch.update(applicantRef, {'status': 'NEGOTIATING'});
 
-    final brandInboxRef = _db.collection('user_chats').doc(brandId).collection('chats').doc(chatId);
-    final modelInboxRef = _db.collection('user_chats').doc(modelId).collection('chats').doc(chatId);
+    final brandInboxRef = _db
+        .collection('user_chats')
+        .doc(brandId)
+        .collection('chats')
+        .doc(chatId);
+    final modelInboxRef = _db
+        .collection('user_chats')
+        .doc(modelId)
+        .collection('chats')
+        .doc(chatId);
     batch.set(brandInboxRef, {
       'peerId': modelId,
       'peerName': modelName,
@@ -126,7 +182,12 @@ class ChatService {
     return chatId;
   }
 
-  Future<void> sendMessage(String chatId, String content, String type, {Map<String, dynamic>? metadata}) async {
+  Future<void> sendMessage(
+    String chatId,
+    String content,
+    String type, {
+    Map<String, dynamic>? metadata,
+  }) async {
     final user = FirebaseAuth.instance.currentUser!;
     var chatDoc = await _db.collection('chats').doc(chatId).get();
     Map<String, dynamic>? chat;
@@ -139,8 +200,16 @@ class ChatService {
       // Fallback: try to find a chat where either (agencyId == user.uid AND modelId == <peer>)
       // or (agencyId == <peer> AND modelId == user.uid). We'll query broadly for any chat
       // involving the user and pick the first match.
-      final q1 = await _db.collection('chats').where('agencyId', isEqualTo: user.uid).limit(20).get();
-      final q2 = await _db.collection('chats').where('modelId', isEqualTo: user.uid).limit(20).get();
+      final q1 = await _db
+          .collection('chats')
+          .where('agencyId', isEqualTo: user.uid)
+          .limit(20)
+          .get();
+      final q2 = await _db
+          .collection('chats')
+          .where('modelId', isEqualTo: user.uid)
+          .limit(20)
+          .get();
       DocumentSnapshot? found;
       for (var d in q1.docs) {
         final data = d.data() as Map<String, dynamic>;
@@ -166,9 +235,19 @@ class ChatService {
           if (parts.length == 2) {
             final a = parts[0];
             final b = parts[1];
-            final qA = await _db.collection('chats').where('agencyId', isEqualTo: a).where('modelId', isEqualTo: b).limit(1).get();
+            final qA = await _db
+                .collection('chats')
+                .where('agencyId', isEqualTo: a)
+                .where('modelId', isEqualTo: b)
+                .limit(1)
+                .get();
             if (qA.docs.isNotEmpty) found = qA.docs.first;
-            final qB = await _db.collection('chats').where('agencyId', isEqualTo: b).where('modelId', isEqualTo: a).limit(1).get();
+            final qB = await _db
+                .collection('chats')
+                .where('agencyId', isEqualTo: b)
+                .where('modelId', isEqualTo: a)
+                .limit(1)
+                .get();
             if (found == null && qB.docs.isNotEmpty) found = qB.docs.first;
           }
         }
@@ -200,7 +279,10 @@ class ChatService {
 
     final encrypted = await CryptoService.encryptFor(recvPub, content);
 
-    final messagesRef = _db.collection('chats').doc(chatId).collection('messages');
+    final messagesRef = _db
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages');
 
     final msgRef = messagesRef.doc();
     final msg = {
@@ -222,8 +304,16 @@ class ChatService {
     // update user inboxes for sender and receiver (populate peer name/image from profiles)
     final senderDoc = await _db.collection('users').doc(user.uid).get();
     final senderData = senderDoc.data() ?? {};
-    final senderInbox = _db.collection('user_chats').doc(user.uid).collection('chats').doc(chatId);
-    final receiverInbox = _db.collection('user_chats').doc(receiverId).collection('chats').doc(chatId);
+    final senderInbox = _db
+        .collection('user_chats')
+        .doc(user.uid)
+        .collection('chats')
+        .doc(chatId);
+    final receiverInbox = _db
+        .collection('user_chats')
+        .doc(receiverId)
+        .collection('chats')
+        .doc(chatId);
     batch.set(senderInbox, {
       'peerId': receiverId,
       'peerName': recvData['fullName'] ?? recvData['displayName'] ?? '',
@@ -253,14 +343,25 @@ class ChatService {
 
   // Stream of ChatMessage objects ordered by timestamp
   Stream<List<ChatMessage>> subscribeToMessages(String chatId) {
-    final ref = _db.collection('chats').doc(chatId).collection('messages').orderBy('timestamp', descending: false);
-    return ref.snapshots().map((snap) => snap.docs.map((d) => ChatMessage.fromDoc(d)).toList());
+    final ref = _db
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .orderBy('timestamp', descending: false);
+    return ref.snapshots().map(
+      (snap) => snap.docs.map((d) => ChatMessage.fromDoc(d)).toList(),
+    );
   }
 
   // Send structured offer; stored as encrypted content with metadata.offer
   Future<void> sendOffer(String chatId, Map<String, dynamic> offerData) async {
     final content = jsonEncode(offerData);
-    await sendMessage(chatId, content, 'offer', metadata: {'offer': offerData, 'status': 'pending'});
+    await sendMessage(
+      chatId,
+      content,
+      'offer',
+      metadata: {'offer': offerData, 'status': 'pending'},
+    );
   }
 
   // Accept an offer: mark applicant accepted, update offer message metadata and post system message
@@ -273,7 +374,11 @@ class ChatService {
     final modelId = chat['modelId'] as String;
 
     // update applicant status
-    final applicantRef = _db.collection('castings').doc(castingId).collection('applicants').doc(modelId);
+    final applicantRef = _db
+        .collection('castings')
+        .doc(castingId)
+        .collection('applicants')
+        .doc(modelId);
     // update offer message metadata
     final offerRef = chatRef.collection('messages').doc(offerMessageId);
 
@@ -284,23 +389,34 @@ class ChatService {
     final sysRef = chatRef.collection('messages').doc();
     batch.set(sysRef, {
       'senderId': 'system',
-      'encryptedContent': await _systemEncryptedPayload(chatRef.id, 'Offer accepted'),
+      'encryptedContent': await _systemEncryptedPayload(
+        chatRef.id,
+        'Offer accepted',
+      ),
       'timestamp': FieldValue.serverTimestamp(),
       'type': 'system',
       'metadata': {'note': 'offer_accepted'},
     });
-    batch.update(chatRef, {'lastMessage': 'Offer accepted', 'lastUpdated': FieldValue.serverTimestamp()});
+    batch.update(chatRef, {
+      'lastMessage': 'Offer accepted',
+      'lastUpdated': FieldValue.serverTimestamp(),
+    });
     await batch.commit();
   }
 
   Future<String> _systemEncryptedPayload(String chatId, String text) async {
     // system messages are stored encrypted for both participants by encrypting with each receiver's pub
     // but for simplicity store plaintext marker wrapped (non-sensitive)
-    return base64Encode(utf8.encode(jsonEncode({'system': true, 'text': text})));
+    return base64Encode(
+      utf8.encode(jsonEncode({'system': true, 'text': text})),
+    );
   }
 
   // Confirm booking: create bookings doc and mark applicant BOOKED
-  Future<void> confirmBooking(String chatId, Map<String, dynamic> bookingData) async {
+  Future<void> confirmBooking(
+    String chatId,
+    Map<String, dynamic> bookingData,
+  ) async {
     final chatRef = _db.collection('chats').doc(chatId);
     final chatDoc = await chatRef.get();
     if (!chatDoc.exists) throw Exception('Chat not found');
@@ -323,9 +439,17 @@ class ChatService {
     final batch = _db.batch();
     final bookingsRef = _db.collection('bookings').doc();
     batch.set(bookingsRef, booking);
-    final applicantRef = _db.collection('castings').doc(castingId).collection('applicants').doc(modelId);
+    final applicantRef = _db
+        .collection('castings')
+        .doc(castingId)
+        .collection('applicants')
+        .doc(modelId);
     batch.update(applicantRef, {'status': 'BOOKED'});
-    batch.update(chatRef, {'status': 'BOOKED', 'lastUpdated': FieldValue.serverTimestamp(), 'lastMessage': 'Booking confirmed'});
+    batch.update(chatRef, {
+      'status': 'BOOKED',
+      'lastUpdated': FieldValue.serverTimestamp(),
+      'lastMessage': 'Booking confirmed',
+    });
     await batch.commit();
   }
 }

@@ -35,9 +35,7 @@ class AppChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected ? p.onSurface : Colors.transparent,
             borderRadius: AppRadii.pill,
-            border: Border.all(
-              color: selected ? p.onSurface : p.lineStrong,
-            ),
+            border: Border.all(color: selected ? p.onSurface : p.lineStrong),
           ),
           child: Text(
             label,

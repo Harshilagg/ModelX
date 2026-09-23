@@ -54,11 +54,16 @@ class AppField extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: AppType.label(color: p.onSurface.withValues(alpha: 0.8)),
+                  style: AppType.label(
+                    color: p.onSurface.withValues(alpha: 0.8),
+                  ),
                 ),
               ),
               if (optional)
-                Text('Optional', style: AppType.caption(color: p.onSurfaceFaint)),
+                Text(
+                  'Optional',
+                  style: AppType.caption(color: p.onSurfaceFaint),
+                ),
             ],
           ),
           const SizedBox(height: 8),
@@ -155,7 +160,11 @@ class AppTextField extends StatelessWidget {
       // 16px is not a style choice: below it, iOS Safari-style zoom
       // kicks in on focus on some webviews and the field jumps.
       style: tabularFigures
-          ? AppType.tabular(fontSize: 16, fontWeight: FontWeight.w400, color: p.onSurface)
+          ? AppType.tabular(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: p.onSurface,
+            )
           : AppType.body(fontSize: 16, color: p.onSurface),
       decoration: InputDecoration(
         hintText: hintText,
@@ -172,13 +181,21 @@ class AppTextField extends StatelessWidget {
         // grow, so the constraint is applied per case.
         constraints: multiline
             ? null
-            : const BoxConstraints(minHeight: AppMetrics.control, maxHeight: AppMetrics.control),
+            : const BoxConstraints(
+                minHeight: AppMetrics.control,
+                maxHeight: AppMetrics.control,
+              ),
         suffixIcon: suffix,
-        suffixIconConstraints:
-            const BoxConstraints(minHeight: AppMetrics.control, minWidth: 0),
+        suffixIconConstraints: const BoxConstraints(
+          minHeight: AppMetrics.control,
+          minWidth: 0,
+        ),
         border: _border(p.line),
         enabledBorder: _border(hasError ? p.rejectedText : p.line),
-        focusedBorder: _border(hasError ? p.rejectedText : p.onSurfaceSoft, width: 1.4),
+        focusedBorder: _border(
+          hasError ? p.rejectedText : p.onSurfaceSoft,
+          width: 1.4,
+        ),
         disabledBorder: _border(p.line),
       ),
     );
@@ -239,7 +256,9 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
       onChanged: widget.onChanged,
       onSubmitted: widget.onSubmitted,
       textInputAction: widget.textInputAction,
-      autofillHints: [widget.isNew ? AutofillHints.newPassword : AutofillHints.password],
+      autofillHints: [
+        widget.isNew ? AutofillHints.newPassword : AutofillHints.password,
+      ],
       cursorColor: p.onSurface,
       style: AppType.body(fontSize: 16, color: p.onSurface),
       decoration: InputDecoration(
@@ -270,7 +289,9 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
         ),
         suffixIconConstraints: const BoxConstraints(minHeight: 36, minWidth: 0),
         border: AppTextField._border(p.line),
-        enabledBorder: AppTextField._border(widget.hasError ? p.rejectedText : p.line),
+        enabledBorder: AppTextField._border(
+          widget.hasError ? p.rejectedText : p.line,
+        ),
         focusedBorder: AppTextField._border(
           widget.hasError ? p.rejectedText : p.onSurfaceSoft,
           width: 1.4,

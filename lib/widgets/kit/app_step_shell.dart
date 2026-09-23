@@ -153,12 +153,7 @@ class _AppStepShellState extends State<AppStepShell> {
     return Column(
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(
-            12,
-            AppMetrics.topInset(context),
-            12,
-            0,
-          ),
+          padding: EdgeInsets.fromLTRB(12, AppMetrics.topInset(context), 12, 0),
           child: Row(
             children: [
               AppIconButton(
@@ -181,14 +176,22 @@ class _AppStepShellState extends State<AppStepShell> {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(
-            AppMetrics.gutter, 16, AppMetrics.gutter, 0),
+            AppMetrics.gutter,
+            16,
+            AppMetrics.gutter,
+            0,
+          ),
           child: AppStepProgress(step: widget.step, total: widget.total),
         ),
         Expanded(
           child: SingleChildScrollView(
             controller: _scroll,
             padding: const EdgeInsets.fromLTRB(
-              AppMetrics.gutter, 28, AppMetrics.gutter, 24),
+              AppMetrics.gutter,
+              28,
+              AppMetrics.gutter,
+              24,
+            ),
             child: TweenAnimationBuilder<double>(
               // Keyed on the step so the tween restarts each time.
               key: ValueKey(widget.step),
@@ -208,7 +211,10 @@ class _AppStepShellState extends State<AppStepShell> {
                   Text(widget.title, style: AppType.title(color: p.onSurface)),
                   if (widget.hint != null) ...[
                     const SizedBox(height: 10),
-                    Text(widget.hint!, style: AppType.body(color: p.onSurfaceSoft)),
+                    Text(
+                      widget.hint!,
+                      style: AppType.body(color: p.onSurfaceSoft),
+                    ),
                   ],
                   const SizedBox(height: AppMetrics.titleGap),
                   ...widget.children,

@@ -34,7 +34,9 @@ class _GigFullDetailPageState extends State<GigFullDetailPage> {
     if (user == null || _applying) return;
     setState(() => _applying = true);
 
-    final gigRef = FirebaseFirestore.instance.collection('gigs').doc(widget.gigId);
+    final gigRef = FirebaseFirestore.instance
+        .collection('gigs')
+        .doc(widget.gigId);
     final appRef = gigRef.collection('applications').doc(user.uid);
 
     try {
@@ -77,14 +79,31 @@ class _GigFullDetailPageState extends State<GigFullDetailPage> {
   static String _stamp(dynamic v) {
     if (v is! Timestamp) return 'NOT SET';
     final d = v.toDate().toLocal();
-    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const months = [
+      'JAN',
+      'FEB',
+      'MAR',
+      'APR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AUG',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DEC',
+    ];
     final hh = d.hour.toString().padLeft(2, '0');
     final mm = d.minute.toString().padLeft(2, '0');
     return '${d.day.toString().padLeft(2, '0')} ${months[d.month - 1]} ${d.year} · $hh:$mm';
   }
 
   List<String> _strings(dynamic v) {
-    if (v is List) return v.map((e) => e.toString()).where((s) => s.trim().isNotEmpty).toList();
+    if (v is List)
+      return v
+          .map((e) => e.toString())
+          .where((s) => s.trim().isNotEmpty)
+          .toList();
     final s = (v ?? '').toString().trim();
     return s.isEmpty ? const [] : [s];
   }
@@ -112,7 +131,8 @@ class _GigFullDetailPageState extends State<GigFullDetailPage> {
     final data = widget.data;
     final modelId = FirebaseAuth.instance.currentUser?.uid;
     final roleReq = data['roleRequirements'] as Map<String, dynamic>? ?? {};
-    final physical = roleReq['physicalAttributes'] as Map<String, dynamic>? ?? {};
+    final physical =
+        roleReq['physicalAttributes'] as Map<String, dynamic>? ?? {};
 
     // Gigs store `city` and `jobLocations`, not `location` — that key
     // belongs to castings.
@@ -120,7 +140,8 @@ class _GigFullDetailPageState extends State<GigFullDetailPage> {
     final location = [
       (data['location'] ?? '').toString().trim(),
       (data['city'] ?? '').toString().trim(),
-      if (locations is List && locations.isNotEmpty) locations.first.toString().trim(),
+      if (locations is List && locations.isNotEmpty)
+        locations.first.toString().trim(),
     ].firstWhere((v) => v.isNotEmpty, orElse: () => '');
     final posterLine = [
       widget.brandName.trim(),
@@ -141,7 +162,9 @@ class _GigFullDetailPageState extends State<GigFullDetailPage> {
         ('Outfit', data['outfitRequirements'].toString().toUpperCase()),
     ];
 
-    final gender = (roleReq['gender'] ?? data['gender'] ?? '').toString().trim();
+    final gender = (roleReq['gender'] ?? data['gender'] ?? '')
+        .toString()
+        .trim();
     final minAge = roleReq['minAge'] ?? data['minAge'];
     final maxAge = roleReq['maxAge'] ?? data['maxAge'];
     final highlights = <(String, String)>[
@@ -156,7 +179,10 @@ class _GigFullDetailPageState extends State<GigFullDetailPage> {
         ? '${DateTime.now().difference(createdAt.toDate()).inDays}D AGO'
         : '';
 
-    BoardJobDetail detail({required bool hasApplied, required String appliedLabel}) {
+    BoardJobDetail detail({
+      required bool hasApplied,
+      required String appliedLabel,
+    }) {
       return BoardJobDetail(
         title: (data['projectTitle'] ?? 'Gig').toString(),
         posterLine: posterLine,
@@ -200,8 +226,9 @@ class _GigFullDetailPageState extends State<GigFullDetailPage> {
       builder: (context, snapshot) {
         final hasApplied = snapshot.data?.exists ?? false;
         final status = hasApplied
-            ? ((snapshot.data!.data() as Map<String, dynamic>?)?['status'] ?? 'applied')
-                .toString()
+            ? ((snapshot.data!.data() as Map<String, dynamic>?)?['status'] ??
+                      'applied')
+                  .toString()
             : 'Applied';
         return detail(hasApplied: hasApplied, appliedLabel: status);
       },

@@ -3,17 +3,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'user_profile_page.dart';
-import '../services/board_departures.dart';
+import '../services/application_feed.dart';
+import '../widgets/kit/kit.dart';
 import '../ui/board_theme.dart';
 import '../widgets/board_widgets.dart';
 import '../widgets/state_views.dart';
 import '../widgets/app_skeleton.dart';
 
-/// Home — the board first, the feed second (style board 5a).
+/// Home -- what needs a decision first, the feed second.
 ///
-/// The board answers the only urgent question a working model has on
-/// open: what's next, where, and am I booked. Collapsing it folds it to
-/// the single next call so feed-first people still get their scroll.
+/// The card at the top answers the only urgent question a working model
+/// has on open: is anything waiting on me. It shows one item rather
+/// than a list, because a list of applications is what the Jobs tab is
+/// for.
 ///
 /// Everything on the board is assembled from data the app already
 /// stores: open gigs/castings plus this model's own application document
@@ -22,19 +24,23 @@ import '../widgets/app_skeleton.dart';
 /// the board reads the same way [JobsPage] does rather than inventing a
 /// new backend shape.
 class HomePage extends StatefulWidget {
-  /// Switches the shell to the Jobs tab. The board's "all departures"
-  /// exit belongs on the Jobs destination, not on a pushed duplicate of
-  /// it, so the shell hands Home a way to move the selection.
+  /// Switches the shell to the Jobs tab. That exit belongs on the Jobs
+  /// destination, not on a pushed duplicate of it, so the shell hands
+  /// Home a way to move the selection.
   final VoidCallback? onOpenJobs;
 
-  const HomePage({super.key, this.onOpenJobs});
+  /// The same, with a status preselected. The counts on the Up next
+  /// card are only worth tapping if they land somewhere narrower than
+  /// the whole list.
+  final void Function(String status)? onOpenJobsFiltered;
+
+  const HomePage({super.key, this.onOpenJobs, this.onOpenJobsFiltered});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  bool _boardOpen = true;
   int _feedFilter = 0; // 0 All · 1 Shots · 2 Notes
 
   /// Last time this device saw the feed. Stored locally rather than on
@@ -61,12 +67,17 @@ class _HomePageState extends State<HomePage> {
     final millis = prefs.getInt('feed_last_seen');
     if (!mounted) return;
     setState(() {
-      _lastSeen = millis == null ? null : DateTime.fromMillisecondsSinceEpoch(millis);
+      _lastSeen = millis == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(millis);
     });
     // Mark seen after the current frame so the count the user just saw
     // doesn't vanish underneath them mid-build.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await prefs.setInt('feed_last_seen', DateTime.now().millisecondsSinceEpoch);
+      await prefs.setInt(
+        'feed_last_seen',
+        DateTime.now().millisecondsSinceEpoch,
+      );
     });
   }
 
@@ -76,13 +87,15 @@ class _HomePageState extends State<HomePage> {
       slivers: [
         SliverToBoxAdapter(
           key: const ValueKey('board'),
-          child: _BoardPanel(
-            open: _boardOpen,
-            onToggle: () => setState(() => _boardOpen = !_boardOpen),
+          child: _UpNextPanel(
             onOpenJobs: widget.onOpenJobs,
+            onOpenJobsFiltered: widget.onOpenJobsFiltered,
           ),
         ),
-        SliverToBoxAdapter(key: const ValueKey('feed-header'), child: _feedHeader()),
+        SliverToBoxAdapter(
+          key: const ValueKey('feed-header'),
+          child: _feedHeader(),
+        ),
         _feedBody(),
       ],
     );
@@ -108,7 +121,9 @@ class _HomePageState extends State<HomePage> {
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
-                            color: active ? BoardColors.brass : Colors.transparent,
+                            color: active
+                                ? BoardColors.brass
+                                : Colors.transparent,
                             width: 3,
                           ),
                         ),
@@ -142,7 +157,9 @@ class _HomePageState extends State<HomePage> {
           return const SliverFillRemaining(
             key: ValueKey('feed-error'),
             hasScrollBody: false,
-            child: ErrorStateView(message: 'Could not load the feed. Please try again.'),
+            child: ErrorStateView(
+              message: 'Could not load the feed. Please try again.',
+            ),
           );
         }
 
@@ -210,9 +227,16 @@ class _HomePageState extends State<HomePage> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: Column(mainAxisSize: MainAxisSize.min, children: left)),
+                Expanded(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: left),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: Column(mainAxisSize: MainAxisSize.min, children: right)),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: right,
+                  ),
+                ),
               ],
             ),
           ),
@@ -223,259 +247,102 @@ class _HomePageState extends State<HomePage> {
 }
 
 /// ---------------------------------------------------------------------
-/// The board
+/// Up next
 /// ---------------------------------------------------------------------
 
-class _BoardPanel extends StatelessWidget {
-  final bool open;
-  final VoidCallback onToggle;
+/// What needs a decision, and how much of everything else there is.
+///
+/// Replaces the departures board. That panel listed every application
+/// as a split-flap row under a countdown that read "NO CALL SCHEDULED"
+/// whenever nothing was booked -- which, for most people most of the
+/// time, meant the most prominent thing on Home said nothing at all.
+class _UpNextPanel extends StatelessWidget {
   final VoidCallback? onOpenJobs;
+  final void Function(String status)? onOpenJobsFiltered;
 
-  const _BoardPanel({required this.open, required this.onToggle, this.onOpenJobs});
+  const _UpNextPanel({this.onOpenJobs, this.onOpenJobsFiltered});
 
   @override
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 0),
-      padding: const EdgeInsets.fromLTRB(13, 13, 13, 12),
-      decoration: BoxDecoration(
-        color: BoardColors.ink,
-        borderRadius: BorderRadius.circular(BoardRadius.panel),
-      ),
-      child: uid == null
-          ? _header(context, const [], 'NOT SIGNED IN')
-          : BoardDepartures(
-              uid: uid,
-              builder: (departures, loading) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _header(context, departures, _countdown(departures)),
-                    if (departures.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Text(
-                          'Nothing on your board yet. Applying to a job puts it here.',
-                          style: BoardType.body(fontSize: 12.5, color: BoardColors.onInkSoft),
-                        ),
-                      )
-                    else if (open)
-                      _openBoard(context, departures)
-                    else
-                      _shutBoard(context, departures.first),
-                  ],
-                );
-              },
-            ),
-    );
-  }
+    if (uid == null) {
+      return const UpNextCard(
+        item: null,
+        counts: [],
+        emptyMessage: 'Sign in to see what needs your attention.',
+      );
+    }
 
-  String _countdown(List<Departure> departures) {
-    final next = departures
-        .where((d) => d.start != null && d.start!.isAfter(DateTime.now()))
-        .toList();
-    if (next.isEmpty) return 'NO CALL SCHEDULED';
-    final diff = next.first.start!.difference(DateTime.now());
-    if (diff.inDays > 0) return 'NEXT CALL IN ${diff.inDays}D ${diff.inHours % 24}H';
-    if (diff.inHours > 0) return 'NEXT CALL IN ${diff.inHours}H ${diff.inMinutes % 60}M';
-    return 'NEXT CALL IN ${diff.inMinutes}M';
-  }
+    return ApplicationFeed(
+      uid: uid,
+      builder: (applications, loading) {
+        // Most urgent first, then soonest. A rejection is excluded by
+        // isUpNext, as is a booking whose shoot date has passed.
+        final candidates = applications.where((a) => a.isUpNext).toList()
+          ..sort((a, b) {
+            final byUrgency = a.state.urgency.compareTo(b.state.urgency);
+            if (byUrgency != 0) return byUrgency;
+            final x = a.start, y = b.start;
+            if (x == null && y == null) return 0;
+            if (x == null) return 1;
+            if (y == null) return -1;
+            return x.compareTo(y);
+          });
 
-  Widget _header(BuildContext context, List<Departure> departures, String eyebrow) {
-    return GestureDetector(
-      onTap: departures.isEmpty ? null : onToggle,
-      behavior: HitTestBehavior.opaque,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  eyebrow,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: BoardType.mono(fontSize: 9.5, color: BoardColors.brass, letterSpacing: 1.15),
+        int count(AppStatus s) =>
+            applications.where((a) => a.state == s).length;
+
+        final headline = candidates.isEmpty ? null : candidates.first;
+
+        return UpNextCard(
+          loading: loading,
+          emptyMessage:
+              'Nothing needs you right now. Applying to a job brings it here.',
+          item: headline == null
+              ? null
+              : UpNextItem(
+                  title: headline.title.isEmpty ? 'Untitled' : headline.title,
+                  subtitle: _context(headline),
+                  status: headline.state,
+                  onOpen: () => headline.open(context),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'YOUR BOARD',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: BoardType.display(fontSize: 25, color: BoardColors.onInk, height: 0.9),
-                ),
-              ],
+          counts: [
+            UpNextCount(
+              label: 'Applied',
+              value: count(AppStatus.applied),
+              onTap: () => onOpenJobsFiltered?.call('applied'),
             ),
-          ),
-          if (departures.isNotEmpty) ...[
-            const SizedBox(width: 10),
-            Flexible(
-              child: Text(
-                '${departures.length} DEPARTURE${departures.length == 1 ? '' : 'S'}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-                style: BoardType.mono(fontSize: 9.5, color: BoardColors.onInkFaint, letterSpacing: 0.95),
-              ),
+            UpNextCount(
+              label: 'Shortlisted',
+              value: count(AppStatus.shortlisted),
+              onTap: () => onOpenJobsFiltered?.call('shortlisted'),
             ),
-            const SizedBox(width: 8),
-            Container(
-              width: 26,
-              height: 26,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: open ? BoardColors.onInkWell : BoardColors.brass,
-              ),
-              child: Icon(
-                open ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                size: 17,
-                color: open ? BoardColors.onInk : BoardColors.ink,
-              ),
+            UpNextCount(
+              label: 'Negotiating',
+              value: count(AppStatus.negotiating),
+              onTap: () => onOpenJobsFiltered?.call('negotiating'),
+            ),
+            UpNextCount(
+              label: 'Booked',
+              value: count(AppStatus.booked),
+              onTap: () => onOpenJobsFiltered?.call('booked'),
             ),
           ],
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _openBoard(BuildContext context, List<Departure> departures) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const SizedBox(height: 10),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 6),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 52,
-                child: Text('TIME', style: BoardType.mono(fontSize: 9.5, color: BoardColors.onInkFaint, letterSpacing: 1.15)),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text('JOB / BRAND', style: BoardType.mono(fontSize: 9.5, color: BoardColors.onInkFaint, letterSpacing: 1.15)),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 76,
-                child: Text('STATUS', style: BoardType.mono(fontSize: 9.5, color: BoardColors.onInkFaint, letterSpacing: 1.15)),
-              ),
-            ],
-          ),
-        ),
-        Container(height: 1, color: BoardColors.onInkLine),
-        for (final d in departures.take(4)) _row(context, d),
-        const SizedBox(height: 10),
-        Container(height: 1, color: BoardColors.onInkLine),
-        const SizedBox(height: 10),
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onOpenJobs,
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'ALL DEPARTURES',
-                  style: BoardType.mono(fontSize: 9.5, color: BoardColors.brass, letterSpacing: 0.95),
-                ),
-              ),
-              Container(
-                width: 24,
-                height: 24,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: BoardColors.brass),
-                child: const Icon(Icons.arrow_outward_rounded, size: 13, color: BoardColors.ink),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _row(BuildContext context, Departure d) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => d.open(context),
-      child: Padding(
-        padding: const EdgeInsets.only(top: 9),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(width: 52, child: FlapTile(text: d.timeLabel, fontSize: 12)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    d.title.toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: BoardType.title(fontSize: 15, color: BoardColors.onInk, letterSpacing: 0.3),
-                  ),
-                  if (d.subtitle.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      d.subtitle.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: BoardType.mono(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w400,
-                        color: BoardColors.onInkFaint,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            SizedBox(width: 76, child: FlapTile.status(d.status)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _shutBoard(BuildContext context, Departure d) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SizedBox(height: 10),
-        Container(height: 1, color: BoardColors.onInkLine),
-        const SizedBox(height: 10),
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => d.open(context),
-          child: Row(
-            children: [
-              FlapTile(text: d.timeLabel, fontSize: 12, padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 9)),
-              const SizedBox(width: 9),
-              Expanded(
-                child: Text(
-                  d.title.toUpperCase(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: BoardType.title(fontSize: 15, color: BoardColors.onInk, letterSpacing: 0.3),
-                ),
-              ),
-              const SizedBox(width: 9),
-              FlapTile.status(d.status),
-            ],
-          ),
-        ),
-      ],
-    );
+  /// Who posted it, and when it shoots -- in that order, because the
+  /// name is what identifies the job in a glance.
+  static String _context(Application a) {
+    final parts = [
+      if (a.posterName.trim().isNotEmpty) a.posterName.trim(),
+      if (a.subtitle.trim().isNotEmpty) a.subtitle.trim(),
+      if (a.start != null) 'Shoots ${relativeTime(a.start)}',
+    ];
+    return parts.isEmpty ? 'No details yet' : parts.join(' - ');
   }
 }
 
@@ -572,10 +439,7 @@ class _FeedCard extends StatelessWidget {
           // A fixed pixel height would crop tall portraits and letterbox
           // wide ones; a ratio lets the masonry column find its own
           // height instead.
-          AspectRatio(
-            aspectRatio: 0.82,
-            child: BoardMedia(url: imageUrl),
-          ),
+          AspectRatio(aspectRatio: 0.82, child: BoardMedia(url: imageUrl)),
           Padding(
             padding: const EdgeInsets.fromLTRB(9, 8, 9, 10),
             child: Column(
@@ -651,7 +515,13 @@ class _FeedCard extends StatelessWidget {
     );
   }
 
-  Widget _author(BuildContext context, String username, String time, {required bool dark, bool flat = false}) {
+  Widget _author(
+    BuildContext context,
+    String username,
+    String time, {
+    required bool dark,
+    bool flat = false,
+  }) {
     final fg = dark ? BoardColors.onInk : BoardColors.ink;
     final meta = dark ? BoardColors.onInkFaint : BoardColors.inkSoft;
 
@@ -660,7 +530,10 @@ class _FeedCard extends StatelessWidget {
       onTap: () {
         final uid = postData['uid'];
         if (uid == null) return;
-        Navigator.push(context, MaterialPageRoute(builder: (_) => UserProfilePage(uid: uid)));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => UserProfilePage(uid: uid)),
+        );
       },
       child: Padding(
         padding: flat ? EdgeInsets.zero : const EdgeInsets.fromLTRB(9, 8, 9, 7),
@@ -670,7 +543,10 @@ class _FeedCard extends StatelessWidget {
               width: flat ? 18 : 20,
               height: flat ? 18 : 20,
               child: ClipOval(
-                child: BoardMedia(url: (postData['userImage'] ?? '').toString(), dark: dark),
+                child: BoardMedia(
+                  url: (postData['userImage'] ?? '').toString(),
+                  dark: dark,
+                ),
               ),
             ),
             const SizedBox(width: 6),
@@ -679,14 +555,22 @@ class _FeedCard extends StatelessWidget {
                 username.toUpperCase(),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: BoardType.title(fontSize: flat ? 11.5 : 12, color: fg, letterSpacing: 0.35),
+                style: BoardType.title(
+                  fontSize: flat ? 11.5 : 12,
+                  color: fg,
+                  letterSpacing: 0.35,
+                ),
               ),
             ),
             if (time.isNotEmpty) ...[
               const SizedBox(width: 4),
               Text(
                 time,
-                style: BoardType.mono(fontSize: 9.5, fontWeight: FontWeight.w400, color: meta),
+                style: BoardType.mono(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w400,
+                  color: meta,
+                ),
               ),
             ],
           ],
@@ -706,7 +590,12 @@ class _FeedCard extends StatelessWidget {
 
     return Row(
       children: [
-        _LikeButton(postId: postId, likes: likes, foreground: fg, accent: accent),
+        _LikeButton(
+          postId: postId,
+          likes: likes,
+          foreground: fg,
+          accent: accent,
+        ),
         const SizedBox(width: 10),
         Flexible(
           child: GestureDetector(
@@ -716,7 +605,11 @@ class _FeedCard extends StatelessWidget {
               'COMMENT',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: BoardType.mono(fontSize: 9.5, color: meta, letterSpacing: 0.6),
+              style: BoardType.mono(
+                fontSize: 9.5,
+                color: meta,
+                letterSpacing: 0.6,
+              ),
             ),
           ),
         ),
@@ -746,21 +639,31 @@ class _LikeButton extends StatefulWidget {
   State<_LikeButton> createState() => _LikeButtonState();
 }
 
-class _LikeButtonState extends State<_LikeButton> with SingleTickerProviderStateMixin {
+class _LikeButtonState extends State<_LikeButton>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _scale;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
     _scale = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween(begin: 1.0, end: 1.35).chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween(
+          begin: 1.0,
+          end: 1.35,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 50,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 1.35, end: 1.0).chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween(
+          begin: 1.35,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 50,
       ),
     ]).animate(_controller);
@@ -780,7 +683,9 @@ class _LikeButtonState extends State<_LikeButton> with SingleTickerProviderState
       _controller.forward(from: 0);
     }
 
-    final postRef = FirebaseFirestore.instance.collection('posts').doc(widget.postId);
+    final postRef = FirebaseFirestore.instance
+        .collection('posts')
+        .doc(widget.postId);
 
     // Run as a transaction so rapid double-taps read the latest server
     // state instead of racing off this widget's (possibly stale) `likes`
@@ -818,7 +723,9 @@ class _LikeButtonState extends State<_LikeButton> with SingleTickerProviderState
             scale: _scale,
             child: Icon(
               isLiked ? Icons.favorite : Icons.favorite_border,
-              color: isLiked ? widget.accent : widget.foreground.withValues(alpha: 0.72),
+              color: isLiked
+                  ? widget.accent
+                  : widget.foreground.withValues(alpha: 0.72),
               size: 14,
             ),
           ),
@@ -841,7 +748,9 @@ void showCommentsSheet(BuildContext context, String postId) {
     isScrollControlled: true,
     backgroundColor: BoardColors.paper,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(BoardRadius.sheet)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(BoardRadius.sheet),
+      ),
     ),
     builder: (_) => _CommentsSheet(postId: postId),
   );
@@ -871,8 +780,10 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     if (text.isEmpty) return;
 
     try {
-      final userDoc =
-          await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
       final userData = userDoc.data() ?? {};
 
       await FirebaseFirestore.instance
@@ -880,27 +791,29 @@ class _CommentsSheetState extends State<_CommentsSheet> {
           .doc(widget.postId)
           .collection('comments')
           .add({
-        'uid': user.uid,
-        'username': userData['username'] ?? '',
-        'profileImage': userData['profileImage'] ?? '',
-        'text': text,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+            'uid': user.uid,
+            'username': userData['username'] ?? '',
+            'profileImage': userData['profileImage'] ?? '',
+            'text': text,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
 
       if (!mounted) return;
       _controller.clear();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not post comment: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not post comment: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: SafeArea(
         top: false,
         child: SizedBox(
@@ -940,7 +853,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
-                      return const ErrorStateView(message: 'Could not load comments.');
+                      return const ErrorStateView(
+                        message: 'Could not load comments.',
+                      );
                     }
                     if (!snapshot.hasData) return const LoadingState();
 
@@ -957,17 +872,24 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       itemCount: comments.length,
                       itemBuilder: (context, index) {
-                        final data = comments[index].data() as Map<String, dynamic>;
+                        final data =
+                            comments[index].data() as Map<String, dynamic>;
                         return InkWell(
                           onTap: () {
                             if (data['uid'] == null) return;
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => UserProfilePage(uid: data['uid'])),
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    UserProfilePage(uid: data['uid']),
+                              ),
                             );
                           },
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -975,25 +897,35 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                   width: 30,
                                   height: 34,
                                   child: BoardMedia(
-                                    url: (data['profileImage'] ?? '').toString(),
+                                    url: (data['profileImage'] ?? '')
+                                        .toString(),
                                     cut: 8,
                                   ),
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        (data['username'] ?? '').toString().toUpperCase(),
+                                        (data['username'] ?? '')
+                                            .toString()
+                                            .toUpperCase(),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: BoardType.title(fontSize: 14, letterSpacing: 0.4),
+                                        style: BoardType.title(
+                                          fontSize: 14,
+                                          letterSpacing: 0.4,
+                                        ),
                                       ),
                                       const SizedBox(height: 3),
                                       Text(
                                         (data['text'] ?? '').toString(),
-                                        style: BoardType.body(fontSize: 13, color: BoardColors.inkSoft),
+                                        style: BoardType.body(
+                                          fontSize: 13,
+                                          color: BoardColors.inkSoft,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -1018,21 +950,36 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                         style: BoardType.body(fontSize: 13),
                         decoration: InputDecoration(
                           hintText: 'Add a comment…',
-                          hintStyle: BoardType.body(fontSize: 13, color: BoardColors.inkSoft),
+                          hintStyle: BoardType.body(
+                            fontSize: 13,
+                            color: BoardColors.inkSoft,
+                          ),
                           filled: true,
                           fillColor: BoardColors.shell,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(BoardRadius.pill),
+                            borderRadius: BorderRadius.circular(
+                              BoardRadius.pill,
+                            ),
                             borderSide: BorderSide.none,
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(BoardRadius.pill),
+                            borderRadius: BorderRadius.circular(
+                              BoardRadius.pill,
+                            ),
                             borderSide: BorderSide.none,
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(BoardRadius.pill),
-                            borderSide: const BorderSide(color: BoardColors.ink, width: 1.4),
+                            borderRadius: BorderRadius.circular(
+                              BoardRadius.pill,
+                            ),
+                            borderSide: const BorderSide(
+                              color: BoardColors.ink,
+                              width: 1.4,
+                            ),
                           ),
                         ),
                       ),
@@ -1048,7 +995,11 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                           color: BoardColors.ink,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.arrow_upward_rounded, color: BoardColors.onInk, size: 19),
+                        child: const Icon(
+                          Icons.arrow_upward_rounded,
+                          color: BoardColors.onInk,
+                          size: 19,
+                        ),
                       ),
                     ),
                   ],

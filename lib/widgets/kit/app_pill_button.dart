@@ -78,12 +78,15 @@ class _AppPillButtonState extends State<AppPillButton> {
       AppButtonKind.ghost => (Colors.transparent, p.onSurfaceFaint, null),
     };
 
-    final height = widget.height ??
+    final height =
+        widget.height ??
         (widget.kind == AppButtonKind.ghost
             ? AppMetrics.tapTarget
             : AppMetrics.control);
 
-    final label = widget.busy ? (widget.busyLabel ?? widget.label) : widget.label;
+    final label = widget.busy
+        ? (widget.busyLabel ?? widget.label)
+        : widget.label;
 
     Widget content = Text(
       label,

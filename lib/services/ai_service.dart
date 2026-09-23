@@ -17,14 +17,15 @@ class AiService {
   bool _isInitialized = false;
 
   void _initialize() {
-    if (AiConfig.geminiApiKey == 'YOUR_GEMINI_API_KEY_HERE' || AiConfig.geminiApiKey.isEmpty) {
+    if (AiConfig.geminiApiKey == 'YOUR_GEMINI_API_KEY_HERE' ||
+        AiConfig.geminiApiKey.isEmpty) {
       debugPrint('⚠️ Gemini API Key missing. AiService will not function.');
       return;
     }
 
     // Use the specific aliases confirmed in your ModelDiscovery list
     _chatModel = GenerativeModel(
-      model: 'gemini-flash-latest', 
+      model: 'gemini-flash-latest',
       apiKey: AiConfig.geminiApiKey,
     );
 
@@ -34,10 +35,10 @@ class AiService {
     );
 
     _embedModel = GenerativeModel(
-      model: 'gemini-embedding-001', 
+      model: 'gemini-embedding-001',
       apiKey: AiConfig.geminiApiKey,
     );
-    
+
     _isInitialized = true;
     debugPrint('✅ AiService initialized with alias models');
   }
@@ -45,7 +46,7 @@ class AiService {
   /// Simple chat completion using Gemini Flash
   Future<String> chat(String prompt) async {
     if (!_isInitialized) return 'Gemini not configured';
-    
+
     debugPrint('🤖 AiService.chat() starting...');
     final content = [Content.text(prompt)];
     try {
@@ -58,15 +59,15 @@ class AiService {
   }
 
   /// Multimodal analysis using Gemini Pro (e.g. for portfolio images)
-  Future<String> analyzeWithPro(String prompt, List<DataPart> imageParts) async {
+  Future<String> analyzeWithPro(
+    String prompt,
+    List<DataPart> imageParts,
+  ) async {
     if (!_isInitialized) return 'Gemini not configured';
 
     debugPrint('🧠 AiService.analyzeWithPro() starting...');
     final content = [
-      Content.multi([
-        TextPart(prompt),
-        ...imageParts,
-      ])
+      Content.multi([TextPart(prompt), ...imageParts]),
     ];
     final response = await _proModel.generateContent(content);
     return response.text ?? '';
@@ -77,7 +78,7 @@ class AiService {
     if (!_isInitialized) throw Exception('Gemini not configured');
 
     debugPrint('🔢 AiService.embedText() starting...');
-    
+
     final content = Content.text(text);
     try {
       final response = await _embedModel.embedContent(

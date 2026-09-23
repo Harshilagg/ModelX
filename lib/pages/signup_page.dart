@@ -15,18 +15,13 @@ class SignupPage extends StatefulWidget {
   final String userType; // 'model'
   final String? inviteToken;
 
-  const SignupPage({
-    super.key,
-    required this.userType,
-    this.inviteToken,
-  });
+  const SignupPage({super.key, required this.userType, this.inviteToken});
 
   @override
   State<SignupPage> createState() => _SignupPageState();
 }
 
 final GoogleSignIn _googleSignIn = GoogleSignIn();
-
 
 class _SignupPageState extends State<SignupPage> {
   final _formKey = GlobalKey<FormState>();
@@ -59,8 +54,7 @@ class _SignupPageState extends State<SignupPage> {
     if (picked != null) {
       setState(() {
         selectedDob = picked;
-        dobController.text =
-            "${picked.day}/${picked.month}/${picked.year}";
+        dobController.text = "${picked.day}/${picked.month}/${picked.year}";
       });
     }
   }
@@ -94,7 +88,10 @@ class _SignupPageState extends State<SignupPage> {
         try {
           await user.delete();
         } catch (_) {}
-        _showError('Could not create user record. ' + (_lastSaveError ?? 'Please try again.'));
+        _showError(
+          'Could not create user record. ' +
+              (_lastSaveError ?? 'Please try again.'),
+        );
         return;
       }
 
@@ -132,81 +129,89 @@ class _SignupPageState extends State<SignupPage> {
   }
 
   // ------------------ GOOGLE SIGNUP ------------------
-Future<void> signupWithGoogle() async {
-  try {
-    setState(() => loading = true);
+  Future<void> signupWithGoogle() async {
+    try {
+      setState(() => loading = true);
 
-    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-    if (googleUser == null) {
-      setState(() => loading = false);
-      return;
-    }
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        setState(() => loading = false);
+        return;
+      }
 
-    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
 
-    final userCredential = await _auth.signInWithCredential(credential);
-    final user = userCredential.user!;
+      final userCredential = await _auth.signInWithCredential(credential);
+      final user = userCredential.user!;
 
-    // Mark that this flow created a Google user
-    isGoogleUser = true;
+      // Mark that this flow created a Google user
+      isGoogleUser = true;
 
-    // Save user doc (best-effort). If saving fails, rollback auth and sign-out.
-    final saved = await _saveUserProfile(user.uid);
-    if (!saved) {
-      try {
-        await _googleSignIn.signOut();
-      } catch (_) {}
-      try {
-        await _auth.signOut();
-      } catch (_) {}
-      try {
-        await user.delete();
-      } catch (_) {}
-      _showError('Could not create user record. ' + (_lastSaveError ?? 'Please try again.'));
-      return;
-    }
+      // Save user doc (best-effort). If saving fails, rollback auth and sign-out.
+      final saved = await _saveUserProfile(user.uid);
+      if (!saved) {
+        try {
+          await _googleSignIn.signOut();
+        } catch (_) {}
+        try {
+          await _auth.signOut();
+        } catch (_) {}
+        try {
+          await user.delete();
+        } catch (_) {}
+        _showError(
+          'Could not create user record. ' +
+              (_lastSaveError ?? 'Please try again.'),
+        );
+        return;
+      }
 
-    // Decide where to redirect: if user has completed profile, go to Dashboard,
-    // otherwise send them to CreateProfilePage so they finish their profile.
-    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-    final data = doc.data();
-    final profileCompleted = data != null && (data['profileCompleted'] == true);
+      // Decide where to redirect: if user has completed profile, go to Dashboard,
+      // otherwise send them to CreateProfilePage so they finish their profile.
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      final data = doc.data();
+      final profileCompleted =
+          data != null && (data['profileCompleted'] == true);
 
-    if (!mounted) return;
-    if (widget.inviteToken != null) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => InviteAcceptancePage(
-            token: widget.inviteToken!,
-            autoAcceptOnLoad: true,
+      if (!mounted) return;
+      if (widget.inviteToken != null) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => InviteAcceptancePage(
+              token: widget.inviteToken!,
+              autoAcceptOnLoad: true,
+            ),
           ),
-        ),
-        (route) => false,
-      );
-    } else if (profileCompleted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const DashboardPage()),
-        (route) => false,
-      );
-    } else {
-      await FirebaseAuth.instance.currentUser?.reload();
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const CreateProfilePage()),
-        (route) => false,
-      );
+          (route) => false,
+        );
+      } else if (profileCompleted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardPage()),
+          (route) => false,
+        );
+      } else {
+        await FirebaseAuth.instance.currentUser?.reload();
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const CreateProfilePage()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      _showError(e.toString());
+    } finally {
+      setState(() => loading = false);
     }
-  } catch (e) {
-    _showError(e.toString());
-  } finally {
-    setState(() => loading = false);
-  }
   }
 
   /// Save basic user document. Returns true on success, false on failure.
@@ -216,14 +221,21 @@ Future<void> signupWithGoogle() async {
       final fullName = isGoogleUser
           ? (authUser?.displayName ?? fullNameController.text.trim())
           : fullNameController.text.trim();
-      final email = (isGoogleUser ? (authUser?.email ?? emailController.text.trim()) : emailController.text.trim()).trim().toLowerCase();
+      final email =
+          (isGoogleUser
+                  ? (authUser?.email ?? emailController.text.trim())
+                  : emailController.text.trim())
+              .trim()
+              .toLowerCase();
 
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'uid': uid,
         'fullName': fullName,
         'fullNameLower': fullName.isNotEmpty ? fullName.toLowerCase() : null,
         'username': usernameController.text.trim(),
-        'usernameLower': usernameController.text.trim().isNotEmpty ? usernameController.text.trim().toLowerCase() : null,
+        'usernameLower': usernameController.text.trim().isNotEmpty
+            ? usernameController.text.trim().toLowerCase()
+            : null,
         'email': email,
         'phone': phoneController.text.trim(),
         'phoneVerified': false,
@@ -248,9 +260,9 @@ Future<void> signupWithGoogle() async {
   }
 
   void _showError(String? msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg ?? 'Something went wrong')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg ?? 'Something went wrong')));
   }
 
   // ------------------ UI ------------------
@@ -277,7 +289,11 @@ Future<void> signupWithGoogle() async {
                       const SizedBox(height: 16),
                       _field(emailController, 'Email', readOnly: isGoogleUser),
                       const SizedBox(height: 16),
-                      _field(phoneController, 'Phone Number', keyboard: TextInputType.phone),
+                      _field(
+                        phoneController,
+                        'Phone Number',
+                        keyboard: TextInputType.phone,
+                      ),
                       if (!isGoogleUser) ...[
                         const SizedBox(height: 16),
                         _field(passwordController, 'Password', obscure: true),
@@ -320,7 +336,12 @@ Future<void> signupWithGoogle() async {
     return Container(
       width: double.infinity,
       color: AppColors.backstage,
-      padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 20, 24, 36),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        MediaQuery.of(context).padding.top + 20,
+        24,
+        36,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -330,29 +351,47 @@ Future<void> signupWithGoogle() async {
               padding: const EdgeInsets.only(bottom: 18),
               child: GestureDetector(
                 onTap: () => Navigator.of(context).pop(),
-                child: const Icon(Icons.arrow_back, color: AppColors.onBackstage, size: AppIconSize.md),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: AppColors.onBackstage,
+                  size: AppIconSize.md,
+                ),
               ),
             ),
           Text.rich(
-            TextSpan(children: [
-              TextSpan(
-                text: 'Join ',
-                style: AppTypography.display.copyWith(color: AppColors.onBackstage, fontSize: 32),
-              ),
-              TextSpan(
-                text: 'ModelX',
-                style: AppTypography.displayAccent(color: AppColors.goldOnBackstage, fontSize: 34),
-              ),
-              TextSpan(
-                text: '.',
-                style: AppTypography.display.copyWith(color: AppColors.onBackstage, fontSize: 32),
-              ),
-            ]),
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: 'Join ',
+                  style: AppTypography.display.copyWith(
+                    color: AppColors.onBackstage,
+                    fontSize: 32,
+                  ),
+                ),
+                TextSpan(
+                  text: 'ModelX',
+                  style: AppTypography.displayAccent(
+                    color: AppColors.goldOnBackstage,
+                    fontSize: 34,
+                  ),
+                ),
+                TextSpan(
+                  text: '.',
+                  style: AppTypography.display.copyWith(
+                    color: AppColors.onBackstage,
+                    fontSize: 32,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 10),
           Text(
             'Create your profile and get discovered by agencies and brands.',
-            style: AppTypography.body.copyWith(color: AppColors.onBackstageSoft, fontSize: 15),
+            style: AppTypography.body.copyWith(
+              color: AppColors.onBackstageSoft,
+              fontSize: 15,
+            ),
           ),
         ],
       ),
@@ -397,7 +436,11 @@ Future<void> signupWithGoogle() async {
       controller: dobController,
       readOnly: true,
       onTap: pickDob,
-      trailingIcon: const Icon(Icons.calendar_today, size: AppIconSize.sm, color: AppColors.inkFaint),
+      trailingIcon: const Icon(
+        Icons.calendar_today,
+        size: AppIconSize.sm,
+        color: AppColors.inkFaint,
+      ),
       validator: (_) => selectedDob == null ? 'Select date of birth' : null,
     );
   }
@@ -406,7 +449,10 @@ Future<void> signupWithGoogle() async {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text('Already have an account? ', style: AppTypography.body.copyWith(color: AppColors.inkSoft)),
+        Text(
+          'Already have an account? ',
+          style: AppTypography.body.copyWith(color: AppColors.inkSoft),
+        ),
         GestureDetector(
           onTap: () {
             Navigator.push(

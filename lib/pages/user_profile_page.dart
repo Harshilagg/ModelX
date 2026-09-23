@@ -53,7 +53,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> _loadUser() async {
-    final doc = await FirebaseFirestore.instance.collection('users').doc(widget.uid).get();
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.uid)
+        .get();
 
     if (!doc.exists) {
       if (mounted) setState(() => loading = false);
@@ -75,7 +78,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
     if (me == null) return;
     final otherUserId = widget.uid;
 
-    final meDoc = await FirebaseFirestore.instance.collection('users').doc(me.uid).get();
+    final meDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(me.uid)
+        .get();
 
     final connections = meDoc.data()?['connections'] ?? [];
     if (connections.contains(otherUserId)) {
@@ -99,7 +105,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
     final me = currentUser;
     if (me == null) return;
 
-    final meDoc = await FirebaseFirestore.instance.collection('users').doc(me.uid).get();
+    final meDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(me.uid)
+        .get();
 
     await FirebaseFirestore.instance.collection('connection_requests').add({
       'senderId': me.uid,
@@ -155,7 +164,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
       return Scaffold(
         backgroundColor: BoardColors.paper,
         appBar: AppBar(backgroundColor: BoardColors.paper, elevation: 0),
-        body: const EmptyState(icon: Icons.person_off_outlined, title: 'Profile not found'),
+        body: const EmptyState(
+          icon: Icons.person_off_outlined,
+          title: 'Profile not found',
+        ),
       );
     }
 
@@ -173,7 +185,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
             accent: BoardColors.brass,
           ),
           Expanded(
-            child: IndexedStack(index: _tab, children: [_detailsTab(), _portfolioTab()]),
+            child: IndexedStack(
+              index: _tab,
+              children: [_detailsTab(), _portfolioTab()],
+            ),
           ),
         ],
       ),
@@ -202,7 +217,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () => Navigator.of(context).maybePop(),
-                    child: const Icon(Icons.arrow_back, size: 18, color: BoardColors.onInk),
+                    child: const Icon(
+                      Icons.arrow_back,
+                      size: 18,
+                      color: BoardColors.onInk,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -221,14 +240,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
-                      Clipboard.setData(ClipboardData(text: 'modelx://profile/${widget.uid}'));
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(const SnackBar(content: Text('Profile link copied')));
+                      Clipboard.setData(
+                        ClipboardData(text: 'modelx://profile/${widget.uid}'),
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Profile link copied')),
+                      );
                     },
                     child: Text(
                       'SHARE',
-                      style: BoardType.mono(fontSize: 9.5, color: BoardColors.brass),
+                      style: BoardType.mono(
+                        fontSize: 9.5,
+                        color: BoardColors.brass,
+                      ),
                     ),
                   ),
                 ],
@@ -267,7 +291,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          (fullName.isEmpty ? 'Profile' : fullName).toUpperCase(),
+                          (fullName.isEmpty ? 'Profile' : fullName)
+                              .toUpperCase(),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: BoardType.display(
@@ -282,7 +307,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
                             '@$username',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: BoardType.mono(fontSize: 10, color: BoardColors.onInkSoft),
+                            style: BoardType.mono(
+                              fontSize: 10,
+                              color: BoardColors.onInkSoft,
+                            ),
                           ),
                         ],
                         const SizedBox(height: 8),
@@ -293,7 +321,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                               Flexible(
                                 child: BoardStatWell(label: 'Age', value: age),
                               ),
-                            if (age.isNotEmpty && availability.isNotEmpty) const SizedBox(width: 6),
+                            if (age.isNotEmpty && availability.isNotEmpty)
+                              const SizedBox(width: 6),
                             if (availability.isNotEmpty)
                               Flexible(
                                 child: MonoChip(
@@ -301,7 +330,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
                                   filled: true,
                                   accent: BoardColors.brass,
                                   fontSize: 9.5,
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
                                 ),
                               ),
                           ],
@@ -320,7 +352,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   Widget _quadStats() {
     final cells = [
-      ('Height', _statValue(userData?['height'], (userData?['heightUnit'] ?? '').toString())),
+      (
+        'Height',
+        _statValue(
+          userData?['height'],
+          (userData?['heightUnit'] ?? '').toString(),
+        ),
+      ),
       ('Measure', _statValue(userData?['measurements'])),
       ('Weight', _statValue(userData?['weight'])),
       ('Gender', _statValue(userData?['gender'])),
@@ -340,7 +378,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
               Expanded(
                 child: Container(
                   color: BoardColors.paper,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 10,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -361,7 +402,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         cells[i].$2,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: BoardType.mono(fontSize: 12.5, letterSpacing: 0.2),
+                        style: BoardType.mono(
+                          fontSize: 12.5,
+                          letterSpacing: 0.2,
+                        ),
                       ),
                     ],
                   ),
@@ -401,19 +445,30 @@ class _UserProfilePageState extends State<UserProfilePage> {
         const SizedBox(height: 6),
         _specRow(
           'Appearance',
-          _summary([_v('skinColor', ''), _v('eyeColor', ''), _v('hairColor', '')]),
+          _summary([
+            _v('skinColor', ''),
+            _v('eyeColor', ''),
+            _v('hairColor', ''),
+          ]),
           _openAppearance,
         ),
         const SizedBox(height: 6),
         _specRow(
           'Professional',
-          _summary([_v('skills', ''), _v('preferredWork', ''), _v('availability', '')]),
+          _summary([
+            _v('skills', ''),
+            _v('preferredWork', ''),
+            _v('availability', ''),
+          ]),
           _openProfessional,
         ),
         const SizedBox(height: 6),
         _specRow(
           'Career History',
-          _summary([_listValue(userData?['projects']), _listValue(userData?['agencies'])]),
+          _summary([
+            _listValue(userData?['projects']),
+            _listValue(userData?['agencies']),
+          ]),
           _openCareer,
         ),
         const SizedBox(height: 14),
@@ -431,7 +486,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
         if (docs.isEmpty) return const SizedBox.shrink();
 
         final urls = docs
-            .map((d) => ((d.data() as Map<String, dynamic>)['mediaUrl'] ?? '').toString())
+            .map(
+              (d) => ((d.data() as Map<String, dynamic>)['mediaUrl'] ?? '')
+                  .toString(),
+            )
             .where((u) => u.isNotEmpty)
             .toList();
         if (urls.isEmpty) return const SizedBox.shrink();
@@ -516,18 +574,26 @@ class _UserProfilePageState extends State<UserProfilePage> {
       stream: _portfolio,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const Padding(padding: EdgeInsets.all(20), child: LoadingState());
+          return const Padding(
+            padding: EdgeInsets.all(20),
+            child: LoadingState(),
+          );
         }
 
         final docs = snapshot.data!.docs;
         if (docs.isEmpty) {
-          return const EmptyState(icon: Icons.photo_library_outlined, title: 'No portfolio yet');
+          return const EmptyState(
+            icon: Icons.photo_library_outlined,
+            title: 'No portfolio yet',
+          );
         }
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
           children: [
-            BoardSectionLabel('Portfolio · ${docs.length} shot${docs.length == 1 ? '' : 's'}'),
+            BoardSectionLabel(
+              'Portfolio · ${docs.length} shot${docs.length == 1 ? '' : 's'}',
+            ),
             const SizedBox(height: 9),
             PortfolioMasonry(
               itemCount: docs.length,
@@ -535,7 +601,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 final data = docs[i].data() as Map<String, dynamic>;
                 final urls = [
                   for (final d in docs)
-                    ((d.data() as Map<String, dynamic>)['mediaUrl'] ?? '').toString(),
+                    ((d.data() as Map<String, dynamic>)['mediaUrl'] ?? '')
+                        .toString(),
                 ];
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
@@ -585,7 +652,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     detail,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: BoardType.mono(fontSize: 10, color: BoardColors.inkSoft),
+                    style: BoardType.mono(
+                      fontSize: 10,
+                      color: BoardColors.inkSoft,
+                    ),
                   ),
                 ],
               ),
@@ -595,7 +665,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
               width: 28,
               height: 28,
               alignment: Alignment.center,
-              decoration: const BoxDecoration(shape: BoxShape.circle, color: BoardColors.ink),
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: BoardColors.ink,
+              ),
               child: const Icon(
                 Icons.arrow_outward_rounded,
                 size: 14,
@@ -620,7 +693,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
         SpecRow(label: 'Eye color', value: _v('eyeColor'), onDark: true),
         SpecRow(label: 'Hair color', value: _v('hairColor'), onDark: true),
         SpecRow(label: 'Tattoos', value: _v('tattoos'), onDark: true),
-        SpecRow(label: 'Piercing', value: _v('piercing'), onDark: true, bottomBorder: true),
+        SpecRow(
+          label: 'Piercing',
+          value: _v('piercing'),
+          onDark: true,
+          bottomBorder: true,
+        ),
       ],
     );
   }
@@ -632,10 +710,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
       accent: BoardColors.brass,
       children: [
         SpecRow(label: 'Skills', value: _v('skills'), onDark: true),
-        SpecRow(label: 'Preferred work', value: _v('preferredWork'), onDark: true),
+        SpecRow(
+          label: 'Preferred work',
+          value: _v('preferredWork'),
+          onDark: true,
+        ),
         SpecRow(label: 'Availability', value: _v('availability'), onDark: true),
         SpecRow(label: 'Experience', value: _v('experience'), onDark: true),
-        SpecRow(label: 'Achievements', value: _v('achievements'), onDark: true, bottomBorder: true),
+        SpecRow(
+          label: 'Achievements',
+          value: _v('achievements'),
+          onDark: true,
+          bottomBorder: true,
+        ),
       ],
     );
   }
@@ -648,7 +735,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
       title: 'Career History',
       accent: BoardColors.brass,
       children: [
-        SpecRow(label: 'Projects', value: projects.trim().isEmpty ? '—' : projects, onDark: true),
+        SpecRow(
+          label: 'Projects',
+          value: projects.trim().isEmpty ? '—' : projects,
+          onDark: true,
+        ),
         SpecRow(
           label: 'Agency associations',
           value: agencies.trim().isEmpty ? 'NONE' : agencies,

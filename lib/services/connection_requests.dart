@@ -34,8 +34,10 @@ class ConnectionRequests {
   /// its button back rather than leaving a request that never landed
   /// looking sent.
   static Future<void> send({required String from, required String to}) async {
-    final meDoc =
-        await FirebaseFirestore.instance.collection('users').doc(from).get();
+    final meDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(from)
+        .get();
     await FirebaseFirestore.instance.collection('connection_requests').add({
       'senderId': from,
       'receiverId': to,

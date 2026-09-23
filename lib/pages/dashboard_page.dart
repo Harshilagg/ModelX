@@ -32,6 +32,12 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   int _selectedIndex = 0;
+
+  /// Set when Home's Up next counts open Jobs, so the list arrives
+  /// already narrowed to whatever was tapped. Cleared as soon as the
+  /// user picks another tab, or the filter would stick on every later
+  /// visit.
+  String? _jobsStatus;
   DateTime? _lastBackPress;
 
   final SearchService _searchService = SearchService();
@@ -75,13 +81,17 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _loadUserType() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
       if (mounted && doc.exists) {
         final data = doc.data() ?? {};
         setState(() {
           _userType = data['userType'] ?? 'User';
           _avatarUrl = (data['profileImage'] ?? '').toString();
-          _displayName = (data['fullName'] ?? data['username'] ?? '').toString();
+          _displayName = (data['fullName'] ?? data['username'] ?? '')
+              .toString();
         });
       }
     }
@@ -171,9 +181,9 @@ class _DashboardPageState extends State<DashboardPage> {
         if (_lastBackPress == null ||
             now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
           _lastBackPress = now;
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Press back again to exit')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Press back again to exit')),
+          );
           return;
         }
         Navigator.of(context).maybePop();
@@ -190,7 +200,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     child: _UnreadCount(
                       builder: (unread) => BoardTopBar(
                         avatarUrl: _avatarUrl,
-                        initial: _displayName.isNotEmpty ? _displayName[0] : '?',
+                        initial: _displayName.isNotEmpty
+                            ? _displayName[0]
+                            : '?',
                         hint: _searchHints[_selectedIndex],
                         unread: unread,
                         controller: _searchController,
@@ -210,7 +222,9 @@ class _DashboardPageState extends State<DashboardPage> {
                           _dismissSearch();
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const ChatInboxPage()),
+                            MaterialPageRoute(
+                              builder: (_) => const ChatInboxPage(),
+                            ),
                           );
                         },
                       ),
@@ -224,17 +238,28 @@ class _DashboardPageState extends State<DashboardPage> {
                   // 110, which only covers that once the inset is taken
                   // out here.
                   child: Padding(
-                    padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).padding.bottom,
+                    ),
                     child: GestureDetector(
                       behavior: HitTestBehavior.translucent,
                       onTap: _dismissSearch,
                       child: IndexedStack(
                         index: _selectedIndex,
                         children: [
-                          HomePage(onOpenJobs: () => setState(() => _selectedIndex = 3)),
+                          HomePage(
+                            onOpenJobs: () =>
+                                setState(() => _selectedIndex = 3),
+                            // The counts on the Up next card open Jobs
+                            // already narrowed to what was counted.
+                            onOpenJobsFiltered: (status) => setState(() {
+                              _jobsStatus = status;
+                              _selectedIndex = 3;
+                            }),
+                          ),
                           const NotificationsPage(),
                           const NetworkPage(),
-                          const JobsPage(),
+                          JobsPage(initialStatus: _jobsStatus),
                           const ProfilePage(embedded: true),
                         ],
                       ),
@@ -254,7 +279,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
 
-            if (showTopBar && (showRecent || searchResults.isNotEmpty)) _searchOverlay(),
+            if (showTopBar && (showRecent || searchResults.isNotEmpty))
+              _searchOverlay(),
 
             // The copilot sits in the Stack rather than in the Scaffold's
             // floatingActionButton slot: the nav bar below is a Positioned
@@ -292,6 +318,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 currentIndex: _selectedIndex,
                 accent: accent,
                 onTap: (i) {
+                  // Picking a tab by hand clears any filter Home asked
+                  // for, or Jobs would stay narrowed on every later
+                  // visit with nothing on screen explaining why.
+                  if (i != 3) _jobsStatus = null;
                   _dismissSearch();
                   setState(() => _selectedIndex = i);
                 },
@@ -353,10 +383,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   if (index < searchResults.length) {
                     final user = searchResults[index];
                     final name =
-                        (user['fullName'] ?? '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}')
+                        (user['fullName'] ??
+                                '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}')
                             .toString()
                             .trim();
-                    final sub = (user['username'] != null && user['username'].toString().isNotEmpty)
+                    final sub =
+                        (user['username'] != null &&
+                            user['username'].toString().isNotEmpty)
                         ? '@${user['username']}'
                         : (user['bio'] ?? '').toString();
                     return ListTile(
@@ -364,26 +397,37 @@ class _DashboardPageState extends State<DashboardPage> {
                       leading: SizedBox(
                         width: 34,
                         height: 40,
-                        child: BoardMedia(url: user['profileImage']?.toString(), cut: 9),
+                        child: BoardMedia(
+                          url: user['profileImage']?.toString(),
+                          cut: 9,
+                        ),
                       ),
                       title: Text(
                         name.isEmpty ? 'User' : name.toUpperCase(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: BoardType.title(fontSize: 16, fontWeight: FontWeight.w700),
+                        style: BoardType.title(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       subtitle: Text(
                         sub,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: BoardType.mono(fontSize: 10, color: BoardColors.inkSoft),
+                        style: BoardType.mono(
+                          fontSize: 10,
+                          color: BoardColors.inkSoft,
+                        ),
                       ),
                       onTap: () async {
                         final uid = user['uid'];
                         FocusScope.of(context).unfocus();
                         await Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => UserProfilePage(uid: uid)),
+                          MaterialPageRoute(
+                            builder: (_) => UserProfilePage(uid: uid),
+                          ),
                         );
                         if (!mounted) return;
                         _addRecentSearch(_searchController.text.trim());
@@ -397,13 +441,18 @@ class _DashboardPageState extends State<DashboardPage> {
 
                   return ListTile(
                     dense: true,
-                    title: Text('SEE ALL RESULTS', style: BoardType.mono(fontSize: 10.5)),
+                    title: Text(
+                      'SEE ALL RESULTS',
+                      style: BoardType.mono(fontSize: 10.5),
+                    ),
                     onTap: () {
                       final q = _searchController.text.trim();
                       if (q.isEmpty) return;
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => SearchResultsPage(query: q)),
+                        MaterialPageRoute(
+                          builder: (_) => SearchResultsPage(query: q),
+                        ),
                       );
                       _addRecentSearch(q);
                       setState(() {

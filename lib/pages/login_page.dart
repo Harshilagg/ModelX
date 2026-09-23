@@ -133,13 +133,17 @@ class _LoginPageState extends State<LoginPage> {
 
       // 🔍 1. Check MODEL (users) collection
       debugPrint('🔎 Checking users for $uid');
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
       if (!mounted) return;
       if (userDoc.exists) {
         debugPrint('➡️ Found model profile');
         // Mirror AuthGate logic: if profileCompleted -> Dashboard, else CreateProfilePage
         final data = userDoc.data();
-        final profileCompleted = data != null && (data['profileCompleted'] == true);
+        final profileCompleted =
+            data != null && (data['profileCompleted'] == true);
         if (profileCompleted) {
           Navigator.pushAndRemoveUntil(
             context,
@@ -158,7 +162,10 @@ class _LoginPageState extends State<LoginPage> {
 
       // 🔍 2. Check BRAND collection
       debugPrint('🔎 Checking brands for $uid');
-      final brandDoc = await FirebaseFirestore.instance.collection('brands').doc(uid).get();
+      final brandDoc = await FirebaseFirestore.instance
+          .collection('brands')
+          .doc(uid)
+          .get();
       if (brandDoc.exists) {
         debugPrint('➡️ Found brand profile');
         // ✅ BRAND LOGIN
@@ -172,10 +179,15 @@ class _LoginPageState extends State<LoginPage> {
 
       // 🔍 3. Check AGENCY collection
       debugPrint('🔎 Checking agency for $uid');
-      final agencyDoc = await FirebaseFirestore.instance.collection('agency').doc(uid).get();
+      final agencyDoc = await FirebaseFirestore.instance
+          .collection('agency')
+          .doc(uid)
+          .get();
       if (agencyDoc.exists) {
         debugPrint('➡️ Found agency profile');
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Logged in as Agency')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Logged in as Agency')));
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const AgencyDashboardPage()),
@@ -193,34 +205,52 @@ class _LoginPageState extends State<LoginPage> {
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('No profile found'),
-          content: const Text('No model/brand/agency profile exists for this account. Would you like to create an Agency profile now?'),
+          content: const Text(
+            'No model/brand/agency profile exists for this account. Would you like to create an Agency profile now?',
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, 'cancel'), child: const Text('Cancel')),
-            TextButton(onPressed: () => Navigator.pop(context, 'select'), child: const Text('Select role')),
-            TextButton(onPressed: () => Navigator.pop(context, 'agency'), child: const Text('Create Agency')),
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'cancel'),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'select'),
+              child: const Text('Select role'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'agency'),
+              child: const Text('Create Agency'),
+            ),
           ],
         ),
       );
 
       if (choice == 'agency') {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AgencyEditProfilePage()));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AgencyEditProfilePage()),
+        );
         return;
       } else if (choice == 'select') {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SelectPortfolioPage()));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const SelectPortfolioPage()),
+        );
         return;
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No profile found')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No profile found')));
         return;
       }
-    }
-    on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? 'Login failed')),
-      );
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Login failed')));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Something went wrong')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
     } finally {
       setState(() => loading = false);
     }
@@ -247,16 +277,18 @@ class _LoginPageState extends State<LoginPage> {
                       AppTextField(
                         label: 'Email or Username',
                         controller: identifierController,
-                        validator: (v) =>
-                            v == null || v.isEmpty ? 'Enter email or username' : null,
+                        validator: (v) => v == null || v.isEmpty
+                            ? 'Enter email or username'
+                            : null,
                       ),
                       const SizedBox(height: 16),
                       AppTextField(
                         label: 'Password',
                         controller: passwordController,
                         obscureText: true,
-                        validator: (v) =>
-                            v == null || v.length < 6 ? 'Password too short' : null,
+                        validator: (v) => v == null || v.length < 6
+                            ? 'Password too short'
+                            : null,
                       ),
                       const SizedBox(height: 28),
                       AppButton(
@@ -271,14 +303,18 @@ class _LoginPageState extends State<LoginPage> {
                         children: [
                           Text(
                             "Don't have an account? ",
-                            style: AppTypography.body.copyWith(color: AppColors.inkSoft),
+                            style: AppTypography.body.copyWith(
+                              color: AppColors.inkSoft,
+                            ),
                           ),
                           GestureDetector(
                             onTap: () {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => SelectPortfolioPage(inviteToken: widget.inviteToken),
+                                  builder: (_) => SelectPortfolioPage(
+                                    inviteToken: widget.inviteToken,
+                                  ),
                                 ),
                               );
                             },
@@ -311,7 +347,12 @@ class _LoginPageState extends State<LoginPage> {
     return Container(
       width: double.infinity,
       color: AppColors.backstage,
-      padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 20, 24, 36),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        MediaQuery.of(context).padding.top + 20,
+        24,
+        36,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -321,29 +362,47 @@ class _LoginPageState extends State<LoginPage> {
               padding: const EdgeInsets.only(bottom: 18),
               child: GestureDetector(
                 onTap: () => Navigator.of(context).pop(),
-                child: const Icon(Icons.arrow_back, color: AppColors.onBackstage, size: AppIconSize.md),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: AppColors.onBackstage,
+                  size: AppIconSize.md,
+                ),
               ),
             ),
           Text.rich(
-            TextSpan(children: [
-              TextSpan(
-                text: 'Welcome ',
-                style: AppTypography.display.copyWith(color: AppColors.onBackstage, fontSize: 32),
-              ),
-              TextSpan(
-                text: 'back',
-                style: AppTypography.displayAccent(color: AppColors.goldOnBackstage, fontSize: 34),
-              ),
-              TextSpan(
-                text: '.',
-                style: AppTypography.display.copyWith(color: AppColors.onBackstage, fontSize: 32),
-              ),
-            ]),
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: 'Welcome ',
+                  style: AppTypography.display.copyWith(
+                    color: AppColors.onBackstage,
+                    fontSize: 32,
+                  ),
+                ),
+                TextSpan(
+                  text: 'back',
+                  style: AppTypography.displayAccent(
+                    color: AppColors.goldOnBackstage,
+                    fontSize: 34,
+                  ),
+                ),
+                TextSpan(
+                  text: '.',
+                  style: AppTypography.display.copyWith(
+                    color: AppColors.onBackstage,
+                    fontSize: 32,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 10),
           Text(
             'Sign in to continue to ModelX.',
-            style: AppTypography.body.copyWith(color: AppColors.onBackstageSoft, fontSize: 15),
+            style: AppTypography.body.copyWith(
+              color: AppColors.onBackstageSoft,
+              fontSize: 15,
+            ),
           ),
         ],
       ),

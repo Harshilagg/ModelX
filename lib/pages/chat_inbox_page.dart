@@ -55,7 +55,11 @@ class ChatInboxPage extends StatelessWidget {
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () => Navigator.of(context).maybePop(),
-            child: const Icon(Icons.arrow_back, size: 18, color: BoardColors.ink),
+            child: const Icon(
+              Icons.arrow_back,
+              size: 18,
+              color: BoardColors.ink,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -63,7 +67,11 @@ class ChatInboxPage extends StatelessWidget {
               'MESSAGES',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: BoardType.display(fontSize: 26, height: 1, letterSpacing: 0.5),
+              style: BoardType.display(
+                fontSize: 26,
+                height: 1,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ],
@@ -116,7 +124,9 @@ class ChatInboxPage extends StatelessWidget {
             final peerUsername = (data['peerUsername'] ?? '').toString().trim();
             final peerImage = (data['peerImage'] ?? '').toString();
             final lastMessage = (data['lastMessage'] ?? '').toString();
-            final unreadCount = (data['unreadCount'] is int) ? data['unreadCount'] as int : 0;
+            final unreadCount = (data['unreadCount'] is int)
+                ? data['unreadCount'] as int
+                : 0;
 
             // Some inbox documents were written before names were
             // captured. Rather than printing "User" over and over, an
@@ -184,7 +194,9 @@ class _ChatRow extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(color: BoardColors.inkLine),
-            bottom: isLast ? BorderSide(color: BoardColors.inkLine) : BorderSide.none,
+            bottom: isLast
+                ? BorderSide(color: BoardColors.inkLine)
+                : BorderSide.none,
           ),
         ),
         child: Row(
@@ -200,7 +212,10 @@ class _ChatRow extends StatelessWidget {
                         alignment: Alignment.center,
                         child: Text(
                           hasName ? name[0].toUpperCase() : '?',
-                          style: BoardType.mono(fontSize: 15, color: BoardColors.onInk),
+                          style: BoardType.mono(
+                            fontSize: 15,
+                            color: BoardColors.onInk,
+                          ),
                         ),
                       ),
               ),
@@ -256,7 +271,10 @@ class _ChatRow extends StatelessWidget {
                 ),
                 child: Text(
                   unread > 99 ? '99+' : unread.toString(),
-                  style: BoardType.mono(fontSize: 9.5, color: BoardColors.onInk),
+                  style: BoardType.mono(
+                    fontSize: 9.5,
+                    color: BoardColors.onInk,
+                  ),
                 ),
               ),
             ],

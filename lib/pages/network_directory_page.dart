@@ -19,7 +19,11 @@ class _DirectoryScaffold extends StatelessWidget {
   final String? meta;
   final Widget child;
 
-  const _DirectoryScaffold({required this.title, required this.child, this.meta});
+  const _DirectoryScaffold({
+    required this.title,
+    required this.child,
+    this.meta,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +41,11 @@ class _DirectoryScaffold extends StatelessWidget {
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () => Navigator.of(context).maybePop(),
-                    child: const Icon(Icons.arrow_back, size: 18, color: BoardColors.ink),
+                    child: const Icon(
+                      Icons.arrow_back,
+                      size: 18,
+                      color: BoardColors.ink,
+                    ),
                   ),
                 ],
               ),
@@ -87,8 +95,10 @@ class _PeopleDirectoryPageState extends State<PeopleDirectoryPage> {
   /// Created once rather than per build — see the note in NetworkPage.
   /// Following somebody calls setState, and an inline stream would
   /// resubscribe and blank the grid on every tap.
-  late final Stream<QuerySnapshot> _people =
-      FirebaseFirestore.instance.collection('users').limit(200).snapshots();
+  late final Stream<QuerySnapshot> _people = FirebaseFirestore.instance
+      .collection('users')
+      .limit(200)
+      .snapshots();
 
   @override
   void initState() {
@@ -149,7 +159,8 @@ class _PeopleDirectoryPageState extends State<PeopleDirectoryPage> {
           if (widget.excluding.contains(d.id)) return false;
           if (target == null || target.isEmpty) return true;
           final data = d.data() as Map<String, dynamic>? ?? {};
-          return (data['location'] ?? '').toString().trim().toLowerCase() == target;
+          return (data['location'] ?? '').toString().trim().toLowerCase() ==
+              target;
         }).toList();
 
         if (people.isEmpty) {
@@ -183,7 +194,8 @@ class _PeopleDirectoryPageState extends State<PeopleDirectoryPage> {
                   crossAxisCount: 2,
                   crossAxisSpacing: gap,
                   mainAxisSpacing: 16,
-                  mainAxisExtent: cropHeight + PersonCropCard.captionHeight(context),
+                  mainAxisExtent:
+                      cropHeight + PersonCropCard.captionHeight(context),
                 ),
                 itemBuilder: (context, i) {
                   final doc = people[i];
@@ -220,11 +232,15 @@ class HiringDirectoryPage extends StatefulWidget {
 class _HiringDirectoryPageState extends State<HiringDirectoryPage> {
   // Unfiltered, to match the rail: every brand on the board, with its
   // open-call count on the card.
-  late final Stream<QuerySnapshot> _gigs =
-      FirebaseFirestore.instance.collection('gigs').limit(200).snapshots();
+  late final Stream<QuerySnapshot> _gigs = FirebaseFirestore.instance
+      .collection('gigs')
+      .limit(200)
+      .snapshots();
 
-  late final Stream<QuerySnapshot> _castings =
-      FirebaseFirestore.instance.collection('castings').limit(200).snapshots();
+  late final Stream<QuerySnapshot> _castings = FirebaseFirestore.instance
+      .collection('castings')
+      .limit(200)
+      .snapshots();
 
   @override
   Widget build(BuildContext context) {
@@ -236,7 +252,8 @@ class _HiringDirectoryPageState extends State<HiringDirectoryPage> {
           builder: (context, castSnap) {
             // Both settle before folding, so a slow query can't render a
             // half-list that looks like missing data.
-            final settled = (gigSnap.hasData || gigSnap.hasError) &&
+            final settled =
+                (gigSnap.hasData || gigSnap.hasError) &&
                 (castSnap.hasData || castSnap.hasError);
             if (!settled) {
               return const _DirectoryScaffold(
@@ -262,7 +279,10 @@ class _HiringDirectoryPageState extends State<HiringDirectoryPage> {
               );
             }
 
-            final open = posters.fold<int>(0, (total, p) => total + p.openCount);
+            final open = posters.fold<int>(
+              0,
+              (total, p) => total + p.openCount,
+            );
 
             return _DirectoryScaffold(
               title: 'Brands',

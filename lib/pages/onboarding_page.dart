@@ -24,7 +24,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
     },
     {
       'title': 'Built for Real People',
-      'subtitle': 'Authentic profiles, real conversations, and trusted connections.',
+      'subtitle':
+          'Authentic profiles, real conversations, and trusted connections.',
     },
     {
       'title': 'Designed for the Future',
@@ -135,7 +136,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                 );
                               }
                             } finally {
-                              if (mounted) setState(() => _isProcessing = false);
+                              if (mounted)
+                                setState(() => _isProcessing = false);
                             }
 
                             if (success && mounted) {
@@ -210,9 +212,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       // Replace onboarding with login so the user cannot navigate back to onboarding
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => const LoginPage(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const LoginPage()),
                       );
                     },
                     child: Text(

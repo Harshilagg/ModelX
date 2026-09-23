@@ -36,7 +36,14 @@ class _NetworkPageState extends State<NetworkPage> {
   /// The fields a comp card prints. Kept identical to the profile's own
   /// readiness row so the two numbers can never disagree.
   static const _cardFields = [
-    'height', 'weight', 'waist', 'hips', 'shoeSize', 'eyeColor', 'hairColor', 'username',
+    'height',
+    'weight',
+    'waist',
+    'hips',
+    'shoeSize',
+    'eyeColor',
+    'hairColor',
+    'username',
   ];
 
   /// People with an outstanding request from this model. Held here
@@ -59,10 +66,14 @@ class _NetworkPageState extends State<NetworkPage> {
     super.initState();
     final me = currentUser;
     if (me != null) {
-      _meStream =
-          FirebaseFirestore.instance.collection('users').doc(me.uid).snapshots();
-      _poolStream =
-          FirebaseFirestore.instance.collection('users').limit(60).snapshots();
+      _meStream = FirebaseFirestore.instance
+          .collection('users')
+          .doc(me.uid)
+          .snapshots();
+      _poolStream = FirebaseFirestore.instance
+          .collection('users')
+          .limit(60)
+          .snapshots();
     }
     _loadPending();
   }
@@ -108,7 +119,10 @@ class _NetworkPageState extends State<NetworkPage> {
   Widget build(BuildContext context) {
     final user = currentUser;
     if (user == null) {
-      return const EmptyState(icon: Icons.people_outline_rounded, title: 'Not signed in');
+      return const EmptyState(
+        icon: Icons.people_outline_rounded,
+        title: 'Not signed in',
+      );
     }
 
     return StreamBuilder<DocumentSnapshot>(
@@ -130,9 +144,10 @@ class _NetworkPageState extends State<NetworkPage> {
           stream: _poolStream,
           builder: (context, poolSnap) {
             final exclude = {...connections, user.uid};
-            final pool = (poolSnap.data?.docs ?? const <QueryDocumentSnapshot>[])
-                .where((d) => !exclude.contains(d.id))
-                .toList();
+            final pool =
+                (poolSnap.data?.docs ?? const <QueryDocumentSnapshot>[])
+                    .where((d) => !exclude.contains(d.id))
+                    .toList();
 
             final nearby = myLocation.isEmpty
                 ? const <QueryDocumentSnapshot>[]
@@ -146,7 +161,9 @@ class _NetworkPageState extends State<NetworkPage> {
             // Nearby models are the more specific suggestion, so they
             // don't get repeated in the general discovery rail above.
             final nearbyIds = nearby.map((d) => d.id).toSet();
-            final discover = pool.where((d) => !nearbyIds.contains(d.id)).toList();
+            final discover = pool
+                .where((d) => !nearbyIds.contains(d.id))
+                .toList();
 
             return CustomScrollView(
               slivers: [
@@ -154,7 +171,8 @@ class _NetworkPageState extends State<NetworkPage> {
                   key: const ValueKey('title'),
                   child: BoardScreenTitle(
                     title: 'Network',
-                    meta: '${connections.length} CONNECTION${connections.length == 1 ? '' : 'S'}',
+                    meta:
+                        '${connections.length} CONNECTION${connections.length == 1 ? '' : 'S'}',
                   ),
                 ),
 
@@ -192,7 +210,8 @@ class _NetworkPageState extends State<NetworkPage> {
                     sliver: SliverList.separated(
                       itemCount: connections.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 6),
-                      itemBuilder: (_, i) => _ConnectionRow(uid: connections[i]),
+                      itemBuilder: (_, i) =>
+                          _ConnectionRow(uid: connections[i]),
                     ),
                   ),
                 ],
@@ -269,11 +288,11 @@ class _NetworkPageState extends State<NetworkPage> {
   }
 
   Widget _skeleton() => ListView.separated(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
-        itemCount: 6,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
-        itemBuilder: (_, __) => AppSkeleton.listTile(),
-      );
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
+    itemCount: 6,
+    separatorBuilder: (_, __) => const SizedBox(height: 8),
+    itemBuilder: (_, __) => AppSkeleton.listTile(),
+  );
 }
 
 /// ---------------------------------------------------------------------
@@ -384,8 +403,11 @@ class _CompCardNudge extends StatelessWidget {
                       shape: BoxShape.circle,
                       color: BoardColors.brass,
                     ),
-                    child: const Icon(Icons.arrow_outward_rounded,
-                        size: 14, color: BoardColors.ink),
+                    child: const Icon(
+                      Icons.arrow_outward_rounded,
+                      size: 14,
+                      color: BoardColors.ink,
+                    ),
                   ),
                 ],
               ),
@@ -414,10 +436,11 @@ class _ConnectionRow extends StatelessWidget {
         if (!snap.hasData) return const SizedBox(height: 0);
         final data = snap.data!.data() as Map<String, dynamic>? ?? {};
 
-        final name = (data['fullName'] ??
-                '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}')
-            .toString()
-            .trim();
+        final name =
+            (data['fullName'] ??
+                    '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}')
+                .toString()
+                .trim();
         final username = (data['username'] ?? '').toString();
         final location = (data['location'] ?? '').toString();
         final bio = (data['bio'] ?? '').toString();
@@ -462,7 +485,10 @@ class _ConnectionRow extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: BoardType.title(
-                            fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                       if (meta.isNotEmpty) ...[
                         const SizedBox(height: 4),
@@ -483,7 +509,10 @@ class _ConnectionRow extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: BoardType.body(
-                              fontSize: 11, color: BoardColors.inkSoft, height: 1.3),
+                            fontSize: 11,
+                            color: BoardColors.inkSoft,
+                            height: 1.3,
+                          ),
                         ),
                       ],
                     ],
@@ -592,15 +621,15 @@ class _BoardRailState extends State<_BoardRail> {
             // already carries a long section name.
             trailing: widget.onShowAll == null
                 ? (widget.meta == null
-                    ? null
-                    : Text(
-                        widget.meta!,
-                        style: BoardType.mono(
-                          fontSize: 9.5,
-                          color: BoardColors.inkSoft,
-                          letterSpacing: 0.95,
-                        ),
-                      ))
+                      ? null
+                      : Text(
+                          widget.meta!,
+                          style: BoardType.mono(
+                            fontSize: 9.5,
+                            color: BoardColors.inkSoft,
+                            letterSpacing: 0.95,
+                          ),
+                        ))
                 : GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: widget.onShowAll,
@@ -609,7 +638,10 @@ class _BoardRailState extends State<_BoardRail> {
                       filled: true,
                       accent: BoardColors.ink,
                       fontSize: 9.5,
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 6,
+                      ),
                     ),
                   ),
           ),
@@ -758,10 +790,11 @@ class _NearbyRail extends StatelessWidget {
       itemBuilder: (context, i) {
         final doc = people[i];
         final data = doc.data() as Map<String, dynamic>? ?? {};
-        final name = (data['fullName'] ??
-                '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}')
-            .toString()
-            .trim();
+        final name =
+            (data['fullName'] ??
+                    '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}')
+                .toString()
+                .trim();
         final username = (data['username'] ?? '').toString();
 
         return SizedBox(
@@ -831,11 +864,15 @@ class _HiringRailState extends State<_HiringRail> {
   // Unfiltered: a brand is only visible through what it has posted, so
   // filtering to open postings would hide every brand between campaigns.
   // The card says how many of their calls are currently open.
-  late final Stream<QuerySnapshot> _gigs =
-      FirebaseFirestore.instance.collection('gigs').limit(200).snapshots();
+  late final Stream<QuerySnapshot> _gigs = FirebaseFirestore.instance
+      .collection('gigs')
+      .limit(200)
+      .snapshots();
 
-  late final Stream<QuerySnapshot> _castings =
-      FirebaseFirestore.instance.collection('castings').limit(200).snapshots();
+  late final Stream<QuerySnapshot> _castings = FirebaseFirestore.instance
+      .collection('castings')
+      .limit(200)
+      .snapshots();
 
   @override
   Widget build(BuildContext context) {
@@ -865,7 +902,9 @@ class _HiringRailState extends State<_HiringRail> {
             // indistinguishable from "nobody is hiring" — and left no way
             // to tell the two apart from the outside.
             if (gigSnap.hasError || castSnap.hasError) {
-              debugPrint('[hiring] gigs: ${gigSnap.error}  castings: ${castSnap.error}');
+              debugPrint(
+                '[hiring] gigs: ${gigSnap.error}  castings: ${castSnap.error}',
+              );
               return const _RailNotice(
                 label: 'Brands on the board',
                 message: "Couldn't load the brands on the board.",
@@ -878,7 +917,8 @@ class _HiringRailState extends State<_HiringRail> {
             );
 
             if (list.isEmpty) {
-              final postings = (gigSnap.data?.docs.length ?? 0) +
+              final postings =
+                  (gigSnap.data?.docs.length ?? 0) +
                   (castSnap.data?.docs.length ?? 0);
               return _RailNotice(
                 label: 'Brands on the board',

@@ -7,7 +7,7 @@ import 'ai_config.dart';
 
 class EmailService {
   final String _apiKey = AiConfig.sendGridApiKey;
-  final String _fromEmail = 'harshilaggarwal0207@gmail.com'; 
+  final String _fromEmail = 'harshilaggarwal0207@gmail.com';
   final String _fromName = 'ModelX Team';
 
   Future<void> sendInvitationEmail({
@@ -17,22 +17,22 @@ class EmailService {
     required String inviteLink,
   }) async {
     final url = Uri.parse('https://api.sendgrid.com/v3/mail/send');
-    
+
     final payload = {
       'personalizations': [
         {
-          'to': [{'email': recipientEmail}],
-          'subject': 'You have been invited to join $agencyName on ModelX'
-        }
+          'to': [
+            {'email': recipientEmail},
+          ],
+          'subject': 'You have been invited to join $agencyName on ModelX',
+        },
       ],
-      'from': {
-        'email': _fromEmail,
-        'name': _fromName
-      },
+      'from': {'email': _fromEmail, 'name': _fromName},
       'content': [
         {
           'type': 'text/html',
-          'value': '''
+          'value':
+              '''
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
               <h2 style="color: #0F172A;">ModelX Team Invitation</h2>
               <p>Hi there,</p>
@@ -45,9 +45,9 @@ class EmailService {
               <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
               <p style="font-size: 12px; color: #666;">This invitation will expire in 7 days.</p>
             </div>
-          '''
-        }
-      ]
+          ''',
+        },
+      ],
     };
 
     try {
@@ -63,7 +63,9 @@ class EmailService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         debugPrint('✅ Invitation email sent successfully to $recipientEmail');
       } else {
-        debugPrint('❌ Failed to send email: ${response.statusCode} - ${response.body}');
+        debugPrint(
+          '❌ Failed to send email: ${response.statusCode} - ${response.body}',
+        );
         throw Exception('Failed to send invitation email');
       }
     } catch (e) {

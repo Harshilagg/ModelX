@@ -46,7 +46,7 @@ class _ChatPageState extends State<ChatPage> {
     // that canonical doc if found.
     // Use provided chatId if present (created by ChatService), otherwise fall back
     // to stable derived chat id for direct peer-to-peer chats. Use lexicographic
-    // ordering of UIDs (stable across runs) to ensure both participants compute 
+    // ordering of UIDs (stable across runs) to ensure both participants compute
     // the same id.
     if (widget.chatId != null) {
       // The caller already knows exactly which chat this is (e.g. it just
@@ -105,27 +105,47 @@ class _ChatPageState extends State<ChatPage> {
       // doc exists but an inbox entry doesn't yet (e.g. it was created by
       // the other participant and this user hasn't opened it before).
       // Check for a casting chat where currentUser is agency and peer is model
-      final q1 = await db.collection('chats').where('agencyId', isEqualTo: currentUser.uid).where('modelId', isEqualTo: widget.peerId).limit(1).get();
+      final q1 = await db
+          .collection('chats')
+          .where('agencyId', isEqualTo: currentUser.uid)
+          .where('modelId', isEqualTo: widget.peerId)
+          .limit(1)
+          .get();
       if (q1.docs.isNotEmpty) {
         if (mounted) setState(() => chatId = q1.docs.first.id);
         return;
       }
 
       // Check the reverse (currentUser is model and peer is agency)
-      final q2 = await db.collection('chats').where('agencyId', isEqualTo: widget.peerId).where('modelId', isEqualTo: currentUser.uid).limit(1).get();
+      final q2 = await db
+          .collection('chats')
+          .where('agencyId', isEqualTo: widget.peerId)
+          .where('modelId', isEqualTo: currentUser.uid)
+          .limit(1)
+          .get();
       if (q2.docs.isNotEmpty) {
         if (mounted) setState(() => chatId = q2.docs.first.id);
         return;
       }
 
       // Same two checks for gig chats, which store `brandId` instead of `agencyId`.
-      final q3 = await db.collection('chats').where('brandId', isEqualTo: currentUser.uid).where('modelId', isEqualTo: widget.peerId).limit(1).get();
+      final q3 = await db
+          .collection('chats')
+          .where('brandId', isEqualTo: currentUser.uid)
+          .where('modelId', isEqualTo: widget.peerId)
+          .limit(1)
+          .get();
       if (q3.docs.isNotEmpty) {
         if (mounted) setState(() => chatId = q3.docs.first.id);
         return;
       }
 
-      final q4 = await db.collection('chats').where('brandId', isEqualTo: widget.peerId).where('modelId', isEqualTo: currentUser.uid).limit(1).get();
+      final q4 = await db
+          .collection('chats')
+          .where('brandId', isEqualTo: widget.peerId)
+          .where('modelId', isEqualTo: currentUser.uid)
+          .limit(1)
+          .get();
       if (q4.docs.isNotEmpty) {
         if (mounted) setState(() => chatId = q4.docs.first.id);
         return;
@@ -141,9 +161,15 @@ class _ChatPageState extends State<ChatPage> {
 
     // Helper to write legacy plaintext messages and update inboxes
     Future<void> _writeLegacy(String messageText) async {
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
       final userData = userDoc.data() ?? {};
-      final peerDoc = await FirebaseFirestore.instance.collection('users').doc(widget.peerId).get();
+      final peerDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.peerId)
+          .get();
       final peerUsername = peerDoc.data()?['username'] ?? '';
 
       final messageData = {
@@ -156,35 +182,53 @@ class _ChatPageState extends State<ChatPage> {
         'timestamp': FieldValue.serverTimestamp(),
       };
 
-      await FirebaseFirestore.instance.collection('chats').doc(chatId).collection('messages').add(messageData);
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .add(messageData);
 
-      await FirebaseFirestore.instance.collection('user_chats').doc(currentUser.uid).collection('chats').doc(chatId).set({
-        'peerId': widget.peerId,
-        'peerName': widget.peerName,
-        'peerUsername': peerUsername,
-        'peerImage': widget.peerImage,
-        'lastMessage': messageText,
-        'lastTimestamp': Timestamp.now(),
-        'unreadCount': 0,
-      }, SetOptions(merge: true));
+      await FirebaseFirestore.instance
+          .collection('user_chats')
+          .doc(currentUser.uid)
+          .collection('chats')
+          .doc(chatId)
+          .set({
+            'peerId': widget.peerId,
+            'peerName': widget.peerName,
+            'peerUsername': peerUsername,
+            'peerImage': widget.peerImage,
+            'lastMessage': messageText,
+            'lastTimestamp': Timestamp.now(),
+            'unreadCount': 0,
+          }, SetOptions(merge: true));
 
-      await FirebaseFirestore.instance.collection('user_chats').doc(widget.peerId).collection('chats').doc(chatId).set({
-        'peerId': currentUser.uid,
-        'peerName': userData['fullName'] ?? '',
-        'peerUsername': userData['username'] ?? '',
-        'peerImage': userData['profileImage'] ?? '',
-        'lastMessage': messageText,
-        'lastTimestamp': Timestamp.now(),
-        'unreadCount': FieldValue.increment(1),
-      }, SetOptions(merge: true));
+      await FirebaseFirestore.instance
+          .collection('user_chats')
+          .doc(widget.peerId)
+          .collection('chats')
+          .doc(chatId)
+          .set({
+            'peerId': currentUser.uid,
+            'peerName': userData['fullName'] ?? '',
+            'peerUsername': userData['username'] ?? '',
+            'peerImage': userData['profileImage'] ?? '',
+            'lastMessage': messageText,
+            'lastTimestamp': Timestamp.now(),
+            'unreadCount': FieldValue.increment(1),
+          }, SetOptions(merge: true));
     }
 
     // Decide whether this chatId refers to a negotiation chat in `chats/`.
     // Casting chats store `castingId`, gig chats store `gigId` — either one
     // means this is a service-created chat that should be encrypted.
-    final chatDoc = await FirebaseFirestore.instance.collection('chats').doc(chatId).get();
+    final chatDoc = await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatId)
+        .get();
     final chatDocData = chatDoc.data();
-    final isNegotiationChat = chatDoc.exists &&
+    final isNegotiationChat =
+        chatDoc.exists &&
         (chatDocData?['castingId'] != null || chatDocData?['gigId'] != null);
 
     if (isNegotiationChat) {
@@ -192,7 +236,11 @@ class _ChatPageState extends State<ChatPage> {
         await ChatService().sendMessage(chatId, text, 'text');
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Encrypted send failed, sending unencrypted: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Encrypted send failed, sending unencrypted: $e'),
+          ),
+        );
         await _writeLegacy(text);
       }
     } else {
@@ -212,7 +260,6 @@ class _ChatPageState extends State<ChatPage> {
       );
     }
   }
- 
 
   /// A single bubble-shaped placeholder, matching the geometry of a real
   /// message bubble — used while the message stream's first snapshot is
@@ -221,7 +268,10 @@ class _ChatPageState extends State<ChatPage> {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
+        margin: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: 4,
+        ),
         child: AppSkeleton(
           width: width,
           height: 38,
@@ -248,13 +298,14 @@ class _ChatPageState extends State<ChatPage> {
       appBar: AppBar(
         title: Row(
           children: [
-            ProfileAvatar(imageUrl: widget.peerImage, name: widget.peerName, size: 36),
+            ProfileAvatar(
+              imageUrl: widget.peerImage,
+              name: widget.peerName,
+              size: 36,
+            ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
-              child: Text(
-                widget.peerName,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(widget.peerName, overflow: TextOverflow.ellipsis),
             ),
           ],
         ),
@@ -267,7 +318,9 @@ class _ChatPageState extends State<ChatPage> {
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return ListView(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.md,
+                    ),
                     children: [
                       _bubbleSkeleton(isMe: false, width: 190),
                       _bubbleSkeleton(isMe: false, width: 130),
@@ -312,7 +365,9 @@ class _ChatPageState extends State<ChatPage> {
                               height: 20,
                               child: LinearProgressIndicator(
                                 color: isMe ? AppColors.paper : AppColors.ink,
-                                backgroundColor: isMe ? AppColors.inkSoft : AppColors.line,
+                                backgroundColor: isMe
+                                    ? AppColors.inkSoft
+                                    : AppColors.line,
                               ),
                             );
                           }
@@ -321,17 +376,28 @@ class _ChatPageState extends State<ChatPage> {
                         },
                       );
                     } else {
-                      bubbleChild = Text(msg['message'] ?? '', style: bubbleTextStyle);
+                      bubbleChild = Text(
+                        msg['message'] ?? '',
+                        style: bubbleTextStyle,
+                      );
                     }
 
                     return Align(
-                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment: isMe
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
                       child: Container(
                         constraints: BoxConstraints(
                           maxWidth: MediaQuery.of(context).size.width * 0.75,
                         ),
-                        margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: 4,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: isMe ? AppColors.ink : AppColors.paperRaised,
                           borderRadius: BorderRadius.only(
@@ -388,7 +454,11 @@ class _ChatPageState extends State<ChatPage> {
                       color: AppColors.ink,
                       shape: const CircleBorder(),
                       child: IconButton(
-                        icon: const Icon(Icons.arrow_upward_rounded, color: AppColors.paper, size: 20),
+                        icon: const Icon(
+                          Icons.arrow_upward_rounded,
+                          color: AppColors.paper,
+                          size: 20,
+                        ),
                         onPressed: sendMessage,
                       ),
                     ),
@@ -400,7 +470,9 @@ class _ChatPageState extends State<ChatPage> {
         ],
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 70), // Shift above message input bar
+        padding: const EdgeInsets.only(
+          bottom: 70,
+        ), // Shift above message input bar
         child: ModelXCopilot(
           pageContext: {
             'page': 'chat',

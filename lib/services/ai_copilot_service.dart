@@ -8,7 +8,7 @@ enum CopilotIntent {
   appGuidance,
   messaging,
   profileFeedback,
-  unknown
+  unknown,
 }
 
 class AiCopilotService {
@@ -16,11 +16,15 @@ class AiCopilotService {
   final AiScoutService _scoutService = AiScoutService();
 
   /// Determines the user's intent based on their query and the current app context.
-  Future<CopilotIntent> classifyIntent(String query, Map<String, dynamic> context) async {
+  Future<CopilotIntent> classifyIntent(
+    String query,
+    Map<String, dynamic> context,
+  ) async {
     final page = context['page'] ?? 'unknown';
     final role = context['role'] ?? 'user';
 
-    final systemPrompt = '''You are the Intent Classifier for ModelX Copilot.
+    final systemPrompt =
+        '''You are the Intent Classifier for ModelX Copilot.
 Your job is to categorize the user's query into one of these intents:
 1. talentSearch: Finding specific models, scouting talent, searching for people. Only for Brands/Agencies looking for NEW people.
 2. appGuidance: Questions about HOW to use the app, "how to post a gig", "how to get hired", "payments", "navigating", "creating a profile". These are process questions.
@@ -49,11 +53,14 @@ Respond with ONLY the intent name (e.g., "talentSearch").''';
       );
 
       final cleanResponse = response.trim().toLowerCase();
-      if (cleanResponse.contains('talentsearch')) return CopilotIntent.talentSearch;
-      if (cleanResponse.contains('appguidance')) return CopilotIntent.appGuidance;
+      if (cleanResponse.contains('talentsearch'))
+        return CopilotIntent.talentSearch;
+      if (cleanResponse.contains('appguidance'))
+        return CopilotIntent.appGuidance;
       if (cleanResponse.contains('messaging')) return CopilotIntent.messaging;
-      if (cleanResponse.contains('profilefeedback')) return CopilotIntent.profileFeedback;
-      
+      if (cleanResponse.contains('profilefeedback'))
+        return CopilotIntent.profileFeedback;
+
       return CopilotIntent.unknown;
     } catch (e) {
       debugPrint('Intent Classification Error: $e');
@@ -62,18 +69,24 @@ Respond with ONLY the intent name (e.g., "talentSearch").''';
   }
 
   /// Dispatches the query to the correct AI logic based on intent.
-  Future<dynamic> handleRequest(String query, Map<String, dynamic> context) async {
+  Future<dynamic> handleRequest(
+    String query,
+    Map<String, dynamic> context,
+  ) async {
     // Normalize user role
     final rawRole = context['role'] ?? 'Model';
     final role = (rawRole == 'User') ? 'Model' : rawRole;
-    
+
     CopilotIntent intent;
-    
+
     // On the scout page, if it doesn't look like a process question ("how to", "?", "account"),
     // assume it's a talent search to match the successful behavior of the simpler widget.
     if (context['page'] == 'scout') {
       final qLower = query.toLowerCase();
-      if (!qLower.contains('how') && !qLower.contains('?') && !qLower.contains('account') && !qLower.contains('help')) {
+      if (!qLower.contains('how') &&
+          !qLower.contains('?') &&
+          !qLower.contains('account') &&
+          !qLower.contains('help')) {
         intent = CopilotIntent.talentSearch;
         debugPrint('🎯 AiCopilotService: Scout Page Direct Search Path');
       } else {
@@ -82,19 +95,19 @@ Respond with ONLY the intent name (e.g., "talentSearch").''';
     } else {
       intent = await classifyIntent(query, context);
     }
-    
+
     debugPrint('🎯 AiCopilotService: Intent Classified as $intent');
-    
+
     // Safety check: Models don't search for talent
     if (role == 'Model' && intent == CopilotIntent.talentSearch) {
       intent = CopilotIntent.appGuidance;
     }
-    
+
     switch (intent) {
       case CopilotIntent.talentSearch:
         // Ensure strictly search behavior
         return await _scoutService.searchTalent(query);
-      
+
       case CopilotIntent.appGuidance:
         return await _scoutService.getGuidance(query, role);
 
@@ -110,33 +123,35 @@ Respond with ONLY the intent name (e.g., "talentSearch").''';
     }
   }
 
-  Future<String> _getMessagingAdvice(String query, Map<String, dynamic> context) async {
+  Future<String> _getMessagingAdvice(
+    String query,
+    Map<String, dynamic> context,
+  ) async {
     final chatContext = context['chatContext'] ?? 'No chat history available.';
-    final response = await _groqService.complete(
-      AiConfig.modelChatAssistant,
-      [
-        {
-          'role': 'system', 
-          'content': 'You are a messaging copilot for ModelX. Help the user draft professional, charming, and effective replies. Context: $chatContext'
-        },
-        {'role': 'user', 'content': query},
-      ],
-    );
+    final response = await _groqService.complete(AiConfig.modelChatAssistant, [
+      {
+        'role': 'system',
+        'content':
+            'You are a messaging copilot for ModelX. Help the user draft professional, charming, and effective replies. Context: $chatContext',
+      },
+      {'role': 'user', 'content': query},
+    ]);
     return response;
   }
 
-  Future<String> _getProfileAdvice(String query, Map<String, dynamic> context) async {
+  Future<String> _getProfileAdvice(
+    String query,
+    Map<String, dynamic> context,
+  ) async {
     final profileData = context['profileData'] ?? 'No profile data available.';
-    final response = await _groqService.complete(
-      AiConfig.modelChatAssistant,
-      [
-        {
-          'role': 'system', 
-          'content': 'You are a career consultant for ModelX. Analyze the user\'s profile data and provide high-impact tips to improve their bio and portfolio. Data: $profileData'
-        },
-        {'role': 'user', 'content': query},
-      ],
-    );
+    final response = await _groqService.complete(AiConfig.modelChatAssistant, [
+      {
+        'role': 'system',
+        'content':
+            'You are a career consultant for ModelX. Analyze the user\'s profile data and provide high-impact tips to improve their bio and portfolio. Data: $profileData',
+      },
+      {'role': 'user', 'content': query},
+    ]);
     return response;
   }
 }

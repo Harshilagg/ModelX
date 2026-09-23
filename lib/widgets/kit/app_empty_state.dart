@@ -53,7 +53,10 @@ class AppEmptyState extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: AppType.heading(fontSize: compact ? 16 : 18, color: p.onSurface),
+            style: AppType.heading(
+              fontSize: compact ? 16 : 18,
+              color: p.onSurface,
+            ),
           ),
           if (message != null) ...[
             const SizedBox(height: 8),

@@ -39,70 +39,66 @@ class _CreatePostPageState extends State<CreatePostPage> {
     });
   }
 
-Future<void> createPost() async {
-  if (selectedImage == null || loading) return;
+  Future<void> createPost() async {
+    if (selectedImage == null || loading) return;
 
-  setState(() => loading = true);
+    setState(() => loading = true);
 
-  try {
-    final user = FirebaseAuth.instance.currentUser!;
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
+    try {
+      final user = FirebaseAuth.instance.currentUser!;
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
 
-    if (!userDoc.exists) {
-      throw Exception('User profile not found');
-    }
+      if (!userDoc.exists) {
+        throw Exception('User profile not found');
+      }
 
-    final userData = userDoc.data()!;
+      final userData = userDoc.data()!;
 
-    final imageUrl = await CloudinaryService.uploadPortfolioImage(
-      selectedImage!,
-      "post_${user.uid}_${DateTime.now().millisecondsSinceEpoch}",
-    );
-
-    if (imageUrl == null || imageUrl.isEmpty) {
-      throw Exception('Image upload failed');
-    }
-
-    await FirebaseFirestore.instance.collection('posts').add({
-      'uid': user.uid,
-      'username': userData['username'] ?? '',
-      'userImage': userData['profileImage'] ?? '',
-      'imageUrl': imageUrl,
-      'caption': captionController.text.trim(),
-      'createdAt': FieldValue.serverTimestamp(),
-      'likes': [],
-      'likeCount': 0,
-    });
-
-    if (!mounted) return;
-
-    Navigator.pop(context); // ✅ SUCCESS
-  } catch (e) {
-    debugPrint('Create post error: $e');
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to post. Please try again.')),
+      final imageUrl = await CloudinaryService.uploadPortfolioImage(
+        selectedImage!,
+        "post_${user.uid}_${DateTime.now().millisecondsSinceEpoch}",
       );
-    }
-  } finally {
-    if (mounted) {
-      setState(() => loading = false);
+
+      if (imageUrl == null || imageUrl.isEmpty) {
+        throw Exception('Image upload failed');
+      }
+
+      await FirebaseFirestore.instance.collection('posts').add({
+        'uid': user.uid,
+        'username': userData['username'] ?? '',
+        'userImage': userData['profileImage'] ?? '',
+        'imageUrl': imageUrl,
+        'caption': captionController.text.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+        'likes': [],
+        'likeCount': 0,
+      });
+
+      if (!mounted) return;
+
+      Navigator.pop(context); // ✅ SUCCESS
+    } catch (e) {
+      debugPrint('Create post error: $e');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to post. Please try again.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => loading = false);
+      }
     }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('New Post'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('New Post'), centerTitle: true),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -138,7 +134,10 @@ Future<void> createPost() async {
                               SizedBox(height: AppSpacing.sm),
                               Text(
                                 "Tap to choose a photo",
-                                style: TextStyle(color: AppColors.inkFaint, fontSize: 14),
+                                style: TextStyle(
+                                  color: AppColors.inkFaint,
+                                  fontSize: 14,
+                                ),
                               ),
                             ],
                           )

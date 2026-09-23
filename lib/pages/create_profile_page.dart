@@ -8,7 +8,8 @@ import '../widgets/app_button.dart';
 import '../widgets/app_text_field.dart';
 
 class CreateProfilePage extends StatefulWidget {
-  final VoidCallback? onComplete; // for tests or custom flows to avoid Firebase calls
+  final VoidCallback?
+  onComplete; // for tests or custom flows to avoid Firebase calls
 
   const CreateProfilePage({super.key, this.onComplete});
 
@@ -31,18 +32,25 @@ class _CreateProfilePageState extends State<CreateProfilePage> {
     // Prefill display name if available from auth (useful for Google users)
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      if (user.displayName != null) displayNameController.text = user.displayName!;
+      if (user.displayName != null)
+        displayNameController.text = user.displayName!;
 
       // Prefill username and bio from firestore if exists
-      FirebaseFirestore.instance.collection('users').doc(user.uid).get().then((doc) {
-        if (doc.exists && doc.data() != null) {
-          final data = doc.data()!;
-          if (data['username'] != null) usernameController.text = data['username'];
-          if (data['bio'] != null) bioController.text = data['bio'];
-        }
-      }).catchError((e) {
-        // ignore errors here
-      });
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get()
+          .then((doc) {
+            if (doc.exists && doc.data() != null) {
+              final data = doc.data()!;
+              if (data['username'] != null)
+                usernameController.text = data['username'];
+              if (data['bio'] != null) bioController.text = data['bio'];
+            }
+          })
+          .catchError((e) {
+            // ignore errors here
+          });
     }
   }
 
@@ -61,13 +69,23 @@ class _CreateProfilePageState extends State<CreateProfilePage> {
     // Validate username uniqueness (case-insensitive when usernameLower is available)
     if (desiredUsername.isNotEmpty) {
       final lower = desiredUsername.toLowerCase();
-      final qLower = await FirebaseFirestore.instance.collection('users').where('usernameLower', isEqualTo: lower).get();
-      final qExact = await FirebaseFirestore.instance.collection('users').where('username', isEqualTo: desiredUsername).get();
-      final taken = qLower.docs.any((d) => d.id != user.uid) || qExact.docs.any((d) => d.id != user.uid);
+      final qLower = await FirebaseFirestore.instance
+          .collection('users')
+          .where('usernameLower', isEqualTo: lower)
+          .get();
+      final qExact = await FirebaseFirestore.instance
+          .collection('users')
+          .where('username', isEqualTo: desiredUsername)
+          .get();
+      final taken =
+          qLower.docs.any((d) => d.id != user.uid) ||
+          qExact.docs.any((d) => d.id != user.uid);
       if (taken) {
         setState(() => loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Username already taken. Please choose another.')),
+          const SnackBar(
+            content: Text('Username already taken. Please choose another.'),
+          ),
         );
         return;
       }
@@ -77,12 +95,17 @@ class _CreateProfilePageState extends State<CreateProfilePage> {
       'fullName': displayNameController.text.trim(),
       'fullNameLower': displayNameController.text.trim().toLowerCase(),
       'username': desiredUsername,
-      'usernameLower': desiredUsername.isNotEmpty ? desiredUsername.toLowerCase() : null,
+      'usernameLower': desiredUsername.isNotEmpty
+          ? desiredUsername.toLowerCase()
+          : null,
       'bio': bioController.text.trim(),
       'profileCompleted': true,
     };
 
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).set(profileData, SetOptions(merge: true));
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .set(profileData, SetOptions(merge: true));
 
     // AUTO-SYNC: Index new user for AI Search
     AiScoutService().indexProfile(user.uid, profileData).catchError((e) {
@@ -94,7 +117,11 @@ class _CreateProfilePageState extends State<CreateProfilePage> {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Profile completed — welcome ${displayNameController.text.trim()}!')),
+      SnackBar(
+        content: Text(
+          'Profile completed — welcome ${displayNameController.text.trim()}!',
+        ),
+      ),
     );
 
     //Clear the navigation stack and make Dashboard the root so Back doesn't reveal auth/onboarding
@@ -126,7 +153,9 @@ class _CreateProfilePageState extends State<CreateProfilePage> {
                     Expanded(
                       child: AppButton(
                         label: details.stepIndex == 0 ? 'Continue' : 'Finish',
-                        onPressed: details.stepIndex == 1 && loading ? null : details.onStepContinue,
+                        onPressed: details.stepIndex == 1 && loading
+                            ? null
+                            : details.onStepContinue,
                         loading: details.stepIndex == 1 && loading,
                         expand: true,
                       ),
@@ -148,11 +177,15 @@ class _CreateProfilePageState extends State<CreateProfilePage> {
               if (_currentStep == 0) {
                 // validate first step fields
                 if (displayNameController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a display name')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Enter a display name')),
+                  );
                   return;
                 }
                 if (usernameController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a username')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Enter a username')),
+                  );
                   return;
                 }
                 setState(() => _currentStep = 1);
@@ -170,18 +203,24 @@ class _CreateProfilePageState extends State<CreateProfilePage> {
                 content: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (FirebaseAuth.instance.currentUser?.providerData.any((p) => p.providerId.contains('google')) == true)
+                    if (FirebaseAuth.instance.currentUser?.providerData.any(
+                          (p) => p.providerId.contains('google'),
+                        ) ==
+                        true)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12.0),
                         child: Text(
                           'We retrieved some info from your Google account — please confirm or edit below.',
-                          style: AppTypography.caption.copyWith(color: AppColors.inkSoft),
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.inkSoft,
+                          ),
                         ),
                       ),
                     AppTextField(
                       label: 'Display name',
                       controller: displayNameController,
-                      validator: (v) => v!.isEmpty ? 'Enter a display name' : null,
+                      validator: (v) =>
+                          v!.isEmpty ? 'Enter a display name' : null,
                     ),
                     const SizedBox(height: 16),
                     AppTextField(
@@ -189,9 +228,10 @@ class _CreateProfilePageState extends State<CreateProfilePage> {
                       controller: usernameController,
                       validator: (v) {
                         final s = v ?? '';
-                            final reg = RegExp(r'^[a-zA-Z0-9_]{3,30}$');
+                        final reg = RegExp(r'^[a-zA-Z0-9_]{3,30}$');
                         if (s.isEmpty) return 'Enter a username';
-                        if (!reg.hasMatch(s)) return 'Use letters, numbers, underscores; 3-30 chars';
+                        if (!reg.hasMatch(s))
+                          return 'Use letters, numbers, underscores; 3-30 chars';
                         return null;
                       },
                     ),
@@ -227,14 +267,19 @@ class _CreateProfilePageState extends State<CreateProfilePage> {
                               // Allow user to skip finishing the profile for now.
                               setState(() => loading = true);
                               final user = FirebaseAuth.instance.currentUser!;
-                              await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-                                'profileCompleted': false,
-                              }, SetOptions(merge: true));
+                              await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(user.uid)
+                                  .set({
+                                    'profileCompleted': false,
+                                  }, SetOptions(merge: true));
                               setState(() => loading = false);
                               if (!mounted) return;
                               Navigator.pushAndRemoveUntil(
                                 context,
-                                MaterialPageRoute(builder: (_) => const DashboardPage()),
+                                MaterialPageRoute(
+                                  builder: (_) => const DashboardPage(),
+                                ),
                                 (route) => false,
                               );
                             },

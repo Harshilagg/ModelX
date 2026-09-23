@@ -84,10 +84,26 @@ class GreyscaleReveal extends StatelessWidget {
     double drop(double lum) => b * (lum - lum * s);
 
     return <double>[
-      keep(lumR), drop(lumG), drop(lumB), 0, 0,
-      drop(lumR), keep(lumG), drop(lumB), 0, 0,
-      drop(lumR), drop(lumG), keep(lumB), 0, 0,
-      0, 0, 0, 1, 0,
+      keep(lumR),
+      drop(lumG),
+      drop(lumB),
+      0,
+      0,
+      drop(lumR),
+      keep(lumG),
+      drop(lumB),
+      0,
+      0,
+      drop(lumR),
+      drop(lumG),
+      keep(lumB),
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
     ];
   }
 }

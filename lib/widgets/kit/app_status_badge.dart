@@ -68,13 +68,13 @@ enum AppStatus {
   /// Sentence case, and worded for the person reading it: a model is
   /// told "Not selected", never "Rejected".
   String get label => switch (this) {
-        AppStatus.applied => 'Applied',
-        AppStatus.shortlisted => 'Shortlisted',
-        AppStatus.negotiating => 'Negotiating',
-        AppStatus.booked => 'Booked',
-        AppStatus.rejected => 'Not selected',
-        AppStatus.open => 'Open',
-      };
+    AppStatus.applied => 'Applied',
+    AppStatus.shortlisted => 'Shortlisted',
+    AppStatus.negotiating => 'Negotiating',
+    AppStatus.booked => 'Booked',
+    AppStatus.rejected => 'Not selected',
+    AppStatus.open => 'Open',
+  };
 
   /// True once a posting has moved past the initial application -- the
   /// thing worth telling someone about.
@@ -85,28 +85,28 @@ enum AppStatus {
   /// A rejection needs nothing from anyone and leading with it is a poor
   /// first thing to see, so it is excluded even though it is news.
   bool get needsAttention => switch (this) {
-        AppStatus.booked || AppStatus.negotiating || AppStatus.shortlisted => true,
-        _ => false,
-      };
+    AppStatus.booked || AppStatus.negotiating || AppStatus.shortlisted => true,
+    _ => false,
+  };
 
   /// Sort key for choosing between several. Lower comes first.
   int get urgency => switch (this) {
-        AppStatus.booked => 0,
-        AppStatus.negotiating => 1,
-        AppStatus.shortlisted => 2,
-        AppStatus.applied => 3,
-        AppStatus.open => 4,
-        AppStatus.rejected => 5,
-      };
+    AppStatus.booked => 0,
+    AppStatus.negotiating => 1,
+    AppStatus.shortlisted => 2,
+    AppStatus.applied => 3,
+    AppStatus.open => 4,
+    AppStatus.rejected => 5,
+  };
 
   Color fill(BoardPalette p) => switch (this) {
-        AppStatus.applied => p.applied,
-        AppStatus.shortlisted => p.negotiating,
-        AppStatus.negotiating => p.negotiating,
-        AppStatus.booked => p.booked,
-        AppStatus.rejected => p.rejected,
-        AppStatus.open => Colors.transparent,
-      };
+    AppStatus.applied => p.applied,
+    AppStatus.shortlisted => p.negotiating,
+    AppStatus.negotiating => p.negotiating,
+    AppStatus.booked => p.booked,
+    AppStatus.rejected => p.rejected,
+    AppStatus.open => Colors.transparent,
+  };
 }
 
 /// A status, shown the same way everywhere.
@@ -137,8 +137,12 @@ class AppStatusBadge extends StatelessWidget {
     Key? key,
     String? label,
     bool dense = false,
-  }) =>
-      AppStatusBadge(AppStatus.parse(raw), key: key, label: label, dense: dense);
+  }) => AppStatusBadge(
+    AppStatus.parse(raw),
+    key: key,
+    label: label,
+    dense: dense,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -153,8 +157,8 @@ class AppStatusBadge extends StatelessWidget {
     final Color foreground = isOpen
         ? p.onSurfaceSoft
         : (status == AppStatus.shortlisted || status == AppStatus.negotiating)
-            ? p.ink
-            : p.onPanel;
+        ? p.ink
+        : p.onPanel;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -168,10 +172,7 @@ class AppStatusBadge extends StatelessWidget {
       ),
       child: Text(
         label ?? status.label,
-        style: AppType.label(
-          fontSize: dense ? 11 : 12,
-          color: foreground,
-        ),
+        style: AppType.label(fontSize: dense ? 11 : 12, color: foreground),
       ),
     );
   }

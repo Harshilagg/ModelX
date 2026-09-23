@@ -42,9 +42,9 @@ class _PhoneOtpPageState extends State<PhoneOtpPage> {
 
       verificationFailed: (FirebaseAuthException e) {
         setState(() => loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? 'OTP failed')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message ?? 'OTP failed')));
       },
 
       codeSent: (String verId, int? resendToken) {
@@ -76,9 +76,9 @@ class _PhoneOtpPageState extends State<PhoneOtpPage> {
       await _linkPhoneCredential(credential);
     } on FirebaseAuthException catch (e) {
       setState(() => loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? 'Invalid OTP')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Invalid OTP')));
     }
   }
 
@@ -89,10 +89,7 @@ class _PhoneOtpPageState extends State<PhoneOtpPage> {
     await user.linkWithCredential(credential);
 
     // Mark phone verified in Firestore
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .update({
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
       'phoneVerified': true,
     });
 

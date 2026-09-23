@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../agency/agency_signup_page.dart';
-import '../brand/brand_signup_page.dart';
+import 'agency_signup_page.dart';
+import 'brand_signup_page.dart';
 import 'login_page.dart';
 import 'model_signup_page.dart';
 import 'role_select_page.dart';
@@ -75,7 +75,7 @@ class OnboardingFlow extends StatelessWidget {
     ),
     // These two took no token before, which is what broke brand and
     // agency invite links.
-    SignupRole.brand => BrandSignupPage(inviteToken: inviteToken),
-    SignupRole.agency => AgencySignupPage(inviteToken: inviteToken),
+    SignupRole.brand => BrandSignupFlow(inviteToken: inviteToken),
+    SignupRole.agency => AgencySignupFlow(inviteToken: inviteToken),
   };
 }

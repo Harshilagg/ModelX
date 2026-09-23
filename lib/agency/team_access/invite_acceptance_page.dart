@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../services/agency_service.dart';
 import '../../models/agency_models.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../pages/login_page.dart';
+import '../../onboarding/login_page.dart';
 import '../../ui/app_theme.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/state_views.dart';
@@ -67,7 +67,9 @@ class _InviteAcceptancePageState extends State<InviteAcceptancePage> {
       // Prompt login if not authenticated
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => LoginPage(inviteToken: widget.token)),
+        MaterialPageRoute(
+          builder: (_) => OnboardingLoginPage(inviteToken: widget.token),
+        ),
       );
       return;
     }

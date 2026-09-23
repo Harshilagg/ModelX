@@ -250,13 +250,10 @@ class _CreateProfilePageState extends State<CreateProfilePage> {
                       maxLines: 3,
                     ),
                     const SizedBox(height: 16),
-                    AppButton(
-                      label: 'Finish',
-                      onPressed: loading ? null : finishProfile,
-                      loading: loading,
-                      expand: true,
-                    ),
-                    const SizedBox(height: 12),
+                    // The Stepper's own controls already render Finish
+                    // on this step and route it through onStepContinue.
+                    // A second one directly above them gave the screen
+                    // two identical buttons doing the same thing.
                     AppButton(
                       label: 'Skip for now',
                       variant: AppButtonVariant.ghost,

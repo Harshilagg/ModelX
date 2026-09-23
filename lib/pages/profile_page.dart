@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'login_page.dart';
+import '../onboarding/login_page.dart';
 import 'connected_users_page.dart';
 import 'user_profile_page.dart';
 import 'create_post_page.dart';
@@ -359,7 +359,7 @@ class _ProfilePageState extends State<ProfilePage> {
     // After sign out, go to LoginPage and clear the stack so the user can
     // log in or create an account.
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginPage()),
+      MaterialPageRoute(builder: (_) => const OnboardingLoginPage()),
       (Route<dynamic> route) => false,
     );
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'signup_page.dart';
-import 'login_page.dart';
+import '../onboarding/model_signup_page.dart';
+import '../onboarding/login_page.dart';
 
 class AuthOptionsPage extends StatelessWidget {
   const AuthOptionsPage({super.key});
@@ -70,7 +70,7 @@ class AuthOptionsPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const SignupPage(userType: 'model'),
+                    builder: (_) => const ModelSignupPage(userType: 'model'),
                   ),
                 );
               },
@@ -89,7 +89,9 @@ class AuthOptionsPage extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                      MaterialPageRoute(
+                        builder: (_) => const OnboardingLoginPage(),
+                      ),
                     );
                   },
                   child: const Text(

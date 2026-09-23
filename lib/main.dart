@@ -4,7 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
-import 'pages/login_page.dart';
+import 'onboarding/login_page.dart';
 import 'pages/dashboard_page.dart';
 import 'onboarding/onboarding_flow.dart';
 import 'onboarding/onboarding_theme.dart';
@@ -211,7 +211,7 @@ class AuthGate extends StatelessWidget {
 
     // ❌ Edge case: logged in but no profile -> sign out to show login
     await FirebaseAuth.instance.signOut();
-    return const LoginPage();
+    return const OnboardingLoginPage();
   }
 
   @override
@@ -226,7 +226,7 @@ class AuthGate extends StatelessWidget {
         }
 
         final user = snapshot.data;
-        if (user == null) return const LoginPage();
+        if (user == null) return const OnboardingLoginPage();
 
         return FutureBuilder<Widget>(
           future: _getHome(user),

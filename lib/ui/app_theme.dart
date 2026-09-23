@@ -112,8 +112,11 @@ class AppTypography {
   static TextStyle get subheading =>
       AppType.heading(fontSize: 19, color: AppColors.ink);
 
-  static TextStyle get bodyEmphasized =>
-      AppType.body(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.ink);
+  static TextStyle get bodyEmphasized => AppType.body(
+    fontSize: 15,
+    fontWeight: FontWeight.w500,
+    color: AppColors.ink,
+  );
 
   static TextStyle get body => AppType.body(fontSize: 15, color: AppColors.ink);
 
@@ -127,8 +130,7 @@ class AppTypography {
   /// The small eyebrow label. Floored at 13px for the same reason the
   /// board's monospace was: 11px is below a comfortable reading size,
   /// and the tracking that made it legible as capitals is gone.
-  static TextStyle get label =>
-      AppType.label(color: AppColors.inkFaint);
+  static TextStyle get label => AppType.label(color: AppColors.inkFaint);
 
   /// The serif accent is retired along with the rest. It was restrained
   /// to hero moments; the new direction has one family and no italic

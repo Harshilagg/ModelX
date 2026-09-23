@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../pages/login_page.dart';
+import '../onboarding/login_page.dart';
 import '../ui/app_theme.dart';
 import '../widgets/app_action_bar.dart';
 import '../widgets/app_card.dart';
@@ -99,7 +99,7 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
 
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const LoginPage()),
+      MaterialPageRoute(builder: (_) => const OnboardingLoginPage()),
       (_) => false,
     );
   }

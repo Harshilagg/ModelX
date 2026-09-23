@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
-import '../pages/login_page.dart';
+import '../onboarding/login_page.dart';
 import '../ui/app_theme.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_stat_row.dart';
@@ -250,7 +250,7 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
               await FirebaseAuth.instance.signOut();
               if (!mounted) return;
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const LoginPage()),
+                MaterialPageRoute(builder: (_) => const OnboardingLoginPage()),
                 (Route<dynamic> route) => false,
               );
             },

@@ -3,8 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../agency/agency_signup_page.dart';
 import '../brand/brand_signup_page.dart';
-import '../pages/login_page.dart';
 import '../pages/signup_page.dart';
+import 'login_page.dart';
 import 'role_select_page.dart';
 import 'splash_page.dart';
 
@@ -54,14 +54,14 @@ class OnboardingFlow extends StatelessWidget {
   Widget build(BuildContext context) {
     return SplashPage(
       onCreateAccount: () => _open(context, _roleSelect(context)),
-      onLogIn: () => _open(context, const LoginPage()),
+      onLogIn: () => _open(context, OnboardingLoginPage(inviteToken: inviteToken)),
     );
   }
 
   Widget _roleSelect(BuildContext context) => Builder(
     builder: (context) => RoleSelectPage(
       onBack: () => Navigator.of(context).pop(),
-      onLogIn: () => _open(context, const LoginPage()),
+      onLogIn: () => _open(context, OnboardingLoginPage(inviteToken: inviteToken)),
       onSelected: (role) => _open(context, _signupFor(role)),
     ),
   );

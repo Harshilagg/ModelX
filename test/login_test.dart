@@ -4,16 +4,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_modelx/onboarding/auth_router.dart';
 import 'package:flutter_application_modelx/onboarding/login_page.dart';
 
-Future<void> pumpLogin(WidgetTester tester, {Size size = const Size(390, 844)}) async {
+Future<void> pumpLogin(
+  WidgetTester tester, {
+  Size size = const Size(390, 844),
+}) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(MaterialApp(
-    home: MediaQuery(
-      data: MediaQueryData(size: size),
-      child: const OnboardingLoginPage(),
+  await tester.pumpWidget(
+    MaterialApp(
+      home: MediaQuery(
+        data: MediaQueryData(size: size),
+        child: const OnboardingLoginPage(),
+      ),
     ),
-  ));
+  );
   await tester.pumpAndSettle();
 }
 
@@ -25,23 +30,30 @@ void main() {
       // be used to enumerate who is registered. The wording has to stay
       // vague to match, or it undoes that.
       final unknown = AuthRouter.messageFor(
-          FirebaseAuthException(code: 'user-not-found'));
+        FirebaseAuthException(code: 'user-not-found'),
+      );
       final wrongPassword = AuthRouter.messageFor(
-          FirebaseAuthException(code: 'wrong-password'));
+        FirebaseAuthException(code: 'wrong-password'),
+      );
       final collapsed = AuthRouter.messageFor(
-          FirebaseAuthException(code: 'invalid-credential'));
+        FirebaseAuthException(code: 'invalid-credential'),
+      );
       expect(unknown, wrongPassword);
       expect(wrongPassword, collapsed);
       expect(unknown, isNot(contains('account')));
     });
 
     test('says something useful for the failures worth distinguishing', () {
-      expect(AuthRouter.messageFor(FirebaseAuthException(code: 'too-many-requests')),
-          contains('Too many'));
       expect(
-          AuthRouter.messageFor(
-              FirebaseAuthException(code: 'network-request-failed')),
-          contains('connection'));
+        AuthRouter.messageFor(FirebaseAuthException(code: 'too-many-requests')),
+        contains('Too many'),
+      );
+      expect(
+        AuthRouter.messageFor(
+          FirebaseAuthException(code: 'network-request-failed'),
+        ),
+        contains('connection'),
+      );
     });
 
     test('a non-Firebase error still produces a sentence', () {
@@ -58,7 +70,9 @@ void main() {
       expect(find.text('Enter your password.'), findsOneWidget);
     });
 
-    testWidgets('errors clear as soon as the field is corrected', (tester) async {
+    testWidgets('errors clear as soon as the field is corrected', (
+      tester,
+    ) async {
       // Leaving a field red while it is being fixed reads as the fix
       // not working.
       await pumpLogin(tester);
@@ -71,9 +85,14 @@ void main() {
       expect(find.text('Enter your password.'), findsNothing);
     });
 
-    testWidgets('forgot-password carries the email already typed', (tester) async {
+    testWidgets('forgot-password carries the email already typed', (
+      tester,
+    ) async {
       await pumpLogin(tester);
-      await tester.enterText(find.byType(TextField).first, 'someone@example.com');
+      await tester.enterText(
+        find.byType(TextField).first,
+        'someone@example.com',
+      );
       await tester.tap(find.text('Forgot password?'));
       await tester.pumpAndSettle();
 
@@ -92,7 +111,9 @@ void main() {
       expect(find.text('Enter a valid email address.'), findsOneWidget);
     });
 
-    testWidgets('back steps through the views rather than leaving', (tester) async {
+    testWidgets('back steps through the views rather than leaving', (
+      tester,
+    ) async {
       await pumpLogin(tester);
       await tester.tap(find.text('Forgot password?'));
       await tester.pumpAndSettle();
@@ -103,8 +124,9 @@ void main() {
       expect(find.text('Welcome back.'), findsOneWidget);
     });
 
-    testWidgets('offers Google, and does not offer a dead Apple button',
-        (tester) async {
+    testWidgets('offers Google, and does not offer a dead Apple button', (
+      tester,
+    ) async {
       // Sign in with Apple is not implemented. Rendering it disabled
       // would advertise something that does not work.
       await pumpLogin(tester);

@@ -14,6 +14,7 @@ import 'package:flutter_application_modelx/services/cloudinary_service.dart';
 import '../agency/scouting/ai_scout_service.dart'; // Import AI Service
 import '../ui/app_theme.dart';
 import '../ui/board_theme.dart';
+import 'settings_page.dart';
 import '../widgets/board_widgets.dart';
 import '../widgets/portfolio_masonry.dart';
 import '../widgets/profile_photo_viewer.dart';
@@ -594,11 +595,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                   ),
-                  // Edit lives here, not at the foot of a long scroll.
-                  // It is the thing a model reaches for most and it used
-                  // to be the furthest away. Log out moved the other way,
-                  // to the bottom of Details — rare, and not something to
-                  // put a thumb's width from the avatar.
+                  // Edit lives here, not at the foot of a long
+                  // scroll. It is the thing a model reaches for most and
+                  // it used to be the furthest away.
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () => _showEditProfileModal(context),
@@ -619,6 +618,31 @@ class _ProfilePageState extends State<ProfilePage> {
                           color: BoardColors.brass,
                         ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  // Settings: the theme switch, the unit switches and
+                  // log out. Those were scattered -- the units buried
+                  // inside the measurements editor, log out at the foot
+                  // of a long scroll -- and a gear is where people look
+                  // for them.
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsPage()),
+                    ),
+                    child: Semantics(
+                      button: true,
+                      label: 'Settings',
+                      child: const SizedBox(
+                        width: 44,
+                        height: 44,
+                        child: Icon(
+                          Icons.settings_outlined,
+                          size: 18,
+                          color: BoardColors.onInk,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -846,16 +870,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
         const SizedBox(height: 12),
         _compCardRow(),
-
-        const SizedBox(height: 14),
-        // Edit moved to the header; this slot is log out. Without it the
-        // action had nowhere left to live at all.
-        BoardButton(
-          label: 'Log out',
-          background: BoardColors.shell,
-          foreground: BoardColors.ink,
-          onTap: logout,
-        ),
       ],
     );
   }

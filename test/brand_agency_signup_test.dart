@@ -3,14 +3,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_modelx/onboarding/agency_signup_page.dart';
 import 'package:flutter_application_modelx/onboarding/brand_signup_page.dart';
 
-Future<void> pump(WidgetTester tester, Widget page,
-    {Size size = const Size(390, 844)}) async {
+Future<void> pump(
+  WidgetTester tester,
+  Widget page, {
+  Size size = const Size(390, 844),
+}) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(MaterialApp(
-    home: MediaQuery(data: MediaQueryData(size: size), child: page),
-  ));
+  await tester.pumpWidget(
+    MaterialApp(
+      home: MediaQuery(
+        data: MediaQueryData(size: size),
+        child: page,
+      ),
+    ),
+  );
   await tester.pumpAndSettle();
 }
 
@@ -55,8 +63,9 @@ void main() {
   });
 
   group('agency signup', () {
-    testWidgets('counts digits, not formatting, in the phone number',
-        (tester) async {
+    testWidgets('counts digits, not formatting, in the phone number', (
+      tester,
+    ) async {
       await pump(tester, const AgencySignupFlow());
       await tester.enterText(find.byType(TextField).first, 'a@b.com');
       await tester.enterText(find.byType(TextField).last, 'longenough');
@@ -70,7 +79,10 @@ void main() {
       await tester.enterText(fields.at(2), 'Mumbai');
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
-      expect(find.text('Enter a phone number brands can reach.'), findsOneWidget);
+      expect(
+        find.text('Enter a phone number brands can reach.'),
+        findsOneWidget,
+      );
 
       await tester.enterText(fields.at(1), '+91 22 5555 0100');
       await tester.tap(find.text('Continue'));
@@ -93,7 +105,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Create agency account'), findsOneWidget);
-      expect(find.text('You can edit your agency page anytime.'), findsOneWidget);
+      expect(
+        find.text('You can edit your agency page anytime.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('lays out at 360x640', (tester) async {

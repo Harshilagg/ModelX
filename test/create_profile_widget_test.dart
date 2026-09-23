@@ -3,14 +3,27 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_modelx/pages/create_profile_page.dart';
 
 void main() {
-  testWidgets('CreateProfilePage stepper and finish calls onComplete', (WidgetTester tester) async {
+  testWidgets('CreateProfilePage stepper and finish calls onComplete', (
+    WidgetTester tester,
+  ) async {
     var completed = false;
 
-    await tester.pumpWidget(MaterialApp(home: CreateProfilePage(onComplete: () { completed = true; })));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CreateProfilePage(
+          onComplete: () {
+            completed = true;
+          },
+        ),
+      ),
+    );
 
     // Enter display name and username
     await tester.enterText(find.bySemanticsLabel('Display name'), 'Test User');
-    await tester.enterText(find.bySemanticsLabel('Username (letters, numbers, underscores)'), 'test_user');
+    await tester.enterText(
+      find.bySemanticsLabel('Username (letters, numbers, underscores)'),
+      'test_user',
+    );
 
     // Move to second step by invoking the continue button
     final continueFinder = find.text('CONTINUE');

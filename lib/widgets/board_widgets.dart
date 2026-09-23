@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../ui/app_type.dart';
 import '../ui/board_theme.dart';
 
 /// ---------------------------------------------------------------------
@@ -748,19 +749,58 @@ class BoardTopBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          GestureDetector(
-            onTap: onMessages,
-            child: Container(
-              width: 30,
-              height: 30,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: BoardColors.ink, width: 1.5),
-              ),
-              child: Text(
-                unread > 99 ? '99' : unread.toString(),
-                style: BoardType.mono(fontSize: 11),
+          // Messages, with the unread count as a badge.
+          //
+          // This used to be the count on its own in a square box, which
+          // said nothing about what it counted or where it went -- and
+          // at zero it read as a broken counter rather than an inbox
+          // with nothing in it. The badge is hidden at zero for the
+          // same reason.
+          Semantics(
+            button: true,
+            label: unread == 0 ? 'Messages' : 'Messages, $unread unread',
+            child: GestureDetector(
+              onTap: onMessages,
+              behavior: HitTestBehavior.opaque,
+              child: SizedBox(
+                // The visible mark is 30px; the tap target is not.
+                width: 44,
+                height: 44,
+                child: Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      size: 22,
+                      color: BoardColors.ink,
+                    ),
+                    if (unread > 0)
+                      Positioned(
+                        top: 6,
+                        right: 4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1,
+                          ),
+                          constraints: const BoxConstraints(minWidth: 16),
+                          decoration: BoxDecoration(
+                            color: BoardColors.rejected,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            unread > 99 ? '99+' : unread.toString(),
+                            textAlign: TextAlign.center,
+                            style: AppType.tabular(
+                              fontSize: 10,
+                              color: BoardColors.onInk,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),

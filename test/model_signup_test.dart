@@ -24,21 +24,36 @@ void main() {
       // This is the guarantee the whole redesign rests on: the form may
       // change shape, the document may not. A new key here is a schema
       // change nobody asked for.
-      final doc = filled()
-          .accountDocument(uid: 'u1', userType: 'Model', viaGoogle: false);
-      expect(
-        doc.keys.toSet(),
-        {
-          'uid', 'fullName', 'fullNameLower', 'username', 'usernameLower',
-          'email', 'phone', 'phoneVerified', 'profileCompleted', 'userType',
-          'dob', 'followers', 'following', 'authProvider', 'createdAt',
-        },
+      final doc = filled().accountDocument(
+        uid: 'u1',
+        userType: 'Model',
+        viaGoogle: false,
       );
+      expect(doc.keys.toSet(), {
+        'uid',
+        'fullName',
+        'fullNameLower',
+        'username',
+        'usernameLower',
+        'email',
+        'phone',
+        'phoneVerified',
+        'profileCompleted',
+        'userType',
+        'dob',
+        'followers',
+        'following',
+        'authProvider',
+        'createdAt',
+      });
     });
 
     test('normalises the same way the old form did', () {
-      final doc = filled()
-          .accountDocument(uid: 'u1', userType: 'Model', viaGoogle: false);
+      final doc = filled().accountDocument(
+        uid: 'u1',
+        userType: 'Model',
+        viaGoogle: false,
+      );
       expect(doc['fullName'], 'Anya Sharma');
       expect(doc['fullNameLower'], 'anya sharma');
       expect(doc['usernameLower'], 'anyasharma');
@@ -50,8 +65,11 @@ void main() {
     test('empty name and username store null, not an empty string', () {
       // The lookup queries match on these; an empty string is a value
       // that two blank accounts would collide on.
-      final doc = (ModelSignupData()..email = 'a@b.com')
-          .accountDocument(uid: 'u1', userType: 'Model', viaGoogle: false);
+      final doc = (ModelSignupData()..email = 'a@b.com').accountDocument(
+        uid: 'u1',
+        userType: 'Model',
+        viaGoogle: false,
+      );
       expect(doc['fullNameLower'], isNull);
       expect(doc['usernameLower'], isNull);
     });
@@ -59,8 +77,11 @@ void main() {
     test('is incomplete until step 4', () {
       // So that abandoning mid-form lands on the repair path rather
       // than a half-filled dashboard.
-      final doc = filled()
-          .accountDocument(uid: 'u1', userType: 'Model', viaGoogle: false);
+      final doc = filled().accountDocument(
+        uid: 'u1',
+        userType: 'Model',
+        viaGoogle: false,
+      );
       expect(doc['profileCompleted'], false);
     });
   });
@@ -69,13 +90,19 @@ void main() {
     test('adds no field that does not already exist on users', () {
       final doc = filled().profileDocument();
       // Every one of these is already written by the profile editor.
-      expect(
-        doc.keys.toSet(),
-        {
-          'location', 'height', 'heightUnit', 'waist', 'hips', 'skills',
-          'bio', 'instagram', 'website', 'profileCompleted', 'measurements',
-        },
-      );
+      expect(doc.keys.toSet(), {
+        'location',
+        'height',
+        'heightUnit',
+        'waist',
+        'hips',
+        'skills',
+        'bio',
+        'instagram',
+        'website',
+        'profileCompleted',
+        'measurements',
+      });
     });
 
     test('measurements use the format the app already documents', () {
@@ -115,8 +142,14 @@ void main() {
       // casting that requires it, which is the entire point of the
       // field.
       expect(ModelSignupData.skillOptions, [
-        'Runway Walk', 'Posing', 'Acting', 'Dance',
-        'Voice Over', 'Swimming', 'Sports', 'Yoga',
+        'Runway Walk',
+        'Posing',
+        'Acting',
+        'Dance',
+        'Voice Over',
+        'Swimming',
+        'Sports',
+        'Yoga',
       ]);
     });
   });
@@ -192,9 +225,9 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(const MaterialApp(
-        home: ModelSignupPage(userType: 'Model'),
-      ));
+      await tester.pumpWidget(
+        const MaterialApp(home: ModelSignupPage(userType: 'Model')),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Step 1 of 4'), findsOneWidget);
@@ -203,9 +236,9 @@ void main() {
     });
 
     testWidgets('will not advance past an invalid first step', (tester) async {
-      await tester.pumpWidget(const MaterialApp(
-        home: ModelSignupPage(userType: 'Model'),
-      ));
+      await tester.pumpWidget(
+        const MaterialApp(home: ModelSignupPage(userType: 'Model')),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Continue'));
@@ -224,9 +257,11 @@ void main() {
         (SuccessRole.brand, 'Browse talent'),
         (SuccessRole.agency, 'Go to dashboard'),
       ]) {
-        await tester.pumpWidget(MaterialApp(
-          home: SuccessPage(role: role, onContinue: () {}),
-        ));
+        await tester.pumpWidget(
+          MaterialApp(
+            home: SuccessPage(role: role, onContinue: () {}),
+          ),
+        );
         await tester.pumpAndSettle();
         expect(find.text(cta), findsOneWidget);
         expect(find.text("What's next"), findsOneWidget);

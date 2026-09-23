@@ -19,16 +19,18 @@ Future<void> pumpPage(
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
 
-  await tester.pumpWidget(MaterialApp(
-    home: MediaQuery(
-      data: MediaQueryData(
-        size: size,
-        disableAnimations: reduceMotion,
-        textScaler: TextScaler.linear(textScale),
+  await tester.pumpWidget(
+    MaterialApp(
+      home: MediaQuery(
+        data: MediaQueryData(
+          size: size,
+          disableAnimations: reduceMotion,
+          textScaler: TextScaler.linear(textScale),
+        ),
+        child: page,
       ),
-      child: page,
     ),
-  ));
+  );
 }
 
 void main() {
@@ -36,49 +38,59 @@ void main() {
     test('every photo appears exactly once across the columns', () {
       // A photo in two columns is visibly the same image scrolling in
       // two places at once.
-      final used = [
-        for (final c in MasonryBackground.columns) ...c.photos,
-      ]..sort();
+      final used = [for (final c in MasonryBackground.columns) ...c.photos]
+        ..sort();
       expect(used, List.generate(OnboardingPhotos.masonry.length, (i) => i));
     });
 
-    test('the spotlight visits every photo, and never twice in a row in one column', () {
-      final order = MasonryBackground.spotlightOrder;
-      expect(order.toSet().length, order.length, reason: 'no repeats');
-      expect(order.toSet(),
-          List.generate(OnboardingPhotos.masonry.length, (i) => i).toSet());
+    test(
+      'the spotlight visits every photo, and never twice in a row in one column',
+      () {
+        final order = MasonryBackground.spotlightOrder;
+        expect(order.toSet().length, order.length, reason: 'no repeats');
+        expect(
+          order.toSet(),
+          List.generate(OnboardingPhotos.masonry.length, (i) => i).toSet(),
+        );
 
-      int columnOf(int photo) => MasonryBackground.columns
-          .indexWhere((c) => c.photos.contains(photo));
+        int columnOf(int photo) => MasonryBackground.columns.indexWhere(
+          (c) => c.photos.contains(photo),
+        );
 
-      // The point of the order is that the lit photo jumps across the
-      // screen rather than walking down one column.
-      for (var i = 0; i < order.length; i++) {
-        final a = columnOf(order[i]);
-        final b = columnOf(order[(i + 1) % order.length]);
-        expect(a == b, isFalse,
-            reason: 'photos ${order[i]} and ${order[(i + 1) % order.length]} '
-                'are both in column $a');
-      }
-    });
+        // The point of the order is that the lit photo jumps across the
+        // screen rather than walking down one column.
+        for (var i = 0; i < order.length; i++) {
+          final a = columnOf(order[i]);
+          final b = columnOf(order[(i + 1) % order.length]);
+          expect(
+            a == b,
+            isFalse,
+            reason:
+                'photos ${order[i]} and ${order[(i + 1) % order.length]} '
+                'are both in column $a',
+          );
+        }
+      },
+    );
 
     test('there is a height for every photo', () {
-      expect(MasonryBackground.heights.length,
-          OnboardingPhotos.masonry.length);
+      expect(MasonryBackground.heights.length, OnboardingPhotos.masonry.length);
       // Even heights would read as a grid rather than a contact sheet.
       expect(MasonryBackground.heights.toSet().length, greaterThan(4));
     });
 
     test('no two columns share a loop duration', () {
-      final durations =
-          MasonryBackground.columns.map((c) => c.duration).toSet();
+      final durations = MasonryBackground.columns
+          .map((c) => c.duration)
+          .toSet();
       expect(durations.length, MasonryBackground.columns.length);
     });
 
     testWidgets('keeps running without throwing', (tester) async {
-      await pumpPage(tester, const OnboardingTheme(
-        child: Scaffold(body: MasonryBackground()),
-      ));
+      await pumpPage(
+        tester,
+        const OnboardingTheme(child: Scaffold(body: MasonryBackground())),
+      );
       await tester.pump(const Duration(seconds: 1));
       await tester.pump(const Duration(seconds: 3));
       expect(tester.takeException(), isNull);
@@ -103,7 +115,10 @@ void main() {
     testWidgets('offers both ways out from the first slide', (tester) async {
       // A returning user must never have to sit through the carousel to
       // reach the login form.
-      await pumpPage(tester, SplashPage(onCreateAccount: () {}, onLogIn: () {}));
+      await pumpPage(
+        tester,
+        SplashPage(onCreateAccount: () {}, onLogIn: () {}),
+      );
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('Create an account'), findsOneWidget);
       expect(find.text('Log in'), findsOneWidget);
@@ -111,7 +126,10 @@ void main() {
     });
 
     testWidgets('advances, then stops on the last slide', (tester) async {
-      await pumpPage(tester, SplashPage(onCreateAccount: () {}, onLogIn: () {}));
+      await pumpPage(
+        tester,
+        SplashPage(onCreateAccount: () {}, onLogIn: () {}),
+      );
       expect(find.textContaining('Talent moves'), findsOneWidget);
 
       await tester.pump(SplashPage.slideDuration);
@@ -157,10 +175,10 @@ void main() {
       // A single tap that navigated made a mis-tap drop you into the
       // wrong signup, with no way back that keeps what you typed.
       SignupRole? chosen;
-      await pumpPage(tester, RoleSelectPage(
-        onSelected: (r) => chosen = r,
-        onBack: () {},
-      ));
+      await pumpPage(
+        tester,
+        RoleSelectPage(onSelected: (r) => chosen = r, onBack: () {}),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Agency'));
@@ -176,11 +194,16 @@ void main() {
       await pumpPage(tester, RoleSelectPage(onSelected: (_) {}, onBack: () {}));
       await tester.pumpAndSettle();
 
-      double cardHeight(String label) =>
-          tester.getSize(find.ancestor(
-            of: find.text(label),
-            matching: find.byType(ClipRRect),
-          ).first).height;
+      double cardHeight(String label) => tester
+          .getSize(
+            find
+                .ancestor(
+                  of: find.text(label),
+                  matching: find.byType(ClipRRect),
+                )
+                .first,
+          )
+          .height;
 
       final modelFirst = cardHeight('Model');
       expect(modelFirst, greaterThan(cardHeight('Brand')));
@@ -198,15 +221,20 @@ void main() {
       await pumpPage(tester, RoleSelectPage(onSelected: (_) {}, onBack: () {}));
       await tester.pumpAndSettle();
 
-      final dots = tester.widgetList<Container>(find.byType(Container)).where(
-          (c) => (c.decoration as BoxDecoration?)?.shape == BoxShape.circle &&
-              (c.decoration as BoxDecoration?)?.color == BoardColors.brass);
+      final dots = tester
+          .widgetList<Container>(find.byType(Container))
+          .where(
+            (c) =>
+                (c.decoration as BoxDecoration?)?.shape == BoxShape.circle &&
+                (c.decoration as BoxDecoration?)?.color == BoardColors.brass,
+          );
       expect(dots, isNotEmpty);
 
       for (final banned in [BoardColors.booked, BoardColors.negotiating]) {
         expect(
-          tester.widgetList<Container>(find.byType(Container)).any((c) =>
-              (c.decoration as BoxDecoration?)?.color == banned),
+          tester
+              .widgetList<Container>(find.byType(Container))
+              .any((c) => (c.decoration as BoxDecoration?)?.color == banned),
           isFalse,
           reason: '$banned is a status colour',
         );
@@ -244,12 +272,17 @@ void main() {
   group('onboarding theme', () {
     testWidgets('is dark even when the app is light', (tester) async {
       late BoardPalette seen;
-      await pumpPage(tester, OnboardingTheme(
-        child: Builder(builder: (context) {
-          seen = BoardColors.of(context);
-          return const SizedBox();
-        }),
-      ));
+      await pumpPage(
+        tester,
+        OnboardingTheme(
+          child: Builder(
+            builder: (context) {
+              seen = BoardColors.of(context);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
       expect(seen.isNight, isTrue);
     });
   });

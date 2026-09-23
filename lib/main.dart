@@ -100,16 +100,19 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     // Rebuilds only when the mode changes, which while
     // kThemeSwitchingEnabled is false is never.
-    return AnimatedBuilder(
-      animation: widget.themeController,
-      builder: (context, _) => MaterialApp(
-        navigatorKey: _navigatorKey,
-        debugShowCheckedModeBanner: false,
-        title: 'ModelX App',
-        theme: AppTheme.light(),
-        darkTheme: AppTheme.night(),
-        themeMode: widget.themeController.mode,
-        home: const AppEntry(),
+    return ThemeScope(
+      controller: widget.themeController,
+      child: AnimatedBuilder(
+        animation: widget.themeController,
+        builder: (context, _) => MaterialApp(
+          navigatorKey: _navigatorKey,
+          debugShowCheckedModeBanner: false,
+          title: 'ModelX App',
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.night(),
+          themeMode: widget.themeController.mode,
+          home: const AppEntry(),
+        ),
       ),
     );
   }

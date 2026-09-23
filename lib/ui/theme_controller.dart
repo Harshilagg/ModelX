@@ -80,3 +80,21 @@ class ThemeController extends ChangeNotifier {
     _ => ThemeMode.system,
   };
 }
+
+/// Makes the [ThemeController] reachable from anywhere below it.
+///
+/// Settings sits several routes below the app root and needs the same
+/// controller instance that `MaterialApp` is reading, not a new one --
+/// two controllers would disagree about the current mode.
+class ThemeScope extends InheritedNotifier<ThemeController> {
+  const ThemeScope({
+    super.key,
+    required ThemeController controller,
+    required super.child,
+  }) : super(notifier: controller);
+
+  /// Returns null above the scope, so a widget pumped bare in a test
+  /// does not have to install one.
+  static ThemeController? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ThemeScope>()?.notifier;
+}

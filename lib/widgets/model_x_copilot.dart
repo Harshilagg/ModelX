@@ -107,6 +107,13 @@ class _ModelXCopilotState extends State<ModelXCopilot>
           );
         }
 
+        // A floating button over a raised keyboard covers the field
+        // being typed into, and there is nothing it can usefully do
+        // mid-sentence anyway.
+        if (MediaQuery.viewInsetsOf(context).bottom > 0) {
+          return const SizedBox.shrink();
+        }
+
         return Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,

@@ -58,8 +58,9 @@ void main() {
           expect(await renderFace(tester, template, back: back), isNull);
         });
 
-        testWidgets('${template.name} $side survives an empty profile',
-            (tester) async {
+        testWidgets('${template.name} $side survives an empty profile', (
+          tester,
+        ) async {
           expect(
             await renderFace(tester, template, back: back, user: const {}),
             isNull,
@@ -84,20 +85,19 @@ void main() {
 
   group('CompCardData', () {
     test('reads bust/waist/hips out of a measurements string', () {
-      final data = CompCardData.fromUser(
-        {'measurements': '82-60-88'},
-        images: const [],
-      );
+      final data = CompCardData.fromUser({
+        'measurements': '82-60-88',
+      }, images: const []);
       expect(data.bust, '82');
       expect(data.waist, '60');
       expect(data.hips, '88');
     });
 
     test('falls back to the separate waist and hips fields', () {
-      final data = CompCardData.fromUser(
-        {'waist': '61', 'hips': '89'},
-        images: const [],
-      );
+      final data = CompCardData.fromUser({
+        'waist': '61',
+        'hips': '89',
+      }, images: const []);
       // There is no bust field on the profile, so it prints as a dash
       // rather than inventing a number.
       expect(data.bust, CompCardData.dash);
@@ -106,10 +106,10 @@ void main() {
     });
 
     test('strips the unit for stat grids but keeps it on the full line', () {
-      final data = CompCardData.fromUser(
-        {'height': '175', 'heightUnit': 'cm'},
-        images: const [],
-      );
+      final data = CompCardData.fromUser({
+        'height': '175',
+        'heightUnit': 'cm',
+      }, images: const []);
       expect(data.height, '175 CM');
       expect(data.heightNumber, '175');
     });
@@ -117,8 +117,15 @@ void main() {
     test('an empty profile prints dashes, never "null"', () {
       final data = CompCardData.fromUser(const {}, images: const []);
       for (final value in [
-        data.city, data.phone, data.height, data.bust,
-        data.waist, data.hips, data.shoe, data.hair, data.eyes,
+        data.city,
+        data.phone,
+        data.height,
+        data.bust,
+        data.waist,
+        data.hips,
+        data.shoe,
+        data.hair,
+        data.eyes,
       ]) {
         expect(value, CompCardData.dash);
       }
@@ -138,10 +145,7 @@ void main() {
     test('scores only fields a template actually prints', () {
       // Weight is on no card, so filling it must not move the number.
       expect(CompCardReadiness.printed.containsKey('weight'), isFalse);
-      expect(
-        CompCardReadiness.statsPercent(const {'weight': '65'}),
-        0,
-      );
+      expect(CompCardReadiness.statsPercent(const {'weight': '65'}), 0);
     });
 
     test('measurements count either as a triple or as waist plus hips', () {

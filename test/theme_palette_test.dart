@@ -77,9 +77,15 @@ void main() {
         BoardPalette.nightField,
       };
       for (final c in [
-        night.surface, night.surfaceRaised, night.surfaceField,
-        night.panel, night.onSurface, night.brass, night.booked,
-        night.negotiating, night.rejected,
+        night.surface,
+        night.surfaceRaised,
+        night.surfaceField,
+        night.panel,
+        night.onSurface,
+        night.brass,
+        night.booked,
+        night.negotiating,
+        night.rejected,
       ]) {
         expect(known, contains(c), reason: '$c is not a palette colour');
       }
@@ -113,26 +119,36 @@ void main() {
 
     testWidgets('BoardColors.of reads the ambient palette', (tester) async {
       late BoardPalette seen;
-      await tester.pumpWidget(MaterialApp(
-        theme: AppTheme.night(),
-        home: Builder(builder: (context) {
-          seen = BoardColors.of(context);
-          return const SizedBox();
-        }),
-      ));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.night(),
+          home: Builder(
+            builder: (context) {
+              seen = BoardColors.of(context);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
       expect(seen.isNight, isTrue);
     });
 
-    testWidgets('falls back to day when no extension is installed', (tester) async {
+    testWidgets('falls back to day when no extension is installed', (
+      tester,
+    ) async {
       // Most widget tests pump a bare MaterialApp. Those must keep
       // rendering what they render today rather than throwing.
       late BoardPalette seen;
-      await tester.pumpWidget(MaterialApp(
-        home: Builder(builder: (context) {
-          seen = BoardColors.of(context);
-          return const SizedBox();
-        }),
-      ));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              seen = BoardColors.of(context);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
       expect(seen.isNight, isFalse);
       expect(seen.surface, BoardColors.paper);
     });
@@ -149,11 +165,14 @@ void main() {
       expect(s.fontVariations?.single.value, 600);
     });
 
-    test('tabular figures are opt-in, and on by default only for tabular()', () {
-      expect(AppType.tabular().fontFeatures, isNotEmpty);
-      expect(AppType.body().fontFeatures, isNull);
-      expect(AppType.label(tabular: true).fontFeatures, isNotEmpty);
-    });
+    test(
+      'tabular figures are opt-in, and on by default only for tabular()',
+      () {
+        expect(AppType.tabular().fontFeatures, isNotEmpty);
+        expect(AppType.body().fontFeatures, isNull);
+        expect(AppType.label(tabular: true).fontFeatures, isNotEmpty);
+      },
+    );
   });
 
   group('theme switching gate', () {

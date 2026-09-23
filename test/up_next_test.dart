@@ -8,36 +8,53 @@ Application app({
   required String status,
   DateTime? start,
   String title = 'Editorial shoot',
-}) =>
-    Application(
-      id: 'x',
-      isGig: true,
-      data: const {},
-      title: title,
-      subtitle: 'Mumbai',
-      status: status,
-      start: start,
-      appliedAt: null,
-      posterName: 'Lumiere',
-    );
+}) => Application(
+  id: 'x',
+  isGig: true,
+  data: const {},
+  title: title,
+  subtitle: 'Mumbai',
+  status: status,
+  start: start,
+  appliedAt: null,
+  posterName: 'Lumiere',
+);
 
 void main() {
   group('relativeTime', () {
     final now = DateTime.now();
 
     test('reads as English, not as a board stamp', () {
-      expect(relativeTime(now.subtract(const Duration(seconds: 20))), 'just now');
-      expect(relativeTime(now.subtract(const Duration(minutes: 6))), '6 minutes ago');
-      expect(relativeTime(now.subtract(const Duration(hours: 4))), '4 hours ago');
+      expect(
+        relativeTime(now.subtract(const Duration(seconds: 20))),
+        'just now',
+      );
+      expect(
+        relativeTime(now.subtract(const Duration(minutes: 6))),
+        '6 minutes ago',
+      );
+      expect(
+        relativeTime(now.subtract(const Duration(hours: 4))),
+        '4 hours ago',
+      );
       expect(relativeTime(now.subtract(const Duration(days: 1))), 'yesterday');
       expect(relativeTime(now.subtract(const Duration(days: 3))), '3 days ago');
-      expect(relativeTime(now.subtract(const Duration(days: 21))), '3 weeks ago');
+      expect(
+        relativeTime(now.subtract(const Duration(days: 21))),
+        '3 weeks ago',
+      );
     });
 
     test('turns the old meaningless 193D into something readable', () {
       // The board printed "193D". Nobody reads that as half a year.
-      expect(relativeTime(now.subtract(const Duration(days: 193))), '6 months ago');
-      expect(relativeTime(now.subtract(const Duration(days: 800))), '2 years ago');
+      expect(
+        relativeTime(now.subtract(const Duration(days: 193))),
+        '6 months ago',
+      );
+      expect(
+        relativeTime(now.subtract(const Duration(days: 800))),
+        '2 years ago',
+      );
     });
 
     test('future dates read forwards, because shoot dates usually are', () {
@@ -46,8 +63,14 @@ void main() {
     });
 
     test('singular and plural agree', () {
-      expect(relativeTime(now.subtract(const Duration(hours: 1))), '1 hour ago');
-      expect(relativeTime(now.subtract(const Duration(hours: 2))), '2 hours ago');
+      expect(
+        relativeTime(now.subtract(const Duration(hours: 1))),
+        '1 hour ago',
+      );
+      expect(
+        relativeTime(now.subtract(const Duration(hours: 2))),
+        '2 hours ago',
+      );
     });
 
     test('a missing date is not a crash', () {
@@ -89,40 +112,59 @@ void main() {
 
     test('booked outranks negotiating outranks shortlisted', () {
       expect(AppStatus.booked.urgency, lessThan(AppStatus.negotiating.urgency));
-      expect(AppStatus.negotiating.urgency,
-          lessThan(AppStatus.shortlisted.urgency));
+      expect(
+        AppStatus.negotiating.urgency,
+        lessThan(AppStatus.shortlisted.urgency),
+      );
     });
   });
 
   group('UpNextCard', () {
     Future<void> pump(WidgetTester tester, Widget child) async {
-      await tester.pumpWidget(MaterialApp(
-        theme: AppTheme.light(),
-        home: Scaffold(body: child),
-      ));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(),
+          home: Scaffold(body: child),
+        ),
+      );
       await tester.pumpAndSettle();
     }
 
     testWidgets('says what to do when there is nothing', (tester) async {
-      await pump(tester, const UpNextCard(
-        item: null,
-        counts: [],
-        emptyMessage: 'Nothing needs you right now.',
-      ));
+      await pump(
+        tester,
+        const UpNextCard(
+          item: null,
+          counts: [],
+          emptyMessage: 'Nothing needs you right now.',
+        ),
+      );
       expect(find.text('Nothing needs you right now.'), findsOneWidget);
     });
 
-    testWidgets('counts are tappable and land on their own status',
-        (tester) async {
+    testWidgets('counts are tappable and land on their own status', (
+      tester,
+    ) async {
       String? tapped;
-      await pump(tester, UpNextCard(
-        item: null,
-        emptyMessage: 'x',
-        counts: [
-          UpNextCount(label: 'Applied', value: 3, onTap: () => tapped = 'applied'),
-          UpNextCount(label: 'Booked', value: 12, onTap: () => tapped = 'booked'),
-        ],
-      ));
+      await pump(
+        tester,
+        UpNextCard(
+          item: null,
+          emptyMessage: 'x',
+          counts: [
+            UpNextCount(
+              label: 'Applied',
+              value: 3,
+              onTap: () => tapped = 'applied',
+            ),
+            UpNextCount(
+              label: 'Booked',
+              value: 12,
+              onTap: () => tapped = 'booked',
+            ),
+          ],
+        ),
+      );
       expect(find.text('3'), findsOneWidget);
       expect(find.text('12'), findsOneWidget);
 
@@ -133,16 +175,19 @@ void main() {
 
     testWidgets('shows one item with its status and a way in', (tester) async {
       var opened = false;
-      await pump(tester, UpNextCard(
-        counts: const [],
-        emptyMessage: 'x',
-        item: UpNextItem(
-          title: 'Editorial shoot',
-          subtitle: 'Lumiere - Shoots in 3 days',
-          status: AppStatus.negotiating,
-          onOpen: () => opened = true,
+      await pump(
+        tester,
+        UpNextCard(
+          counts: const [],
+          emptyMessage: 'x',
+          item: UpNextItem(
+            title: 'Editorial shoot',
+            subtitle: 'Lumiere - Shoots in 3 days',
+            status: AppStatus.negotiating,
+            onOpen: () => opened = true,
+          ),
         ),
-      ));
+      );
       expect(find.text('Editorial shoot'), findsOneWidget);
       expect(find.text('Negotiating'), findsOneWidget);
 
@@ -156,21 +201,24 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      await pump(tester, UpNextCard(
-        emptyMessage: 'x',
-        item: UpNextItem(
-          title: 'A rather long editorial shoot title that will wrap',
-          subtitle: 'Lumiere Studio - Shoots in 3 days',
-          status: AppStatus.shortlisted,
-          onOpen: () {},
+      await pump(
+        tester,
+        UpNextCard(
+          emptyMessage: 'x',
+          item: UpNextItem(
+            title: 'A rather long editorial shoot title that will wrap',
+            subtitle: 'Lumiere Studio - Shoots in 3 days',
+            status: AppStatus.shortlisted,
+            onOpen: () {},
+          ),
+          counts: const [
+            UpNextCount(label: 'Applied', value: 3),
+            UpNextCount(label: 'Shortlisted', value: 12),
+            UpNextCount(label: 'Negotiating', value: 4),
+            UpNextCount(label: 'Booked', value: 1),
+          ],
         ),
-        counts: const [
-          UpNextCount(label: 'Applied', value: 3),
-          UpNextCount(label: 'Shortlisted', value: 12),
-          UpNextCount(label: 'Negotiating', value: 4),
-          UpNextCount(label: 'Booked', value: 1),
-        ],
-      ));
+      );
       expect(tester.takeException(), isNull);
     });
   });

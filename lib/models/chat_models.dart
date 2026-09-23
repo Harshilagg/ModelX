@@ -22,14 +22,14 @@ class Chat {
   });
 
   Map<String, dynamic> toMap() => {
-        'castingId': castingId,
-        'modelId': modelId,
-        'agencyId': agencyId,
-        'status': status,
-        'createdAt': createdAt,
-        'lastUpdated': lastUpdated,
-        'lastMessage': lastMessage,
-      };
+    'castingId': castingId,
+    'modelId': modelId,
+    'agencyId': agencyId,
+    'status': status,
+    'createdAt': createdAt,
+    'lastUpdated': lastUpdated,
+    'lastMessage': lastMessage,
+  };
 
   static Chat fromDoc(String id, Map<String, dynamic> data) {
     return Chat(
@@ -63,12 +63,12 @@ class ChatMessage {
   });
 
   Map<String, dynamic> toMap() => {
-        'senderId': senderId,
-        'encryptedContent': encryptedContent,
-        'timestamp': timestamp,
-        'type': type,
-        'metadata': metadata,
-      };
+    'senderId': senderId,
+    'encryptedContent': encryptedContent,
+    'timestamp': timestamp,
+    'type': type,
+    'metadata': metadata,
+  };
 
   static ChatMessage fromDoc(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -78,7 +78,9 @@ class ChatMessage {
       encryptedContent: data['encryptedContent'],
       timestamp: data['timestamp'] ?? Timestamp.now(),
       type: data['type'] ?? 'text',
-      metadata: data['metadata'] != null ? Map<String, dynamic>.from(data['metadata']) : null,
+      metadata: data['metadata'] != null
+          ? Map<String, dynamic>.from(data['metadata'])
+          : null,
     );
   }
 }

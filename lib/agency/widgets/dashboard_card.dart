@@ -6,7 +6,12 @@ class DashboardCard extends StatelessWidget {
   final String value;
   final IconData icon;
 
-  const DashboardCard({super.key, required this.title, required this.value, required this.icon});
+  const DashboardCard({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +27,10 @@ class DashboardCard extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: AppColors.ink.withValues(alpha: 0.06), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: AppColors.ink.withValues(alpha: 0.06),
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, color: AppColors.ink, size: AppIconSize.md),
           ),
           const SizedBox(width: 12),
@@ -47,7 +55,7 @@ class DashboardCard extends StatelessWidget {
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );

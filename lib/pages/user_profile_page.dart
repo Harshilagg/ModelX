@@ -131,7 +131,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   String _statValue(dynamic raw, [String suffix = '']) {
     final value = (raw ?? '').toString().trim();
     if (value.isEmpty) return '—';
-    return suffix.trim().isEmpty ? value : '$value ${suffix.toUpperCase()}';
+    return suffix.trim().isEmpty ? value : '$value ${suffix}';
   }
 
   /// Joins whatever of a sheet's values exist into one preview line.
@@ -141,7 +141,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         .where((p) => p.isNotEmpty && p != '—')
         .toList();
     if (kept.isEmpty) return 'NOT SET';
-    return kept.join(' · ').toUpperCase();
+    return kept.join(' · ');
   }
 
   String _listValue(dynamic v) {
@@ -226,7 +226,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      (fullName.isEmpty ? 'Profile' : fullName).toUpperCase(),
+                      (fullName.isEmpty ? 'Profile' : fullName),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: BoardType.title(
@@ -248,7 +248,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       );
                     },
                     child: Text(
-                      'SHARE',
+                      'Share',
                       style: BoardType.mono(
                         fontSize: 9.5,
                         color: BoardColors.brass,
@@ -291,8 +291,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          (fullName.isEmpty ? 'Profile' : fullName)
-                              .toUpperCase(),
+                          (fullName.isEmpty ? 'Profile' : fullName),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: BoardType.display(
@@ -387,7 +386,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        cells[i].$1.toUpperCase(),
+                        cells[i].$1,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: BoardType.mono(
@@ -558,7 +557,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 behavior: HitTestBehavior.opaque,
                 onTap: () => Navigator.of(dialogContext).pop(),
                 child: Text(
-                  'CLOSE',
+                  'Close',
                   style: BoardType.mono(fontSize: 11, color: BoardColors.brass),
                 ),
               ),
@@ -638,7 +637,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    title.toUpperCase(),
+                    title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: BoardType.title(
@@ -742,7 +741,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         ),
         SpecRow(
           label: 'Agency associations',
-          value: agencies.trim().isEmpty ? 'NONE' : agencies,
+          value: agencies.trim().isEmpty ? 'None' : agencies,
           onDark: true,
           bottomBorder: true,
         ),

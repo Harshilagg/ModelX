@@ -35,18 +35,17 @@ class AppType {
     Color? color,
     double? letterSpacing,
     bool tabular = false,
-  }) =>
-      TextStyle(
-        fontFamily: family,
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        // The axis, and the label for it. See the class doc.
-        fontVariations: [FontVariation('wght', fontWeight.value.toDouble())],
-        height: height,
-        color: color,
-        letterSpacing: letterSpacing,
-        fontFeatures: tabular ? const [FontFeature.tabularFigures()] : null,
-      );
+  }) => TextStyle(
+    fontFamily: family,
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    // The axis, and the label for it. See the class doc.
+    fontVariations: [FontVariation('wght', fontWeight.value.toDouble())],
+    height: height,
+    color: color,
+    letterSpacing: letterSpacing,
+    fontFeatures: tabular ? const [FontFeature.tabularFigures()] : null,
+  );
 
   /// The largest voice: splash and success headlines, screen heroes.
   static TextStyle display({
@@ -54,16 +53,15 @@ class AppType {
     FontWeight fontWeight = FontWeight.w400,
     Color? color,
     double height = 1.08,
-  }) =>
-      _base(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-        height: height,
-        // -0.03em. Albert Sans opens up noticeably at display sizes, and
-        // without this the headlines read loose against the prototype.
-        letterSpacing: fontSize * -0.03,
-      );
+  }) => _base(
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    color: color,
+    height: height,
+    // -0.03em. Albert Sans opens up noticeably at display sizes, and
+    // without this the headlines read loose against the prototype.
+    letterSpacing: fontSize * -0.03,
+  );
 
   /// Step and section titles -- the 28px voice the signup steps open on.
   static TextStyle title({
@@ -71,14 +69,13 @@ class AppType {
     FontWeight fontWeight = FontWeight.w400,
     Color? color,
     double height = 1.1,
-  }) =>
-      _base(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-        height: height,
-        letterSpacing: fontSize * -0.03,
-      );
+  }) => _base(
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    color: color,
+    height: height,
+    letterSpacing: fontSize * -0.03,
+  );
 
   /// Row titles, card titles, tab labels, button labels.
   static TextStyle heading({
@@ -86,13 +83,12 @@ class AppType {
     FontWeight fontWeight = FontWeight.w500,
     Color? color,
     double height = 1.2,
-  }) =>
-      _base(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-        height: height,
-      );
+  }) => _base(
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    color: color,
+    height: height,
+  );
 
   /// Prose. Descriptions, hints, bios.
   static TextStyle body({
@@ -100,13 +96,12 @@ class AppType {
     FontWeight fontWeight = FontWeight.w400,
     Color? color,
     double height = 1.5,
-  }) =>
-      _base(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-        height: height,
-      );
+  }) => _base(
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    color: color,
+    height: height,
+  );
 
   /// Field labels, meta, chips, status badges.
   ///
@@ -119,14 +114,13 @@ class AppType {
     Color? color,
     double height = 1.3,
     bool tabular = false,
-  }) =>
-      _base(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-        height: height,
-        tabular: tabular,
-      );
+  }) => _base(
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    color: color,
+    height: height,
+    tabular: tabular,
+  );
 
   /// Legal lines, counters, the quietest meta.
   static TextStyle caption({
@@ -135,14 +129,13 @@ class AppType {
     Color? color,
     double height = 1.5,
     bool tabular = false,
-  }) =>
-      _base(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-        height: height,
-        tabular: tabular,
-      );
+  }) => _base(
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    color: color,
+    height: height,
+    tabular: tabular,
+  );
 
   /// Figures that sit in a column or change in place -- prices, counts,
   /// measurements, timers, "Step 2 of 4".
@@ -156,14 +149,13 @@ class AppType {
     FontWeight fontWeight = FontWeight.w500,
     Color? color,
     double height = 1.3,
-  }) =>
-      _base(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-        height: height,
-        tabular: true,
-      );
+  }) => _base(
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    color: color,
+    height: height,
+    tabular: true,
+  );
 
   /// The family applied across Material's own text slots, so widgets we
   /// do not own -- dialogs, snackbars, pickers -- come along too.

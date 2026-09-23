@@ -85,7 +85,9 @@ class StatusPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: s.bg,
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: s.border == Colors.transparent ? null : Border.all(color: s.border),
+        border: s.border == Colors.transparent
+            ? null
+            : Border.all(color: s.border),
       ),
       child: Text(
         s.label,
@@ -105,5 +107,10 @@ class _StatusStyle {
   final Color fg;
   final Color bg;
   final Color border;
-  _StatusStyle({required this.label, required this.fg, required this.bg, required this.border});
+  _StatusStyle({
+    required this.label,
+    required this.fg,
+    required this.bg,
+    required this.border,
+  });
 }

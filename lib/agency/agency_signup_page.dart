@@ -44,20 +44,33 @@ class _AgencySignupPageState extends State<AgencySignupPage> {
 
   Future<void> _pickAndUpload(bool isLogo) async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 75);
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 75,
+    );
     if (picked == null) return;
     final file = File(picked.path);
 
-    final uid = _auth.currentUser?.uid ?? DateTime.now().millisecondsSinceEpoch.toString();
+    final uid =
+        _auth.currentUser?.uid ??
+        DateTime.now().millisecondsSinceEpoch.toString();
 
-    final uploaded = await CloudinaryService.uploadProfileImage(file, 'agency_$uid');
+    final uploaded = await CloudinaryService.uploadProfileImage(
+      file,
+      'agency_$uid',
+    );
     if (uploaded == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Upload failed')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Upload failed')));
       return;
     }
 
     setState(() {
-      if (isLogo) logoUrl = uploaded; else coverUrl = uploaded;
+      if (isLogo)
+        logoUrl = uploaded;
+      else
+        coverUrl = uploaded;
     });
   }
 
@@ -84,8 +97,20 @@ class _AgencySignupPageState extends State<AgencySignupPage> {
           'address': addressController.text.trim(),
           'website': websiteController.text.trim(),
           'bio': bioController.text.trim(),
-          'specialties': specialtiesController.text.trim().isEmpty ? null : specialtiesController.text.trim().split(',').map((s) => s.trim()).toList(),
-          'services': servicesController.text.trim().isEmpty ? null : servicesController.text.trim().split(',').map((s) => s.trim()).toList(),
+          'specialties': specialtiesController.text.trim().isEmpty
+              ? null
+              : specialtiesController.text
+                    .trim()
+                    .split(',')
+                    .map((s) => s.trim())
+                    .toList(),
+          'services': servicesController.text.trim().isEmpty
+              ? null
+              : servicesController.text
+                    .trim()
+                    .split(',')
+                    .map((s) => s.trim())
+                    .toList(),
           'logoUrl': logoUrl,
           'coverImageUrl': coverUrl,
           'portfolioMedia': null,
@@ -102,7 +127,9 @@ class _AgencySignupPageState extends State<AgencySignupPage> {
         debugPrint('✅ Agency document created for $uid');
 
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Agency account created')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Agency account created')));
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
@@ -126,11 +153,15 @@ class _AgencySignupPageState extends State<AgencySignupPage> {
         }
 
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to create agency profile: $fireErr')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create agency profile: $fireErr')),
+        );
         return;
       }
     } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? 'Signup failed')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Signup failed')));
     } finally {
       setState(() => loading = false);
     }
@@ -156,27 +187,36 @@ class _AgencySignupPageState extends State<AgencySignupPage> {
                       AppTextField(
                         label: 'Agency Name',
                         controller: agencyNameController,
-                        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                        validator: (v) =>
+                            v == null || v.isEmpty ? 'Required' : null,
                       ),
                       const SizedBox(height: 16),
                       AppTextField(
                         label: 'Email',
                         controller: emailController,
-                        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                        validator: (v) =>
+                            v == null || v.isEmpty ? 'Required' : null,
                       ),
                       const SizedBox(height: 16),
                       AppTextField(
                         label: 'Password',
                         controller: passwordController,
                         obscureText: true,
-                        validator: (v) => v == null || v.length < 6 ? 'Min 6 chars' : null,
+                        validator: (v) =>
+                            v == null || v.length < 6 ? 'Min 6 chars' : null,
                       ),
                       const SizedBox(height: 16),
                       AppTextField(label: 'Phone', controller: phoneController),
                       const SizedBox(height: 16),
-                      AppTextField(label: 'Address', controller: addressController),
+                      AppTextField(
+                        label: 'Address',
+                        controller: addressController,
+                      ),
                       const SizedBox(height: 16),
-                      AppTextField(label: 'Website', controller: websiteController),
+                      AppTextField(
+                        label: 'Website',
+                        controller: websiteController,
+                      ),
                       const SizedBox(height: 20),
                       Row(
                         children: [
@@ -200,15 +240,31 @@ class _AgencySignupPageState extends State<AgencySignupPage> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      AppTextField(label: 'Bio', controller: bioController, maxLines: 4),
+                      AppTextField(
+                        label: 'Bio',
+                        controller: bioController,
+                        maxLines: 4,
+                      ),
                       const SizedBox(height: 16),
-                      AppTextField(label: 'Specialties (comma separated)', controller: specialtiesController),
+                      AppTextField(
+                        label: 'Specialties (comma separated)',
+                        controller: specialtiesController,
+                      ),
                       const SizedBox(height: 16),
-                      AppTextField(label: 'Services (comma separated)', controller: servicesController),
+                      AppTextField(
+                        label: 'Services (comma separated)',
+                        controller: servicesController,
+                      ),
                       const SizedBox(height: 16),
-                      AppTextField(label: 'Instagram handle', controller: instagramController),
+                      AppTextField(
+                        label: 'Instagram handle',
+                        controller: instagramController,
+                      ),
                       const SizedBox(height: 16),
-                      AppTextField(label: 'LinkedIn URL', controller: linkedinController),
+                      AppTextField(
+                        label: 'LinkedIn URL',
+                        controller: linkedinController,
+                      ),
                       const SizedBox(height: 28),
                       AppButton(
                         label: 'Sign up as Agency',
@@ -234,7 +290,12 @@ class _AgencySignupPageState extends State<AgencySignupPage> {
     return Container(
       width: double.infinity,
       color: AppColors.backstage,
-      padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 20, 24, 36),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        MediaQuery.of(context).padding.top + 20,
+        24,
+        36,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -244,29 +305,47 @@ class _AgencySignupPageState extends State<AgencySignupPage> {
               padding: const EdgeInsets.only(bottom: 18),
               child: GestureDetector(
                 onTap: () => Navigator.of(context).pop(),
-                child: const Icon(Icons.arrow_back, color: AppColors.onBackstage, size: AppIconSize.md),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: AppColors.onBackstage,
+                  size: AppIconSize.md,
+                ),
               ),
             ),
           Text.rich(
-            TextSpan(children: [
-              TextSpan(
-                text: 'Join ',
-                style: AppTypography.display.copyWith(color: AppColors.onBackstage, fontSize: 32),
-              ),
-              TextSpan(
-                text: 'ModelX',
-                style: AppTypography.displayAccent(color: AppColors.goldOnBackstage, fontSize: 34),
-              ),
-              TextSpan(
-                text: '.',
-                style: AppTypography.display.copyWith(color: AppColors.onBackstage, fontSize: 32),
-              ),
-            ]),
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: 'Join ',
+                  style: AppTypography.display.copyWith(
+                    color: AppColors.onBackstage,
+                    fontSize: 32,
+                  ),
+                ),
+                TextSpan(
+                  text: 'ModelX',
+                  style: AppTypography.displayAccent(
+                    color: AppColors.goldOnBackstage,
+                    fontSize: 34,
+                  ),
+                ),
+                TextSpan(
+                  text: '.',
+                  style: AppTypography.display.copyWith(
+                    color: AppColors.onBackstage,
+                    fontSize: 32,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 10),
           Text(
             'Set up your agency to manage talent and bookings.',
-            style: AppTypography.body.copyWith(color: AppColors.onBackstageSoft, fontSize: 15),
+            style: AppTypography.body.copyWith(
+              color: AppColors.onBackstageSoft,
+              fontSize: 15,
+            ),
           ),
         ],
       ),

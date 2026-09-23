@@ -72,8 +72,8 @@ class _GigFullDetailPageState extends State<GigFullDetailPage> {
     final type = (widget.data['budgetType'] ?? '').toString();
     final amount = (widget.data['budgetAmount'] ?? '').toString();
     if (type.isEmpty && amount.isEmpty) return '—';
-    if (amount.isEmpty) return type.toUpperCase();
-    return type.isEmpty ? '₹$amount' : '${type.toUpperCase()} · ₹$amount';
+    if (amount.isEmpty) return type;
+    return type.isEmpty ? '₹$amount' : '${type} · ₹$amount';
   }
 
   static String _stamp(dynamic v) {
@@ -149,9 +149,9 @@ class _GigFullDetailPageState extends State<GigFullDetailPage> {
     ].where((s) => s.isNotEmpty).join(' · ');
 
     final details = <(String, String)>[
-      if (location.isNotEmpty) ('Location', location.toUpperCase()),
+      if (location.isNotEmpty) ('Location', location),
       ('Budget', _budget()),
-      ('Timeline', _orDash(data['timeline']).toUpperCase()),
+      ('Timeline', _orDash(data['timeline'])),
       if ((data['durationHours'] ?? '').toString().isNotEmpty)
         ('Duration', '${data['durationHours']} HRS'),
       if (data['shootingStart'] is Timestamp)
@@ -159,7 +159,7 @@ class _GigFullDetailPageState extends State<GigFullDetailPage> {
       if (data['shootingEnd'] is Timestamp)
         ('Shooting ends', _stamp(data['shootingEnd'])),
       if ((data['outfitRequirements'] ?? '').toString().trim().isNotEmpty)
-        ('Outfit', data['outfitRequirements'].toString().toUpperCase()),
+        ('Outfit', data['outfitRequirements'].toString()),
     ];
 
     final gender = (roleReq['gender'] ?? data['gender'] ?? '')
@@ -168,7 +168,7 @@ class _GigFullDetailPageState extends State<GigFullDetailPage> {
     final minAge = roleReq['minAge'] ?? data['minAge'];
     final maxAge = roleReq['maxAge'] ?? data['maxAge'];
     final highlights = <(String, String)>[
-      if (gender.isNotEmpty) ('Gender', gender.toUpperCase()),
+      if (gender.isNotEmpty) ('Gender', gender),
       if (minAge != null || maxAge != null)
         ('Age range', '${minAge ?? '—'} – ${maxAge ?? '—'}'),
     ];

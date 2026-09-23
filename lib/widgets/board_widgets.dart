@@ -43,16 +43,19 @@ class FlapTile extends StatelessWidget {
     Color fg = BoardColors.onInk;
     bool outlined = false;
 
-    final isBooked = s.contains('book') ||
+    final isBooked =
+        s.contains('book') ||
         s.contains('confirm') ||
         s.contains('accept') ||
         (s.contains('select') && !s.contains('not'));
-    final isNegotiating = s.contains('callback') ||
+    final isNegotiating =
+        s.contains('callback') ||
         s.contains('shortlist') ||
         s.contains('invite') ||
         s.contains('negotiat') ||
         s.contains('review');
-    final isRejected = s.contains('reject') ||
+    final isRejected =
+        s.contains('reject') ||
         s.contains('declin') ||
         s.contains('not selected') ||
         s.contains('closed');
@@ -73,7 +76,7 @@ class FlapTile extends StatelessWidget {
     }
 
     return FlapTile(
-      text: status.toUpperCase(),
+      text: status,
       background: bg,
       foreground: fg,
       fontSize: fontSize,
@@ -141,7 +144,7 @@ class BoardSectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = Text(
-      text.toUpperCase(),
+      text,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: BoardType.sectionLabel(color: color),
@@ -196,7 +199,9 @@ class MonoChip extends StatelessWidget {
       // Derived, not assumed. A filled chip can be brass, ink or a status
       // hue depending on the call site, and hardcoding ink text made an
       // ink-filled chip render invisibly against itself.
-      fg = accent.computeLuminance() > 0.32 ? BoardColors.ink : BoardColors.onInk;
+      fg = accent.computeLuminance() > 0.32
+          ? BoardColors.ink
+          : BoardColors.onInk;
     } else if (onDark) {
       bg = BoardColors.onInkWell;
       fg = BoardColors.onInk.withValues(alpha: 0.85);
@@ -212,10 +217,14 @@ class MonoChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(BoardRadius.chip),
       ),
       child: Text(
-        text.toUpperCase(),
+        text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: BoardType.mono(fontSize: fontSize, color: fg, letterSpacing: 0.55),
+        style: BoardType.mono(
+          fontSize: fontSize,
+          color: fg,
+          letterSpacing: 0.55,
+        ),
       ),
     );
   }
@@ -259,7 +268,7 @@ class SpecRow extends StatelessWidget {
           Flexible(
             flex: 4,
             child: Text(
-              label.toUpperCase(),
+              label,
               style: BoardType.mono(
                 fontSize: 11,
                 color: keyColor,
@@ -274,7 +283,11 @@ class SpecRow extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: BoardType.mono(fontSize: 11, color: valueColor, height: 1.3),
+              style: BoardType.mono(
+                fontSize: 11,
+                color: valueColor,
+                height: 1.3,
+              ),
             ),
           ),
         ],
@@ -312,7 +325,7 @@ class BoardStatWell extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            label.toUpperCase(),
+            label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: BoardType.mono(
@@ -347,7 +360,9 @@ class BoardStatWell extends StatelessWidget {
                   child: Center(
                     child: Container(
                       height: 1,
-                      color: Colors.black.withValues(alpha: onDark ? 0.5 : 0.08),
+                      color: Colors.black.withValues(
+                        alpha: onDark ? 0.5 : 0.08,
+                      ),
                     ),
                   ),
                 ),
@@ -412,7 +427,7 @@ Future<void> showBoardSheet(
                   children: [
                     Expanded(
                       child: Text(
-                        title.toUpperCase(),
+                        title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: BoardType.display(
@@ -435,7 +450,10 @@ Future<void> showBoardSheet(
                           filled: true,
                           accent: accent,
                           fontSize: 9.5,
-                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 9,
+                            vertical: 6,
+                          ),
                         ),
                       ),
                     ],
@@ -446,8 +464,11 @@ Future<void> showBoardSheet(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Text(
-                          'CLOSE',
-                          style: BoardType.mono(fontSize: 11, color: BoardColors.onInkSoft),
+                          'Close',
+                          style: BoardType.mono(
+                            fontSize: 11,
+                            color: BoardColors.onInkSoft,
+                          ),
                         ),
                       ),
                     ),
@@ -526,7 +547,10 @@ class BoardMedia extends StatelessWidget {
     );
 
     if (cut != null) {
-      content = ClipPath(clipper: CompCardClipper(cut: cut!), child: content);
+      content = ClipPath(
+        clipper: CompCardClipper(cut: cut!),
+        child: content,
+      );
     } else if (radius != null) {
       content = ClipRRect(borderRadius: radius!, child: content);
     }
@@ -598,17 +622,17 @@ class BoardAvatar extends StatelessWidget {
   }
 
   Widget _fallback(String initial) => Container(
-        color: onDark ? BoardColors.slate : BoardColors.shell,
-        alignment: Alignment.center,
-        child: Text(
-          initial,
-          style: BoardType.title(
-            fontSize: size * 0.4,
-            fontWeight: FontWeight.w700,
-            color: onDark ? BoardColors.onInk : BoardColors.inkSoft,
-          ),
-        ),
-      );
+    color: onDark ? BoardColors.slate : BoardColors.shell,
+    alignment: Alignment.center,
+    child: Text(
+      initial,
+      style: BoardType.title(
+        fontSize: size * 0.4,
+        fontWeight: FontWeight.w700,
+        color: onDark ? BoardColors.onInk : BoardColors.inkSoft,
+      ),
+    ),
+  );
 }
 
 /// ---------------------------------------------------------------------
@@ -682,7 +706,10 @@ class BoardTopBar extends StatelessWidget {
                     height: 11,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: BoardColors.inkSoft, width: 1.5),
+                      border: Border.all(
+                        color: BoardColors.inkSoft,
+                        width: 1.5,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -743,13 +770,13 @@ class BoardTopBar extends StatelessWidget {
   }
 
   Widget _initialAvatar() => Container(
-        color: BoardColors.ink,
-        alignment: Alignment.center,
-        child: Text(
-          initial.toUpperCase(),
-          style: BoardType.mono(fontSize: 11, color: BoardColors.onInk),
-        ),
-      );
+    color: BoardColors.ink,
+    alignment: Alignment.center,
+    child: Text(
+      initial.toUpperCase(),
+      style: BoardType.mono(fontSize: 11, color: BoardColors.onInk),
+    ),
+  );
 }
 
 /// The floating pill nav. Five destinations, drawn as shapes rather than
@@ -770,7 +797,13 @@ class BoardNavBar extends StatelessWidget {
     this.accent = BoardColors.brass,
   });
 
-  static const _labels = ['Home', 'Notifications', 'Network', 'Jobs', 'Profile'];
+  static const _labels = [
+    'Home',
+    'Notifications',
+    'Network',
+    'Jobs',
+    'Profile',
+  ];
 
   /// The bar's laid-out height: 11dp of container padding top and bottom
   /// around the tallest destination (the 34dp "me" circle plus its own
@@ -817,7 +850,9 @@ class BoardNavBar extends StatelessWidget {
                           child: Container(
                             width: 14,
                             height: 17,
-                            color: active ? BoardColors.ink : BoardColors.onInkFaint,
+                            color: active
+                                ? BoardColors.ink
+                                : BoardColors.onInkFaint,
                           ),
                         ),
                       )
@@ -833,7 +868,10 @@ class BoardNavBar extends StatelessWidget {
   Widget _glyph(int i, Color color) {
     switch (i) {
       case 0: // Home — a pentagon roofline.
-        return CustomPaint(size: const Size(17, 15), painter: _HousePainter(color));
+        return CustomPaint(
+          size: const Size(17, 15),
+          painter: _HousePainter(color),
+        );
       case 1: // Notifications — bell + clapper.
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -857,7 +895,9 @@ class BoardNavBar extends StatelessWidget {
               height: 3,
               decoration: BoxDecoration(
                 color: color,
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(3)),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(3),
+                ),
               ),
             ),
           ],
@@ -889,7 +929,9 @@ class BoardNavBar extends StatelessWidget {
               height: 3,
               decoration: BoxDecoration(
                 color: color,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(2)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(2),
+                ),
               ),
             ),
             const SizedBox(height: 2),
@@ -950,7 +992,7 @@ class BoardScreenTitle extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              title.toUpperCase(),
+              title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: BoardType.display(fontSize: 34, height: 0.9),
@@ -960,7 +1002,7 @@ class BoardScreenTitle extends StatelessWidget {
             const SizedBox(width: 10),
             Flexible(
               child: Text(
-                meta!.toUpperCase(),
+                meta!,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.right,
@@ -1018,7 +1060,7 @@ class BoardTabRail extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  tabs[i].toUpperCase(),
+                  tabs[i],
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1070,7 +1112,12 @@ class BoardButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: outlined ? Colors.transparent : background,
             borderRadius: BorderRadius.circular(square ? 0 : 26),
-            border: outlined ? Border.all(color: foreground.withValues(alpha: 0.4), width: 1.5) : null,
+            border: outlined
+                ? Border.all(
+                    color: foreground.withValues(alpha: 0.4),
+                    width: 1.5,
+                  )
+                : null,
           ),
           // A Row, not `alignment: Alignment.center`. Container's
           // alignment becomes an Align, and an Align with no size factors
@@ -1083,7 +1130,7 @@ class BoardButton extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  label.toUpperCase(),
+                  label,
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

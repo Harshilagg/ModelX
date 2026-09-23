@@ -34,81 +34,95 @@ Future<void> showProfilePhoto(
       return Material(
         type: MaterialType.transparency,
         child: Stack(
-        children: [
-          // The blur is the backdrop *and* the dismiss target, so there
-          // is no small close button to hunt for.
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => Navigator.of(dialogContext).pop(),
-              child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                child: ColoredBox(
-                  color: BoardColors.ink.withValues(alpha: 0.55),
-                  child: const SizedBox.expand(),
+          children: [
+            // The blur is the backdrop *and* the dismiss target, so there
+            // is no small close button to hunt for.
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.of(dialogContext).pop(),
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                  child: ColoredBox(
+                    color: BoardColors.ink.withValues(alpha: 0.55),
+                    child: const SizedBox.expand(),
+                  ),
                 ),
               ),
             ),
-          ),
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Stack(
-                  children: [
-                    // Absorbs its own taps so the photo isn't a dismiss
-                    // target — only the blur around it is.
-                    GestureDetector(
-                      onTap: () {},
-                      child: BoardAvatar(
-                        url: url,
-                        name: name,
-                        size: size,
-                        onDark: true,
-                        ring: true,
-                      ),
-                    ),
-                    if (onEdit != null)
-                      Positioned(
-                        right: size * 0.06,
-                        bottom: size * 0.06,
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.of(dialogContext).pop();
-                            onEdit();
-                          },
-                          child: Container(
-                            width: 48,
-                            height: 48,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: BoardColors.brass,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: BoardColors.ink, width: 2),
-                            ),
-                            child: const Icon(Icons.edit, size: 20, color: BoardColors.ink),
-                          ),
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Stack(
+                    children: [
+                      // Absorbs its own taps so the photo isn't a dismiss
+                      // target — only the blur around it is.
+                      GestureDetector(
+                        onTap: () {},
+                        child: BoardAvatar(
+                          url: url,
+                          name: name,
+                          size: size,
+                          onDark: true,
+                          ring: true,
                         ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 22),
-                Text(
-                  name.toUpperCase(),
-                  maxLines: 2,
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  style: BoardType.display(fontSize: 26, color: BoardColors.onInk, height: 1),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'TAP ANYWHERE TO CLOSE',
-                  style: BoardType.mono(fontSize: 9.5, color: BoardColors.onInkFaint),
-                ),
-              ],
+                      if (onEdit != null)
+                        Positioned(
+                          right: size * 0.06,
+                          bottom: size * 0.06,
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.of(dialogContext).pop();
+                              onEdit();
+                            },
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: BoardColors.brass,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: BoardColors.ink,
+                                  width: 2,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.edit,
+                                size: 20,
+                                color: BoardColors.ink,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+                  Text(
+                    name.toUpperCase(),
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: BoardType.display(
+                      fontSize: 26,
+                      color: BoardColors.onInk,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Tap anywhere to close',
+                    style: BoardType.mono(
+                      fontSize: 9.5,
+                      color: BoardColors.onInkFaint,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
         ),
       );
     },
@@ -153,16 +167,21 @@ class _AvatarCropPageState extends State<AvatarCropPage> {
 
   void _resolve() {
     _stream = FileImage(widget.source).resolve(const ImageConfiguration());
-    _listener = ImageStreamListener((info, _) {
-      if (!mounted) return;
-      setState(() => _natural = Size(
+    _listener = ImageStreamListener(
+      (info, _) {
+        if (!mounted) return;
+        setState(
+          () => _natural = Size(
             info.image.width.toDouble(),
             info.image.height.toDouble(),
-          ));
-    }, onError: (_, __) {
-      if (!mounted) return;
-      setState(() => _natural = const Size(1, 1));
-    });
+          ),
+        );
+      },
+      onError: (_, __) {
+        if (!mounted) return;
+        setState(() => _natural = const Size(1, 1));
+      },
+    );
     _stream!.addListener(_listener!);
   }
 
@@ -210,7 +229,8 @@ class _AvatarCropPageState extends State<AvatarCropPage> {
 
     try {
       final boundary =
-          _boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+          _boundary.currentContext!.findRenderObject()!
+              as RenderRepaintBoundary;
 
       // 3x so the avatar stays sharp when it is shown large.
       final image = await boundary.toImage(pixelRatio: 3);
@@ -251,15 +271,23 @@ class _AvatarCropPageState extends State<AvatarCropPage> {
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () => Navigator.of(context).pop(),
-                    child: Text('CANCEL',
-                        style: BoardType.mono(fontSize: 11, color: BoardColors.onInkSoft)),
+                    child: Text(
+                      'Cancel',
+                      style: BoardType.mono(
+                        fontSize: 11,
+                        color: BoardColors.onInkSoft,
+                      ),
+                    ),
                   ),
                   Expanded(
                     child: Text(
-                      'FRAME YOUR PHOTO',
+                      'Frame your photo',
                       textAlign: TextAlign.center,
                       style: BoardType.title(
-                          fontSize: 15, letterSpacing: 1.9, color: BoardColors.onInk),
+                        fontSize: 15,
+                        letterSpacing: 1.9,
+                        color: BoardColors.onInk,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 48),
@@ -278,7 +306,10 @@ class _AvatarCropPageState extends State<AvatarCropPage> {
               child: Text(
                 'Drag to move, pinch to zoom. What fills the circle is what people see.',
                 textAlign: TextAlign.center,
-                style: BoardType.body(fontSize: 12.5, color: BoardColors.onInkSoft),
+                style: BoardType.body(
+                  fontSize: 12.5,
+                  color: BoardColors.onInkSoft,
+                ),
               ),
             ),
             Padding(
@@ -287,12 +318,22 @@ class _AvatarCropPageState extends State<AvatarCropPage> {
                 children: [
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap: _natural == null ? null : () => setState(() => _centre(diameter)),
+                    onTap: _natural == null
+                        ? null
+                        : () => setState(() => _centre(diameter)),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       color: BoardColors.slate,
-                      child: Text('RESET',
-                          style: BoardType.mono(fontSize: 10, color: BoardColors.onInk)),
+                      child: Text(
+                        'Reset',
+                        style: BoardType.mono(
+                          fontSize: 10,
+                          color: BoardColors.onInk,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),

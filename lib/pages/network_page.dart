@@ -335,7 +335,7 @@ class _CompCardNudge extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'YOUR COMP CARD',
+                          'Your comp card',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: BoardType.display(
@@ -385,7 +385,7 @@ class _CompCardNudge extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'FREE · NO WATERMARK',
+                      'Free · no watermark',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: BoardType.mono(
@@ -449,7 +449,7 @@ class _ConnectionRow extends StatelessWidget {
         // never a bare name with dead space beside it.
         final meta = [
           if (username.isNotEmpty) '@$username',
-          if (location.isNotEmpty) location.toUpperCase(),
+          if (location.isNotEmpty) location,
         ].join(' · ');
 
         return GestureDetector(
@@ -481,7 +481,7 @@ class _ConnectionRow extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        (name.isEmpty ? 'User' : name).toUpperCase(),
+                        (name.isEmpty ? 'User' : name),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: BoardType.title(
@@ -781,7 +781,7 @@ class _NearbyRail extends StatelessWidget {
 
     return _BoardRail(
       key: const ValueKey('rail-nearby'),
-      label: 'Models in ${location.toUpperCase()}',
+      label: 'Models in ${location}',
       meta: 'ALL ${people.length}',
       onShowAll: onShowAll,
       height: 64 + caption,
@@ -815,7 +815,7 @@ class _NearbyRail extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  (name.isEmpty ? 'User' : name.split(' ').first).toUpperCase(),
+                  (name.isEmpty ? 'User' : name.split(' ').first),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,

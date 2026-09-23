@@ -486,7 +486,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             title: Text(
-              name.isEmpty ? 'User' : name.toUpperCase(),
+              name.isEmpty ? 'User' : name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: BoardType.title(fontSize: 16, fontWeight: FontWeight.w700),
@@ -555,7 +555,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     final handle = [
       if (username.trim().isNotEmpty) '@${username.trim()}',
-      if (location.isNotEmpty) location.toUpperCase(),
+      if (location.isNotEmpty) location,
     ].join(' · ');
 
     return Container(
@@ -584,7 +584,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(width: 18),
                   Expanded(
                     child: Text(
-                      'PROFILE',
+                      'Profile',
                       textAlign: TextAlign.center,
                       style: BoardType.title(
                         fontSize: 15,
@@ -606,7 +606,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'EDIT',
+                          'Edit',
                           style: BoardType.mono(
                             fontSize: 10,
                             color: BoardColors.brass,
@@ -659,7 +659,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          (name.isEmpty ? 'Your name' : name).toUpperCase(),
+                          (name.isEmpty ? 'Your name' : name),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: BoardType.display(
@@ -868,14 +868,14 @@ class _ProfilePageState extends State<ProfilePage> {
         .where((p) => p.isNotEmpty && p != '—')
         .toList();
     if (kept.isEmpty) return 'NOT SET YET';
-    return kept.join(' · ').toUpperCase();
+    return kept.join(' · ');
   }
 
   Widget _quadStats() {
     final cells = [
-      ('Height', _statValue(heightController.text, heightUnit.toUpperCase())),
+      ('Height', _statValue(heightController.text, heightUnit)),
       ('Waist', _statValue(waistController.text)),
-      ('Shoe', _statValue(shoeSizeController.text, shoeSizeUnit.toUpperCase())),
+      ('Shoe', _statValue(shoeSizeController.text, shoeSizeUnit)),
       ('Age', _statValue(ageController.text)),
     ];
 
@@ -904,7 +904,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          cells[i].$1.toUpperCase(),
+                          cells[i].$1,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: BoardType.mono(
@@ -977,7 +977,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     borderRadius: BorderRadius.circular(13),
                   ),
                   child: Text(
-                    unit.toUpperCase(),
+                    unit,
                     style: BoardType.mono(
                       fontSize: 10,
                       color: heightUnit == unit
@@ -1011,7 +1011,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    title.toUpperCase(),
+                    title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: BoardType.title(
@@ -1095,7 +1095,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'COMP CARD',
+                    'Comp card',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: BoardType.title(
@@ -1242,7 +1242,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ? BoardColors.brass
                         : BoardColors.slate,
                     child: Text(
-                      unit.toUpperCase(),
+                      unit,
                       style: BoardType.mono(
                         fontSize: 10,
                         color: current == unit
@@ -1299,7 +1299,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     children: [
                       Expanded(
                         child: Text(
-                          title.toUpperCase(),
+                          title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: BoardType.display(
@@ -1313,7 +1313,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         behavior: HitTestBehavior.opaque,
                         onTap: () => Navigator.of(sheetContext).pop(),
                         child: Text(
-                          'CANCEL',
+                          'Cancel',
                           style: BoardType.mono(
                             fontSize: 11,
                             color: BoardColors.onInkSoft,
@@ -1501,15 +1501,12 @@ class _ProfilePageState extends State<ProfilePage> {
         const SizedBox(height: 14),
         SpecRow(
           label: 'Height',
-          value: _statValue(heightController.text, heightUnit.toUpperCase()),
+          value: _statValue(heightController.text, heightUnit),
           onDark: true,
         ),
         SpecRow(
           label: 'Shoe size',
-          value: _statValue(
-            shoeSizeController.text,
-            shoeSizeUnit.toUpperCase(),
-          ),
+          value: _statValue(shoeSizeController.text, shoeSizeUnit),
           onDark: true,
         ),
         SpecRow(
@@ -1981,7 +1978,7 @@ class _ProfilePageState extends State<ProfilePage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'EDIT PROFILE',
+                  'Edit profile',
                   style: BoardType.display(fontSize: 26, height: 1),
                 ),
                 const SizedBox(height: 20),

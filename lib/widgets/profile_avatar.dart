@@ -22,7 +22,8 @@ class ProfileAvatar extends StatelessWidget {
 
   Color _colorFor(String seed) {
     if (seed.isEmpty) return AppColors.inkFaint;
-    final index = seed.codeUnits.fold<int>(0, (a, b) => a + b) % _palette.length;
+    final index =
+        seed.codeUnits.fold<int>(0, (a, b) => a + b) % _palette.length;
     return _palette[index];
   }
 

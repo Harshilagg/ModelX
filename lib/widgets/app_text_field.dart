@@ -62,7 +62,10 @@ class _AppTextFieldState extends State<AppTextField> {
       children: [
         Text(
           widget.label,
-          style: AppTypography.label.copyWith(color: AppColors.inkSoft, letterSpacing: 0.08),
+          style: AppTypography.label.copyWith(
+            color: AppColors.inkSoft,
+            letterSpacing: 0.08,
+          ),
         ),
         const SizedBox(height: 7),
         TextFormField(
@@ -85,7 +88,9 @@ class _AppTextFieldState extends State<AppTextField> {
             suffixIcon: widget.obscureText
                 ? IconButton(
                     icon: Icon(
-                      _obscured ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                      _obscured
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
                       size: AppIconSize.sm,
                       color: AppColors.inkFaint,
                     ),

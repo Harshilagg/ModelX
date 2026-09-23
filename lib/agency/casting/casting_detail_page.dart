@@ -37,7 +37,10 @@ class _CastingDetailPageState extends State<CastingDetailPage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(backgroundColor: AppColors.paper, body: LoadingState());
+      return const Scaffold(
+        backgroundColor: AppColors.paper,
+        body: LoadingState(),
+      );
     }
 
     final data = _data;
@@ -73,22 +76,32 @@ class _CastingDetailPageState extends State<CastingDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    Expanded(
-                      child: Text(
-                        data['title'] ?? '',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.ink),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          data['title'] ?? '',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.ink,
+                          ),
+                        ),
                       ),
-                    ),
-                    StatusPill(status: (data['status'] ?? 'open').toString()),
-                  ]),
+                      StatusPill(status: (data['status'] ?? 'open').toString()),
+                    ],
+                  ),
                   if ((data['description'] ?? '').toString().isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(
                       data['description'],
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 13.5, color: AppColors.inkSoft, height: 1.4),
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        color: AppColors.inkSoft,
+                        height: 1.4,
+                      ),
                     ),
                   ],
                   const SizedBox(height: AppSpacing.sm + 2),
@@ -96,9 +109,17 @@ class _CastingDetailPageState extends State<CastingDetailPage> {
                     spacing: AppSpacing.md,
                     runSpacing: 6,
                     children: [
-                      if ((data['location'] ?? '').toString().isNotEmpty) _quickFact(Icons.location_on_outlined, data['location']),
+                      if ((data['location'] ?? '').toString().isNotEmpty)
+                        _quickFact(
+                          Icons.location_on_outlined,
+                          data['location'],
+                        ),
                       _quickFact(Icons.payments_outlined, _compensation(data)),
-                      if (data['shootingStart'] != null) _quickFact(Icons.event_outlined, _formatTimestamp(data['shootingStart'])),
+                      if (data['shootingStart'] != null)
+                        _quickFact(
+                          Icons.event_outlined,
+                          _formatTimestamp(data['shootingStart']),
+                        ),
                     ],
                   ),
                 ],
@@ -106,7 +127,14 @@ class _CastingDetailPageState extends State<CastingDetailPage> {
             ),
 
             const SizedBox(height: AppSpacing.lg),
-            Text('Applicants', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.ink)),
+            Text(
+              'Applicants',
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: AppColors.ink,
+              ),
+            ),
             const SizedBox(height: AppSpacing.sm + 4),
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -117,7 +145,9 @@ class _CastingDetailPageState extends State<CastingDetailPage> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  return const ErrorStateView(message: 'Could not load applicants.');
+                  return const ErrorStateView(
+                    message: 'Could not load applicants.',
+                  );
                 }
                 if (!snapshot.hasData) {
                   return const Padding(
@@ -133,7 +163,8 @@ class _CastingDetailPageState extends State<CastingDetailPage> {
                     child: EmptyState(
                       icon: Icons.people_outline_rounded,
                       title: 'No applicants yet',
-                      message: 'Models who apply to this casting will show up here.',
+                      message:
+                          'Models who apply to this casting will show up here.',
                     ),
                   );
                 }
@@ -143,7 +174,11 @@ class _CastingDetailPageState extends State<CastingDetailPage> {
                     final a = doc.data() as Map<String, dynamic>;
                     final modelId = (a['modelId'] ?? doc.id).toString();
                     final status = (a['status'] ?? 'pending').toString();
-                    return CastingApplicantCard(castingId: widget.castingId, modelId: modelId, status: status);
+                    return CastingApplicantCard(
+                      castingId: widget.castingId,
+                      modelId: modelId,
+                      status: status,
+                    );
                   }).toList(),
                 );
               },
@@ -160,7 +195,14 @@ class _CastingDetailPageState extends State<CastingDetailPage> {
       children: [
         Icon(icon, size: 15, color: AppColors.inkFaint),
         const SizedBox(width: 4),
-        Text(value, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.inkSoft)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: AppColors.inkSoft,
+          ),
+        ),
       ],
     );
   }
@@ -171,7 +213,8 @@ class _CastingDetailPageState extends State<CastingDetailPage> {
     if ((min == null || min.isEmpty) && (max == null || max.isEmpty)) {
       final budgetType = (data['budgetType'] ?? '').toString();
       final budgetAmount = (data['budgetAmount'] ?? '').toString();
-      if (budgetType.isNotEmpty && budgetAmount.isNotEmpty) return '$budgetType: ₹$budgetAmount';
+      if (budgetType.isNotEmpty && budgetAmount.isNotEmpty)
+        return '$budgetType: ₹$budgetAmount';
       return '—';
     }
     return '₹${min ?? '-'} – ₹${max ?? '-'}';
@@ -184,5 +227,4 @@ class _CastingDetailPageState extends State<CastingDetailPage> {
     }
     return 'Not set';
   }
-
 }

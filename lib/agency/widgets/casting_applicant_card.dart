@@ -30,7 +30,10 @@ class CastingApplicantCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userRef = FirebaseFirestore.instance.collection('users').doc(modelId);
-    final portfolioRef = FirebaseFirestore.instance.collection('portfolio').where('uid', isEqualTo: modelId).limit(6);
+    final portfolioRef = FirebaseFirestore.instance
+        .collection('portfolio')
+        .where('uid', isEqualTo: modelId)
+        .limit(6);
 
     return StreamBuilder<DocumentSnapshot>(
       stream: userRef.snapshots(),
@@ -40,7 +43,9 @@ class CastingApplicantCard extends StatelessWidget {
         }
 
         final user = userSnap.data!.data() as Map<String, dynamic>;
-        final followersCount = (user['followers'] is List) ? user['followers'].length : 0;
+        final followersCount = (user['followers'] is List)
+            ? user['followers'].length
+            : 0;
 
         return Container(
           margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -64,26 +69,46 @@ class CastingApplicantCard extends StatelessWidget {
                     if (!snap.hasData || snap.data!.docs.isEmpty) {
                       return ClipRRect(
                         borderRadius: BorderRadius.circular(AppRadius.md),
-                        child: Container(color: AppColors.paperRaised, child: const Icon(Icons.image_outlined, color: AppColors.inkFaint)),
+                        child: Container(
+                          color: AppColors.paperRaised,
+                          child: const Icon(
+                            Icons.image_outlined,
+                            color: AppColors.inkFaint,
+                          ),
+                        ),
                       );
                     }
 
                     final images = snap.data!.docs
                         .map((e) => e.data() as Map<String, dynamic>)
-                        .where((d) => d['mediaUrl'] != null && d['mediaUrl'].toString().isNotEmpty && d['mediaUrl'].toString().startsWith('http'))
+                        .where(
+                          (d) =>
+                              d['mediaUrl'] != null &&
+                              d['mediaUrl'].toString().isNotEmpty &&
+                              d['mediaUrl'].toString().startsWith('http'),
+                        )
                         .map((d) => d['mediaUrl'].toString())
                         .toList();
 
                     if (images.isEmpty) {
                       return ClipRRect(
                         borderRadius: BorderRadius.circular(AppRadius.md),
-                        child: Container(color: AppColors.paperRaised, child: const Icon(Icons.image_outlined, color: AppColors.inkFaint)),
+                        child: Container(
+                          color: AppColors.paperRaised,
+                          child: const Icon(
+                            Icons.image_outlined,
+                            color: AppColors.inkFaint,
+                          ),
+                        ),
                       );
                     }
 
                     return ClipRRect(
                       borderRadius: BorderRadius.circular(AppRadius.md),
-                      child: PortfolioCarousel(key: ValueKey(images.first), images: images),
+                      child: PortfolioCarousel(
+                        key: ValueKey(images.first),
+                        images: images,
+                      ),
                     );
                   },
                 ),
@@ -103,7 +128,9 @@ class CastingApplicantCard extends StatelessWidget {
                             user['fullName'] ?? 'Unnamed',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTypography.bodyEmphasized.copyWith(fontWeight: FontWeight.w700),
+                            style: AppTypography.bodyEmphasized.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -118,7 +145,10 @@ class CastingApplicantCard extends StatelessWidget {
                       style: AppTypography.caption,
                     ),
                     const SizedBox(height: 4),
-                    Text('$followersCount followers', style: AppTypography.metadata),
+                    Text(
+                      '$followersCount followers',
+                      style: AppTypography.metadata,
+                    ),
                     const SizedBox(height: 10),
 
                     Wrap(
@@ -126,8 +156,13 @@ class CastingApplicantCard extends StatelessWidget {
                       runSpacing: 6,
                       children: [
                         if (status == 'pending' || status == 'applied')
-                          _actionButton(label: 'Shortlist', color: AppColors.gold, onTap: () => _updateStatus(context, 'SHORTLISTED'))
-                        else if (status == 'SHORTLISTED' || status == 'shortlisted')
+                          _actionButton(
+                            label: 'Shortlist',
+                            color: AppColors.gold,
+                            onTap: () => _updateStatus(context, 'Shortlisted'),
+                          )
+                        else if (status == 'SHORTLISTED' ||
+                            status == 'shortlisted')
                           _actionButton(
                             label: 'Connect',
                             color: AppColors.gold,
@@ -137,7 +172,11 @@ class CastingApplicantCard extends StatelessWidget {
                               final agencyId = current.uid;
                               final chatService = ChatService();
                               try {
-                                final chatId = await chatService.createChat(castingId, modelId, agencyId);
+                                final chatId = await chatService.createChat(
+                                  castingId,
+                                  modelId,
+                                  agencyId,
+                                );
                                 if (context.mounted) {
                                   Navigator.push(
                                     context,
@@ -152,7 +191,12 @@ class CastingApplicantCard extends StatelessWidget {
                                   );
                                 }
                               } catch (e) {
-                                if (context.mounted) showAppToast(context, 'Failed to connect: $e', isError: true);
+                                if (context.mounted)
+                                  showAppToast(
+                                    context,
+                                    'Failed to connect: $e',
+                                    isError: true,
+                                  );
                               }
                             },
                           )
@@ -161,7 +205,10 @@ class CastingApplicantCard extends StatelessWidget {
                             label: 'Message',
                             color: AppColors.ink,
                             onTap: () {
-                              final list = [FirebaseAuth.instance.currentUser!.uid, modelId]..sort();
+                              final list = [
+                                FirebaseAuth.instance.currentUser!.uid,
+                                modelId,
+                              ]..sort();
                               final chatId = list.join('--');
                               Navigator.push(
                                 context,
@@ -177,16 +224,28 @@ class CastingApplicantCard extends StatelessWidget {
                             },
                           ),
                         if (status != 'rejected')
-                          _actionButton(label: 'Reject', color: AppColors.select, onTap: () => _updateStatus(context, 'rejected')),
+                          _actionButton(
+                            label: 'Reject',
+                            color: AppColors.select,
+                            onTap: () => _updateStatus(context, 'rejected'),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 2),
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.person_outline, color: AppColors.inkSoft),
+                          icon: const Icon(
+                            Icons.person_outline,
+                            color: AppColors.inkSoft,
+                          ),
                           onPressed: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => UserProfilePage(uid: modelId)));
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => UserProfilePage(uid: modelId),
+                              ),
+                            );
                           },
                         ),
                       ],
@@ -201,24 +260,47 @@ class CastingApplicantCard extends StatelessWidget {
     );
   }
 
-  Widget _actionButton({required String label, required Color color, required VoidCallback? onTap}) {
+  Widget _actionButton({
+    required String label,
+    required Color color,
+    required VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: onTap == null ? AppColors.paperRaised : color.withValues(alpha: 0.12),
+          color: onTap == null
+              ? AppColors.paperRaised
+              : color.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(AppRadius.pill),
         ),
-        child: Text(label, style: TextStyle(color: onTap == null ? AppColors.inkFaint : color, fontWeight: FontWeight.w600, fontSize: 13)),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: onTap == null ? AppColors.inkFaint : color,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
       ),
     );
   }
 
   Future<void> _updateStatus(BuildContext context, String newStatus) async {
-    await FirebaseFirestore.instance.collection('castings').doc(castingId).collection('applicants').doc(modelId).update({'status': newStatus});
+    await FirebaseFirestore.instance
+        .collection('castings')
+        .doc(castingId)
+        .collection('applicants')
+        .doc(modelId)
+        .update({'status': newStatus});
 
     if (!context.mounted) return;
-    showAppToast(context, newStatus.toUpperCase() == 'SHORTLISTED' ? 'Added to shortlist' : 'Applicant rejected');
+    showAppToast(
+      context,
+      newStatus.toUpperCase() == 'SHORTLISTED'
+          ? 'Added to shortlist'
+          : 'Applicant rejected',
+    );
   }
 }

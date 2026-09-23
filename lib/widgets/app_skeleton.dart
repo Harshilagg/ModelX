@@ -20,14 +20,17 @@ class AppSkeleton extends StatefulWidget {
   });
 
   factory AppSkeleton.circle(double size) => AppSkeleton(
-        width: size,
-        height: size,
-        borderRadius: BorderRadius.circular(size / 2),
-      );
+    width: size,
+    height: size,
+    borderRadius: BorderRadius.circular(size / 2),
+  );
 
   /// A single card-shaped placeholder, matching `AppCard`'s radius.
   static Widget card({double height = 140}) {
-    return AppSkeleton(height: height, borderRadius: BorderRadius.circular(AppRadius.lg));
+    return AppSkeleton(
+      height: height,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+    );
   }
 
   /// An avatar beside two text lines — for post/comment/chat rows
@@ -87,7 +90,10 @@ class AppSkeleton extends StatefulWidget {
         final isLast = i == lines - 1;
         return Padding(
           padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
-          child: AppSkeleton(width: isLast ? 140 : double.infinity, height: lineHeight),
+          child: AppSkeleton(
+            width: isLast ? 140 : double.infinity,
+            height: lineHeight,
+          ),
         );
       }),
     );
@@ -97,13 +103,17 @@ class AppSkeleton extends StatefulWidget {
   State<AppSkeleton> createState() => _AppSkeletonState();
 }
 
-class _AppSkeletonState extends State<AppSkeleton> with SingleTickerProviderStateMixin {
+class _AppSkeletonState extends State<AppSkeleton>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))..repeat();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
   }
 
   @override
@@ -117,7 +127,10 @@ class _AppSkeletonState extends State<AppSkeleton> with SingleTickerProviderStat
     final base = Container(
       width: widget.width,
       height: widget.height,
-      decoration: BoxDecoration(color: AppColors.paperRaised, borderRadius: widget.borderRadius),
+      decoration: BoxDecoration(
+        color: AppColors.paperRaised,
+        borderRadius: widget.borderRadius,
+      ),
     );
 
     if (MediaQuery.of(context).disableAnimations) return base;
@@ -130,7 +143,11 @@ class _AppSkeletonState extends State<AppSkeleton> with SingleTickerProviderStat
           shaderCallback: (bounds) => LinearGradient(
             begin: Alignment(-1 - t * 2, 0),
             end: Alignment(1 - t * 2, 0),
-            colors: const [AppColors.paperRaised, AppColors.line, AppColors.paperRaised],
+            colors: const [
+              AppColors.paperRaised,
+              AppColors.line,
+              AppColors.paperRaised,
+            ],
             stops: const [0.35, 0.5, 0.65],
           ).createShader(bounds),
           child: base,

@@ -77,10 +77,15 @@ class BrandManageGigsPage extends StatelessWidget {
                   description: data['description'] ?? '',
 
                   physicalAttributes: physical,
-                  eyeColors: List<String>.from(physical['eyeColor'] ?? const []),
-                  hairColors: List<String>.from(physical['hairColor'] ?? const []),
-                  skinComplexion:
-                      List<String>.from(physical['skinComplexion'] ?? const []),
+                  eyeColors: List<String>.from(
+                    physical['eyeColor'] ?? const [],
+                  ),
+                  hairColors: List<String>.from(
+                    physical['hairColor'] ?? const [],
+                  ),
+                  skinComplexion: List<String>.from(
+                    physical['skinComplexion'] ?? const [],
+                  ),
 
                   timeline: data['timeline'] ?? '',
                   durationHours: data['durationHours'] ?? 0,
@@ -92,52 +97,46 @@ class BrandManageGigsPage extends StatelessWidget {
                   createdAt: (data['createdAt'] as Timestamp).toDate(),
                 ),
               );
-
             },
           );
         },
       ),
     );
   }
+
   Future<void> _confirmDelete(BuildContext context, String gigId) async {
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (_) => AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-      ),
-      title: Text('Delete Gig', style: AppTypography.subheading),
-      content: Text(
-        'Are you sure you want to delete this gig? '
-        'This action cannot be undone.',
-        style: AppTypography.body.copyWith(color: AppColors.inkSoft),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.select,
+        title: Text('Delete Gig', style: AppTypography.subheading),
+        content: Text(
+          'Are you sure you want to delete this gig? '
+          'This action cannot be undone.',
+          style: AppTypography.body.copyWith(color: AppColors.inkSoft),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
           ),
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('Delete'),
-        ),
-      ],
-    ),
-  );
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.select),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
 
-  if (confirmed == true) {
-    await FirebaseFirestore.instance
-        .collection('gigs')
-        .doc(gigId)
-        .delete();
+    if (confirmed == true) {
+      await FirebaseFirestore.instance.collection('gigs').doc(gigId).delete();
 
-    if (context.mounted) {
-      showAppToast(context, 'Gig deleted');
+      if (context.mounted) {
+        showAppToast(context, 'Gig deleted');
+      }
     }
   }
-}
-
 }

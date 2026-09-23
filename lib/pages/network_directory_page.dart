@@ -166,7 +166,7 @@ class _PeopleDirectoryPageState extends State<PeopleDirectoryPage> {
         if (people.isEmpty) {
           return _DirectoryScaffold(
             title: widget.title,
-            meta: 'NOBODY YET',
+            meta: 'Nobody yet',
             child: const EmptyState(
               icon: Icons.person_search_outlined,
               title: 'Nobody here yet',
@@ -177,7 +177,7 @@ class _PeopleDirectoryPageState extends State<PeopleDirectoryPage> {
 
         return _DirectoryScaffold(
           title: widget.title,
-          meta: '${people.length} ${people.length == 1 ? 'PERSON' : 'PEOPLE'}',
+          meta: '${people.length} ${people.length == 1 ? 'Person' : 'PEOPLE'}',
           child: LayoutBuilder(
             builder: (context, constraints) {
               const gutter = 14.0;
@@ -270,7 +270,7 @@ class _HiringDirectoryPageState extends State<HiringDirectoryPage> {
             if (posters.isEmpty) {
               return const _DirectoryScaffold(
                 title: 'Brands',
-                meta: 'NOBODY YET',
+                meta: 'Nobody yet',
                 child: EmptyState(
                   icon: Icons.work_outline_rounded,
                   title: 'No brands yet',

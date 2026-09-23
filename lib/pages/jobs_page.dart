@@ -390,7 +390,7 @@ class _JobsBody extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          days <= 0 ? 'SHOOTS TODAY' : 'SHOOTS IN ${days}D',
+                          days <= 0 ? 'Shoots today' : 'SHOOTS IN ${days}D',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: BoardType.mono(
@@ -403,7 +403,7 @@ class _JobsBody extends StatelessWidget {
                         const SizedBox(height: 8),
                         Expanded(
                           child: Text(
-                            it.title.toUpperCase(),
+                            it.title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: BoardType.title(
@@ -415,9 +415,7 @@ class _JobsBody extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          it.moneyLine.isEmpty
-                              ? it.posterName.toUpperCase()
-                              : it.moneyLine,
+                          it.moneyLine.isEmpty ? it.posterName : it.moneyLine,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: BoardType.mono(
@@ -522,7 +520,7 @@ class _JobRow extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      item.posterName.toUpperCase(),
+                      item.posterName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: BoardType.mono(
@@ -540,7 +538,7 @@ class _JobRow extends StatelessWidget {
 
               // ---- title ----
               Text(
-                item.title.toUpperCase(),
+                item.title,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: BoardType.display(fontSize: 26, color: fg, height: 0.93),
@@ -571,7 +569,7 @@ class _JobRow extends StatelessWidget {
                       const SizedBox(width: 10),
                       Flexible(
                         child: Text(
-                          item.location.toUpperCase(),
+                          item.location,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.right,
@@ -646,7 +644,7 @@ class _JobRow extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                status == null ? 'APPLY' : 'VIEW',
+                                status == null ? 'Apply' : 'View',
                                 style: BoardType.title(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
@@ -768,7 +766,7 @@ class _FeedItem {
     final type = (data['budgetType'] ?? '').toString();
     final amount = (data['budgetAmount'] ?? '').toString();
     if (amount.isNotEmpty) {
-      return type.isEmpty ? '₹$amount' : '${type.toUpperCase()} · ₹$amount';
+      return type.isEmpty ? '₹$amount' : '${type} · ₹$amount';
     }
     final hours = (data['durationHours'] ?? '').toString();
     if (hours.isNotEmpty) return '$hours HRS';

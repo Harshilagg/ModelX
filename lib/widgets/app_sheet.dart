@@ -26,12 +26,17 @@ class AppSheet {
 /// A themed dialog wrapper, matching the sheet's surface/radius so a
 /// modal and a sheet read as the same family of overlay.
 class AppModal {
-  static Future<T?> show<T>(BuildContext context, {required WidgetBuilder builder}) {
+  static Future<T?> show<T>(
+    BuildContext context, {
+    required WidgetBuilder builder,
+  }) {
     return showDialog<T>(
       context: context,
       builder: (context) => Dialog(
         backgroundColor: AppColors.paper,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
         child: builder(context),
       ),
     );

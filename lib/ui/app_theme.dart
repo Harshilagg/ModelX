@@ -59,13 +59,25 @@ class AppRadius {
 /// shadows instead of each screen inventing its own.
 class AppShadows {
   static final List<BoxShadow> card = [
-    BoxShadow(color: AppColors.ink.withValues(alpha: 0.04), blurRadius: 16, offset: const Offset(0, 6)),
+    BoxShadow(
+      color: AppColors.ink.withValues(alpha: 0.04),
+      blurRadius: 16,
+      offset: const Offset(0, 6),
+    ),
   ];
   static final List<BoxShadow> raised = [
-    BoxShadow(color: AppColors.ink.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+    BoxShadow(
+      color: AppColors.ink.withValues(alpha: 0.05),
+      blurRadius: 10,
+      offset: const Offset(0, 4),
+    ),
   ];
   static final List<BoxShadow> overlay = [
-    BoxShadow(color: AppColors.ink.withValues(alpha: 0.12), blurRadius: 24, offset: const Offset(0, 10)),
+    BoxShadow(
+      color: AppColors.ink.withValues(alpha: 0.12),
+      blurRadius: 24,
+      offset: const Offset(0, 10),
+    ),
   ];
 }
 
@@ -83,40 +95,43 @@ class AppIconSize {
 /// resolving unchanged; new code can also reach these directly.
 class AppTypography {
   static TextStyle get display => GoogleFonts.archivo(
-        fontSize: 34,
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.5,
-        color: AppColors.ink,
-      );
+    fontSize: 34,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.5,
+    color: AppColors.ink,
+  );
   static TextStyle get heading => GoogleFonts.archivo(
-        fontSize: 24,
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.3,
-        color: AppColors.ink,
-      );
+    fontSize: 24,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.3,
+    color: AppColors.ink,
+  );
   static TextStyle get subheading => GoogleFonts.archivo(
-        fontSize: 19,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.2,
-        color: AppColors.ink,
-      );
-  static TextStyle get bodyEmphasized => GoogleFonts.archivo(fontSize: 15, color: AppColors.ink);
-  static TextStyle get body => GoogleFonts.archivo(fontSize: 14, color: AppColors.ink);
-  static TextStyle get caption => GoogleFonts.archivo(fontSize: 12.5, color: AppColors.inkFaint);
+    fontSize: 19,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.2,
+    color: AppColors.ink,
+  );
+  static TextStyle get bodyEmphasized =>
+      GoogleFonts.archivo(fontSize: 15, color: AppColors.ink);
+  static TextStyle get body =>
+      GoogleFonts.archivo(fontSize: 14, color: AppColors.ink);
+  static TextStyle get caption =>
+      GoogleFonts.archivo(fontSize: 12.5, color: AppColors.inkFaint);
 
   /// Timestamps, counts, meta rows — distinct from [label]'s bold
   /// uppercase eyebrow voice, which shouldn't also carry this job.
   static TextStyle get metadata => GoogleFonts.archivo(
-        fontSize: 11.5,
-        fontWeight: FontWeight.w500,
-        color: AppColors.inkFaint,
-      );
+    fontSize: 11.5,
+    fontWeight: FontWeight.w500,
+    color: AppColors.inkFaint,
+  );
   static TextStyle get label => GoogleFonts.archivo(
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.4,
-        color: AppColors.inkFaint,
-      );
+    fontSize: 11,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.4,
+    color: AppColors.inkFaint,
+  );
 
   /// The one serif accent — Bodoni Moda, restrained to hero/display
   /// moments (profile names, one emphasis word in a headline, a
@@ -125,19 +140,22 @@ class AppTypography {
     double fontSize = 40,
     Color color = AppColors.ink,
     FontWeight fontWeight = FontWeight.w500,
-  }) =>
-      GoogleFonts.bodoniModa(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        fontStyle: FontStyle.italic,
-        color: color,
-        height: 1.02,
-      );
+  }) => GoogleFonts.bodoniModa(
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    fontStyle: FontStyle.italic,
+    color: color,
+    height: 1.02,
+  );
 }
 
 /// Small snackbar helper so error toasts read distinctly from success/
 /// neutral ones instead of rendering identically ink-on-paper.
-void showAppToast(BuildContext context, String message, {bool isError = false}) {
+void showAppToast(
+  BuildContext context,
+  String message, {
+  bool isError = false,
+}) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(message),
@@ -253,7 +271,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: BoardColors.shell,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: const BorderSide(color: AppColors.line),
@@ -274,13 +295,24 @@ class AppTheme {
         labelStyle: AppType.label(fontSize: 14, color: AppColors.inkSoft),
       ),
       iconTheme: const IconThemeData(color: AppColors.ink),
-      dividerTheme: DividerThemeData(color: BoardColors.inkLine, thickness: 1, space: 1),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(color: BoardColors.ink),
+      dividerTheme: DividerThemeData(
+        color: BoardColors.inkLine,
+        thickness: 1,
+        space: 1,
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: BoardColors.ink,
+      ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: BoardColors.ink,
-        contentTextStyle: AppType.body(fontSize: 13.5, color: BoardColors.onInk),
+        contentTextStyle: AppType.body(
+          fontSize: 13.5,
+          color: BoardColors.onInk,
+        ),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
       ),
       extensions: <ThemeExtension<dynamic>>[palette],
     );
@@ -392,7 +424,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: palette.surfaceField,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: _nightBorder(palette.line),
         enabledBorder: _nightBorder(palette.line),
         focusedBorder: _nightBorder(palette.onSurfaceSoft, width: 1.4),
@@ -402,13 +437,21 @@ class AppTheme {
         labelStyle: AppType.label(color: palette.onSurfaceSoft),
       ),
       iconTheme: IconThemeData(color: palette.onSurface),
-      dividerTheme: DividerThemeData(color: palette.line, thickness: 1, space: 1),
-      progressIndicatorTheme: ProgressIndicatorThemeData(color: palette.onSurface),
+      dividerTheme: DividerThemeData(
+        color: palette.line,
+        thickness: 1,
+        space: 1,
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: palette.onSurface,
+      ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: palette.surfaceRaised,
         contentTextStyle: AppType.body(color: palette.onSurface),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(BoardRadius.panel)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(BoardRadius.panel),
+        ),
       ),
       extensions: <ThemeExtension<dynamic>>[palette],
     );

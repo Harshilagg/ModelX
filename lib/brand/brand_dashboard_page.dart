@@ -29,7 +29,7 @@ class _BrandDashboardPageState extends State<BrandDashboardPage> {
   final List<Widget> _pages = const [
     HomePage(), // New Primary Social Feed
     BrandHomePage(), // Analysis/Insights moved here
-    BrandManageGigsPage(), 
+    BrandManageGigsPage(),
     PostGigPage(),
     ApplicationsPage(),
     BrandNotificationsPage(),
@@ -51,12 +51,17 @@ class _BrandDashboardPageState extends State<BrandDashboardPage> {
                 children: [
                   // PROFILE
                   IconButton(
-                    icon: const Icon(Icons.business_center, color: AppColors.ink),
+                    icon: const Icon(
+                      Icons.business_center,
+                      color: AppColors.ink,
+                    ),
                     iconSize: AppIconSize.md,
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const BrandProfilePage()),
+                        MaterialPageRoute(
+                          builder: (_) => const BrandProfilePage(),
+                        ),
                       );
                     },
                   ),
@@ -94,12 +99,17 @@ class _BrandDashboardPageState extends State<BrandDashboardPage> {
                           clipBehavior: Clip.none,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.chat_bubble_outline, color: AppColors.ink),
+                              icon: const Icon(
+                                Icons.chat_bubble_outline,
+                                color: AppColors.ink,
+                              ),
                               iconSize: AppIconSize.md,
                               onPressed: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => ChatInboxPage()),
+                                  MaterialPageRoute(
+                                    builder: (_) => ChatInboxPage(),
+                                  ),
                                 );
                               },
                             ),
@@ -109,12 +119,24 @@ class _BrandDashboardPageState extends State<BrandDashboardPage> {
                                 top: 6,
                                 child: Container(
                                   padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(color: AppColors.select, shape: BoxShape.circle),
-                                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.select,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 16,
+                                    minHeight: 16,
+                                  ),
                                   child: Center(
                                     child: Text(
-                                      unreadTotal > 9 ? '9+' : unreadTotal.toString(),
-                                      style: const TextStyle(color: AppColors.paper, fontSize: 10, fontWeight: FontWeight.bold),
+                                      unreadTotal > 9
+                                          ? '9+'
+                                          : unreadTotal.toString(),
+                                      style: const TextStyle(
+                                        color: AppColors.paper,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -126,12 +148,17 @@ class _BrandDashboardPageState extends State<BrandDashboardPage> {
 
                   // AI SCOUT
                   IconButton(
-                    icon: const Icon(Icons.auto_awesome_outlined, color: AppColors.ink),
+                    icon: const Icon(
+                      Icons.auto_awesome_outlined,
+                      color: AppColors.ink,
+                    ),
                     iconSize: AppIconSize.md,
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const ScoutPage(role: 'Brand')),
+                        MaterialPageRoute(
+                          builder: (_) => const ScoutPage(role: 'Brand'),
+                        ),
                       );
                     },
                   ),
@@ -147,23 +174,47 @@ class _BrandDashboardPageState extends State<BrandDashboardPage> {
 
       // ================= PREMIUM BOTTOM NAV =================
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(color: AppColors.paper, boxShadow: AppShadows.raised),
+        decoration: BoxDecoration(
+          color: AppColors.paper,
+          boxShadow: AppShadows.raised,
+        ),
         child: SafeArea(
           child: BottomNavigationBar(
             currentIndex: _selectedIndex,
             onTap: (i) => setState(() => _selectedIndex = i),
             type: BottomNavigationBarType.fixed,
             iconSize: AppIconSize.md,
-            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
+            selectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 11,
+            ),
             unselectedLabelStyle: const TextStyle(fontSize: 11),
             elevation: 0,
             items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.rss_feed_rounded), label: 'Feed'),
-              BottomNavigationBarItem(icon: Icon(Icons.analytics_outlined), label: 'Insights'),
-              BottomNavigationBarItem(icon: Icon(Icons.layers_outlined), label: 'Gigs'),
-              BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), label: 'Post'),
-              BottomNavigationBarItem(icon: Icon(Icons.people_outline), label: 'Applicants'),
-              BottomNavigationBarItem(icon: Icon(Icons.notifications_none_rounded), label: 'Alerts'),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.rss_feed_rounded),
+                label: 'Feed',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.analytics_outlined),
+                label: 'Insights',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.layers_outlined),
+                label: 'Gigs',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.add_circle_outline),
+                label: 'Post',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.people_outline),
+                label: 'Applicants',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.notifications_none_rounded),
+                label: 'Alerts',
+              ),
             ],
           ),
         ),
@@ -172,7 +223,14 @@ class _BrandDashboardPageState extends State<BrandDashboardPage> {
         pageContext: {
           'page': 'home',
           'role': 'Brand',
-          'tab': ['Feed', 'Insights', 'Gigs', 'Post', 'Applicants', 'Alerts'][_selectedIndex],
+          'tab': [
+            'Feed',
+            'Insights',
+            'Gigs',
+            'Post',
+            'Applicants',
+            'Alerts',
+          ][_selectedIndex],
         },
       ),
     );

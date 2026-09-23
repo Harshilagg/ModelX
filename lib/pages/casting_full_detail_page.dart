@@ -100,7 +100,7 @@ class _CastingFullDetailPageState extends State<CastingFullDetailPage> {
     if (budgetAmount.isNotEmpty) {
       return budgetType.isEmpty
           ? '₹$budgetAmount'
-          : '${budgetType.toUpperCase()} · ₹$budgetAmount';
+          : '${budgetType} · ₹$budgetAmount';
     }
     return '—';
   }
@@ -151,16 +151,16 @@ class _CastingFullDetailPageState extends State<CastingFullDetailPage> {
     ].where((s) => s.isNotEmpty).join(' · ');
 
     final details = <(String, String)>[
-      if (location.isNotEmpty) ('Location', location.toUpperCase()),
+      if (location.isNotEmpty) ('Location', location),
       ('Compensation', _compensation()),
       if (data['shootingStart'] is Timestamp)
         ('Shooting starts', _stamp(data['shootingStart'])),
       if (data['shootingEnd'] is Timestamp)
         ('Shooting ends', _stamp(data['shootingEnd'])),
       if ((data['timeline'] ?? '').toString().trim().isNotEmpty)
-        ('Timeline', data['timeline'].toString().toUpperCase()),
+        ('Timeline', data['timeline'].toString()),
       if ((data['outfitRequirements'] ?? '').toString().trim().isNotEmpty)
-        ('Outfit', data['outfitRequirements'].toString().toUpperCase()),
+        ('Outfit', data['outfitRequirements'].toString()),
       if ((data['requirements'] ?? '').toString().trim().isNotEmpty)
         ('Additional', data['requirements'].toString()),
     ];
@@ -173,10 +173,7 @@ class _CastingFullDetailPageState extends State<CastingFullDetailPage> {
     final minAge = talent['minAge'], maxAge = talent['maxAge'];
     final highlights = <(String, String)>[
       if (gender.isNotEmpty)
-        (
-          'Gender',
-          gender.toLowerCase() == 'any' ? 'ANY' : gender.toUpperCase(),
-        ),
+        ('Gender', gender.toLowerCase() == 'any' ? 'ANY' : gender),
       if (minAge != null || maxAge != null)
         ('Age range', '${minAge ?? '—'} – ${maxAge ?? '—'}'),
     ];

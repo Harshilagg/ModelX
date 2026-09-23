@@ -64,7 +64,7 @@ class ChatInboxPage extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'MESSAGES',
+              'Messages',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: BoardType.display(

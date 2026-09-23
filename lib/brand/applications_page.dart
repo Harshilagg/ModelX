@@ -22,10 +22,15 @@ class ApplicationsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.paper,
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('gigs').where('brandId', isEqualTo: uid).snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('gigs')
+            .where('brandId', isEqualTo: uid)
+            .snapshots(),
         builder: (context, gigSnap) {
           if (gigSnap.hasError) {
-            return const ErrorStateView(message: 'Could not load applicants. Please try again.');
+            return const ErrorStateView(
+              message: 'Could not load applicants. Please try again.',
+            );
           }
           if (!gigSnap.hasData) {
             return const LoadingState();
@@ -58,7 +63,10 @@ class ApplicationsPage extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 32),
           child: ElevatedButton(
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const PostGigPage()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PostGigPage()),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.ink,
@@ -90,12 +98,16 @@ class _MergedApplicants extends StatelessWidget {
           final snap = snapshot.data![i];
           for (final doc in snap.docs) {
             final data = doc.data() as Map<String, dynamic>;
-            entries.add(_ApplicantEntry(
-              gigId: gigIds[i],
-              modelId: data['modelId'] ?? doc.id,
-              status: data['status'] ?? 'applied',
-              appliedAt: data['appliedAt'] is Timestamp ? (data['appliedAt'] as Timestamp).toDate() : DateTime.fromMillisecondsSinceEpoch(0),
-            ));
+            entries.add(
+              _ApplicantEntry(
+                gigId: gigIds[i],
+                modelId: data['modelId'] ?? doc.id,
+                status: data['status'] ?? 'applied',
+                appliedAt: data['appliedAt'] is Timestamp
+                    ? (data['appliedAt'] as Timestamp).toDate()
+                    : DateTime.fromMillisecondsSinceEpoch(0),
+              ),
+            );
           }
         }
 
@@ -114,7 +126,11 @@ class _MergedApplicants extends StatelessWidget {
           itemCount: entries.length,
           itemBuilder: (context, index) {
             final e = entries[index];
-            return ModelApplicationCard(gigId: e.gigId, modelId: e.modelId, status: e.status);
+            return ModelApplicationCard(
+              gigId: e.gigId,
+              modelId: e.modelId,
+              status: e.status,
+            );
           },
         );
       },
@@ -123,7 +139,13 @@ class _MergedApplicants extends StatelessWidget {
 
   Stream<List<QuerySnapshot>> _combineStreams(List<String> ids) {
     final streams = ids
-        .map((id) => FirebaseFirestore.instance.collection('gigs').doc(id).collection('applications').snapshots())
+        .map(
+          (id) => FirebaseFirestore.instance
+              .collection('gigs')
+              .doc(id)
+              .collection('applications')
+              .snapshots(),
+        )
         .toList();
     return _zipLatest(streams);
   }
@@ -142,10 +164,12 @@ class _MergedApplicants extends StatelessWidget {
     }
 
     for (var i = 0; i < streams.length; i++) {
-      subs.add(streams[i].listen((snap) {
-        latest[i] = snap;
-        emitIfReady();
-      }, onError: controller.addError));
+      subs.add(
+        streams[i].listen((snap) {
+          latest[i] = snap;
+          emitIfReady();
+        }, onError: controller.addError),
+      );
     }
 
     controller.onCancel = () async {
@@ -164,5 +188,10 @@ class _ApplicantEntry {
   final String status;
   final DateTime appliedAt;
 
-  _ApplicantEntry({required this.gigId, required this.modelId, required this.status, required this.appliedAt});
+  _ApplicantEntry({
+    required this.gigId,
+    required this.modelId,
+    required this.status,
+    required this.appliedAt,
+  });
 }

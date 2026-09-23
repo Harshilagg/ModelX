@@ -47,7 +47,9 @@ class _TeamAccessPageState extends State<TeamAccessPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => Dialog(
           backgroundColor: AppColors.paper,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -63,16 +65,27 @@ class _TeamAccessPageState extends State<TeamAccessPage> {
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 16),
-                Text('Role', style: AppTypography.label.copyWith(color: AppColors.inkSoft, letterSpacing: 0.08)),
+                Text(
+                  'Role',
+                  style: AppTypography.label.copyWith(
+                    color: AppColors.inkSoft,
+                    letterSpacing: 0.08,
+                  ),
+                ),
                 const SizedBox(height: 7),
                 DropdownButtonFormField<AgencyRole>(
                   value: selectedRole,
-                  items: AgencyRole.values.where((r) => r != AgencyRole.owner).map((role) {
-                    return DropdownMenuItem(
-                      value: role,
-                      child: Text(role.toString().split('.').last.toUpperCase()),
-                    );
-                  }).toList(),
+                  items: AgencyRole.values
+                      .where((r) => r != AgencyRole.owner)
+                      .map((role) {
+                        return DropdownMenuItem(
+                          value: role,
+                          child: Text(
+                            role.toString().split('.').last.toUpperCase(),
+                          ),
+                        );
+                      })
+                      .toList(),
                   onChanged: (val) {
                     if (val != null) setDialogState(() => selectedRole = val);
                   },
@@ -100,11 +113,15 @@ class _TeamAccessPageState extends State<TeamAccessPage> {
                               email: email,
                               role: selectedRole,
                               fromAgencyId: _agencyId!,
-                              fromAgencyName: 'Your Agency', // Ideally fetch from agency profile
+                              fromAgencyName:
+                                  'Your Agency', // Ideally fetch from agency profile
                             );
                             if (context.mounted) Navigator.pop(context);
                             if (context.mounted) {
-                              showAppToast(context, 'Invitation sent to $email');
+                              showAppToast(
+                                context,
+                                'Invitation sent to $email',
+                              );
                             }
                           } catch (e) {
                             if (context.mounted) {
@@ -128,7 +145,12 @@ class _TeamAccessPageState extends State<TeamAccessPage> {
   Widget build(BuildContext context) {
     if (_isLoading) return const Scaffold(body: LoadingState());
     if (_agencyId == null) {
-      return const Scaffold(body: EmptyState(icon: Icons.error_outline_rounded, title: 'Agency not found'));
+      return const Scaffold(
+        body: EmptyState(
+          icon: Icons.error_outline_rounded,
+          title: 'Agency not found',
+        ),
+      );
     }
 
     return DefaultTabController(
@@ -147,14 +169,15 @@ class _TeamAccessPageState extends State<TeamAccessPage> {
           onPressed: _showInviteDialog,
           backgroundColor: AppColors.ink,
           icon: const Icon(Icons.person_add, color: AppColors.paper),
-          label: Text('Invite Member', style: AppTypography.bodyEmphasized.copyWith(color: AppColors.paper, fontWeight: FontWeight.w600)),
+          label: Text(
+            'Invite Member',
+            style: AppTypography.bodyEmphasized.copyWith(
+              color: AppColors.paper,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
-        body: TabBarView(
-          children: [
-            _buildMemberList(),
-            _buildInviteList(),
-          ],
-        ),
+        body: TabBarView(children: [_buildMemberList(), _buildInviteList()]),
       ),
     );
   }
@@ -163,7 +186,8 @@ class _TeamAccessPageState extends State<TeamAccessPage> {
     return StreamBuilder<List<AgencyMember>>(
       stream: _agencyService.getAgencyMembers(_agencyId!),
       builder: (context, snapshot) {
-        if (snapshot.hasError) return ErrorStateView(message: 'Error: ${snapshot.error}');
+        if (snapshot.hasError)
+          return ErrorStateView(message: 'Error: ${snapshot.error}');
         if (!snapshot.hasData) return const LoadingState();
 
         final members = snapshot.data!;
@@ -189,8 +213,12 @@ class _TeamAccessPageState extends State<TeamAccessPage> {
                   CircleAvatar(
                     backgroundColor: AppColors.paperRaised,
                     child: Text(
-                      member.fullName.isNotEmpty ? member.fullName[0].toUpperCase() : '?',
-                      style: AppTypography.bodyEmphasized.copyWith(fontWeight: FontWeight.w700),
+                      member.fullName.isNotEmpty
+                          ? member.fullName[0].toUpperCase()
+                          : '?',
+                      style: AppTypography.bodyEmphasized.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -198,7 +226,12 @@ class _TeamAccessPageState extends State<TeamAccessPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(member.fullName, style: AppTypography.bodyEmphasized.copyWith(fontWeight: FontWeight.w700)),
+                        Text(
+                          member.fullName,
+                          style: AppTypography.bodyEmphasized.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         const SizedBox(height: 3),
                         Text(
                           '${member.role.toString().split('.').last.toUpperCase()} • ${member.email}',
@@ -209,16 +242,27 @@ class _TeamAccessPageState extends State<TeamAccessPage> {
                   ),
                   if (isSelf)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.goldBg,
                         borderRadius: BorderRadius.circular(AppRadius.pill),
                       ),
-                      child: Text('YOU', style: AppTypography.label.copyWith(color: AppColors.gold)),
+                      child: Text(
+                        'YOU',
+                        style: AppTypography.label.copyWith(
+                          color: AppColors.gold,
+                        ),
+                      ),
                     )
                   else
                     IconButton(
-                      icon: const Icon(Icons.more_vert, color: AppColors.inkFaint),
+                      icon: const Icon(
+                        Icons.more_vert,
+                        color: AppColors.inkFaint,
+                      ),
                       onPressed: () => _showMemberOptions(member),
                     ),
                 ],
@@ -234,7 +278,8 @@ class _TeamAccessPageState extends State<TeamAccessPage> {
     return StreamBuilder<List<AgencyInvite>>(
       stream: _agencyService.getPendingInvites(_agencyId!),
       builder: (context, snapshot) {
-        if (snapshot.hasError) return ErrorStateView(message: 'Error: ${snapshot.error}');
+        if (snapshot.hasError)
+          return ErrorStateView(message: 'Error: ${snapshot.error}');
         if (!snapshot.hasData) return const LoadingState();
 
         final invites = snapshot.data!;
@@ -258,7 +303,12 @@ class _TeamAccessPageState extends State<TeamAccessPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(invite.email, style: AppTypography.bodyEmphasized.copyWith(fontWeight: FontWeight.w700)),
+                        Text(
+                          invite.email,
+                          style: AppTypography.bodyEmphasized.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         const SizedBox(height: 3),
                         Text(
                           'Role: ${invite.role.toString().split('.').last.toUpperCase()} • Expires: ${invite.expiresAt.day}/${invite.expiresAt.month}',
@@ -268,8 +318,11 @@ class _TeamAccessPageState extends State<TeamAccessPage> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () => _agencyService.revokeInvite(invite.id, _agencyId!),
-                    style: TextButton.styleFrom(foregroundColor: AppColors.select),
+                    onPressed: () =>
+                        _agencyService.revokeInvite(invite.id, _agencyId!),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.select,
+                    ),
                     child: const Text('Revoke'),
                   ),
                 ],
@@ -293,25 +346,41 @@ class _TeamAccessPageState extends State<TeamAccessPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.remove_circle_outline, color: AppColors.select),
-              title: Text('Remove from Team', style: AppTypography.bodyEmphasized.copyWith(color: AppColors.select, fontWeight: FontWeight.w600)),
+              leading: const Icon(
+                Icons.remove_circle_outline,
+                color: AppColors.select,
+              ),
+              title: Text(
+                'Remove from Team',
+                style: AppTypography.bodyEmphasized.copyWith(
+                  color: AppColors.select,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               onTap: () async {
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (context) => Dialog(
                     backgroundColor: AppColors.paper,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Remove Member', style: AppTypography.subheading),
+                          Text(
+                            'Remove Member',
+                            style: AppTypography.subheading,
+                          ),
                           const SizedBox(height: 12),
                           Text(
                             'Are you sure you want to remove ${member.fullName}? They will lose access immediately.',
-                            style: AppTypography.body.copyWith(color: AppColors.inkSoft),
+                            style: AppTypography.body.copyWith(
+                              color: AppColors.inkSoft,
+                            ),
                           ),
                           const SizedBox(height: 24),
                           Row(
@@ -320,7 +389,8 @@ class _TeamAccessPageState extends State<TeamAccessPage> {
                                 child: AppButton(
                                   label: 'Cancel',
                                   variant: AppButtonVariant.ghost,
-                                  onPressed: () => Navigator.pop(context, false),
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
                                 ),
                               ),
                               const SizedBox(width: 12),

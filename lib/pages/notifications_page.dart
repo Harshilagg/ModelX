@@ -122,7 +122,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   key: const ValueKey('title'),
                   child: BoardScreenTitle(
                     title: 'Board Updates',
-                    meta: total == 0 ? 'ALL CLEAR' : '$total NEW',
+                    meta: total == 0 ? 'All clear' : '$total NEW',
                   ),
                 ),
                 if (total == 0)
@@ -262,10 +262,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                [
-                  d.posterName,
-                  d.title,
-                ].where((s) => s.isNotEmpty).join(' · ').toUpperCase(),
+                [d.posterName, d.title].where((s) => s.isNotEmpty).join(' · '),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: BoardType.title(
@@ -276,7 +273,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               ),
               const SizedBox(height: 3),
               Text(
-                'MOVED TO ${d.status.toUpperCase()}',
+                'MOVED TO ${d.status}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: BoardType.mono(
@@ -338,7 +335,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    name.toUpperCase(),
+                    name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: BoardType.title(
@@ -349,7 +346,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    'SENT A CONNECTION REQUEST',
+                    'Sent a connection request',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: BoardType.mono(

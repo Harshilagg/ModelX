@@ -129,7 +129,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       child: Text(
-                        labels[i].toUpperCase(),
+                        labels[i],
                         style: BoardType.title(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
@@ -552,7 +552,7 @@ class _FeedCard extends StatelessWidget {
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                username.toUpperCase(),
+                username,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: BoardType.title(
@@ -602,7 +602,7 @@ class _FeedCard extends StatelessWidget {
             behavior: HitTestBehavior.opaque,
             onTap: () => showCommentsSheet(context, postId),
             child: Text(
-              'COMMENT',
+              'Comment',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: BoardType.mono(
@@ -835,7 +835,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   children: [
                     Expanded(
                       child: Text(
-                        'COMMENTS',
+                        'Comments',
                         style: BoardType.display(fontSize: 24, height: 1),
                       ),
                     ),
@@ -909,9 +909,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        (data['username'] ?? '')
-                                            .toString()
-                                            .toUpperCase(),
+                                        (data['username'] ?? '').toString(),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: BoardType.title(

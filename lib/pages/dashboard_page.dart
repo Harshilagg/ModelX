@@ -351,7 +351,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   return Padding(
                     padding: const EdgeInsets.all(14),
                     child: Text(
-                      'NO RECENT SEARCHES',
+                      'No recent searches',
                       style: BoardType.mono(color: BoardColors.inkSoft),
                     ),
                   );
@@ -442,7 +442,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   return ListTile(
                     dense: true,
                     title: Text(
-                      'SEE ALL RESULTS',
+                      'See all results',
                       style: BoardType.mono(fontSize: 10.5),
                     ),
                     onTap: () {

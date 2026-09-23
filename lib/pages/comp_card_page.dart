@@ -219,7 +219,7 @@ class _CompCardPageState extends State<CompCardPage> {
               ),
               const Spacer(),
               Text(
-                'FREE · NO WATERMARK',
+                'Free · no watermark',
                 style: BoardType.mono(
                   fontSize: 9.5,
                   color: BoardColors.brass,
@@ -230,7 +230,7 @@ class _CompCardPageState extends State<CompCardPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            'COMP CARD',
+            'Comp card',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: BoardType.display(
@@ -513,7 +513,7 @@ class _CompCardPageState extends State<CompCardPage> {
                       children: [
                         Expanded(
                           child: Text(
-                            template.label.toUpperCase(),
+                            template.label,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: BoardType.display(fontSize: 24, height: 1),
@@ -590,7 +590,7 @@ class _CompCardPageState extends State<CompCardPage> {
         CompCardFace(template: template, data: _cardData, back: back),
         const SizedBox(height: 6),
         Text(
-          caption.toUpperCase(),
+          caption,
           style: BoardType.mono(fontSize: 9, color: BoardColors.inkSoft),
         ),
       ],
@@ -651,7 +651,7 @@ class _CompCardPageState extends State<CompCardPage> {
                     border: Border.all(color: BoardColors.ink, width: 3),
                   ),
                   child: Text(
-                    'DOWNLOAD PDF',
+                    'Download PDF',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: BoardType.title(
@@ -674,7 +674,7 @@ class _CompCardPageState extends State<CompCardPage> {
                 ),
                 color: BoardColors.ink,
                 child: Text(
-                  'LINK',
+                  'Link',
                   style: BoardType.title(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -695,7 +695,7 @@ class _CompCardPageState extends State<CompCardPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'WHY THE LINK MATTERS',
+                'Why the link matters',
                 style: BoardType.mono(
                   fontSize: 9.5,
                   color: BoardColors.onInkSoft,
@@ -840,7 +840,7 @@ class _CompCardPageState extends State<CompCardPage> {
               behavior: HitTestBehavior.opaque,
               onTap: () => Navigator.of(dialogContext).pop(),
               child: Text(
-                'CLOSE',
+                'Close',
                 style: BoardType.mono(fontSize: 11, color: BoardColors.brass),
               ),
             ),
@@ -902,7 +902,7 @@ class _CompCardPageState extends State<CompCardPage> {
                   ),
                   color: BoardColors.shell,
                   child: Text(
-                    'BACK',
+                    'Back',
                     style: BoardType.title(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -924,7 +924,7 @@ class _CompCardPageState extends State<CompCardPage> {
                   alignment: Alignment.center,
                   color: _step < 2 ? BoardColors.ink : BoardColors.shell,
                   child: Text(
-                    _step < 2 ? 'CONTINUE' : 'DONE',
+                    _step < 2 ? 'Continue' : 'Done',
                     style: BoardType.title(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,

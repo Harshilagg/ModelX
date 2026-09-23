@@ -7,7 +7,13 @@ class AppCard extends StatelessWidget {
   final VoidCallback? onTap;
   final bool flat;
 
-  const AppCard({super.key, required this.child, this.padding, this.onTap, this.flat = false});
+  const AppCard({
+    super.key,
+    required this.child,
+    this.padding,
+    this.onTap,
+    this.flat = false,
+  });
 
   @override
   Widget build(BuildContext context) {

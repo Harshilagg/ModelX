@@ -72,13 +72,21 @@ class GigCard extends StatelessWidget {
                     color: AppColors.paperRaised,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.business_rounded, size: 18, color: AppColors.inkSoft),
+                  child: const Icon(
+                    Icons.business_rounded,
+                    size: 18,
+                    color: AppColors.inkSoft,
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     brandName!,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink,
+                    ),
                   ),
                 ),
                 if (actionWidget != null) actionWidget!,
@@ -89,7 +97,11 @@ class GigCard extends StatelessWidget {
           // ================= TITLE =================
           Text(
             projectTitle,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.ink),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: AppColors.ink,
+            ),
           ),
 
           const SizedBox(height: AppSpacing.sm + 4),
@@ -103,14 +115,22 @@ class GigCard extends StatelessWidget {
           // ================= DESCRIPTION =================
           const Text(
             'About the job',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.inkSoft),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.inkSoft,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             description,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 14, color: AppColors.ink, height: 1.5),
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.ink,
+              height: 1.5,
+            ),
           ),
 
           const SizedBox(height: AppSpacing.sm + 4),
@@ -133,14 +153,21 @@ class GigCard extends StatelessWidget {
             children: [
               Text(
                 '$applications applications',
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.ink),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  color: AppColors.ink,
+                ),
               ),
               _dot(),
               StatusPill(status: status),
               _dot(),
               _meta(_timeAgo(createdAt)),
               const Spacer(),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.inkFaint),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.inkFaint,
+              ),
             ],
           ),
         ],
@@ -159,17 +186,29 @@ class GigCard extends StatelessWidget {
 
   // ================= HELPERS =================
 
-  Widget _detailText(String text) =>
-      Text(text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.ink));
+  Widget _detailText(String text) => Text(
+    text,
+    style: const TextStyle(
+      fontWeight: FontWeight.w600,
+      fontSize: 13,
+      color: AppColors.ink,
+    ),
+  );
 
-  Widget _meta(String text) => Text(text, style: const TextStyle(fontSize: 12, color: AppColors.inkFaint));
+  Widget _meta(String text) => Text(
+    text,
+    style: const TextStyle(fontSize: 12, color: AppColors.inkFaint),
+  );
 
   Widget _dot() => Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8),
-        width: 3,
-        height: 3,
-        decoration: const BoxDecoration(color: AppColors.lineStrong, shape: BoxShape.circle),
-      );
+    margin: const EdgeInsets.symmetric(horizontal: 8),
+    width: 3,
+    height: 3,
+    decoration: const BoxDecoration(
+      color: AppColors.lineStrong,
+      shape: BoxShape.circle,
+    ),
+  );
 
   String _timeAgo(DateTime date) {
     final diff = DateTime.now().difference(date);
@@ -204,7 +243,11 @@ class GigCard extends StatelessWidget {
         children: [
           const Text(
             'Measurements',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.inkSoft),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.inkSoft,
+            ),
           ),
           const SizedBox(height: 6),
           SizedBox(
@@ -224,7 +267,14 @@ class GigCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.inkSoft)),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.inkSoft,
+            ),
+          ),
           const SizedBox(height: 6),
           SizedBox(
             height: 36,

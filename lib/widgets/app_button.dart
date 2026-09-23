@@ -31,7 +31,9 @@ class AppButton extends StatelessWidget {
     this.loading = false,
     this.expand = false,
     this.icon,
-  }) : variant = primary ? AppButtonVariant.primary : AppButtonVariant.secondary;
+  }) : variant = primary
+           ? AppButtonVariant.primary
+           : AppButtonVariant.secondary;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +44,9 @@ class AppButton extends StatelessWidget {
             height: 18,
             child: CircularProgressIndicator(
               strokeWidth: 2.2,
-              color: variant == AppButtonVariant.primary || variant == AppButtonVariant.destructive
+              color:
+                  variant == AppButtonVariant.primary ||
+                      variant == AppButtonVariant.destructive
                   ? AppColors.paper
                   : AppColors.ink,
             ),
@@ -50,7 +54,10 @@ class AppButton extends StatelessWidget {
         : Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (icon != null) ...[Icon(icon, size: 18), const SizedBox(width: 8)],
+              if (icon != null) ...[
+                Icon(icon, size: 18),
+                const SizedBox(width: 8),
+              ],
               Text(label),
             ],
           );
@@ -58,7 +65,10 @@ class AppButton extends StatelessWidget {
     Widget button;
     switch (variant) {
       case AppButtonVariant.primary:
-        button = ElevatedButton(onPressed: disabled ? null : onPressed, child: child);
+        button = ElevatedButton(
+          onPressed: disabled ? null : onPressed,
+          child: child,
+        );
         break;
       case AppButtonVariant.destructive:
         button = ElevatedButton(
@@ -68,10 +78,16 @@ class AppButton extends StatelessWidget {
         );
         break;
       case AppButtonVariant.secondary:
-        button = OutlinedButton(onPressed: disabled ? null : onPressed, child: child);
+        button = OutlinedButton(
+          onPressed: disabled ? null : onPressed,
+          child: child,
+        );
         break;
       case AppButtonVariant.ghost:
-        button = TextButton(onPressed: disabled ? null : onPressed, child: child);
+        button = TextButton(
+          onPressed: disabled ? null : onPressed,
+          child: child,
+        );
         break;
     }
 

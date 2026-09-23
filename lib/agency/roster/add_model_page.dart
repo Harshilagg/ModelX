@@ -52,7 +52,11 @@ class _AddModelPageState extends State<AddModelPage> {
               hint: 'name@example.com',
               controller: _emailCtl,
               keyboardType: TextInputType.emailAddress,
-              leadingIcon: const Icon(Icons.mail_outline, size: AppIconSize.sm, color: AppColors.inkFaint),
+              leadingIcon: const Icon(
+                Icons.mail_outline,
+                size: AppIconSize.sm,
+                color: AppColors.inkFaint,
+              ),
             ),
             const SizedBox(height: 20),
             AppButton(

@@ -13,10 +13,7 @@ class SelectPortfolioPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.paper,
-      appBar: AppBar(
-        title: const Text("Who are you?"),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text("Who are you?"), centerTitle: true),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -32,7 +29,10 @@ class SelectPortfolioPage extends StatelessWidget {
               onTap: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => SignupPage(userType: 'Model', inviteToken: inviteToken)),
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        SignupPage(userType: 'Model', inviteToken: inviteToken),
+                  ),
                 );
               },
             ),
@@ -48,8 +48,7 @@ class SelectPortfolioPage extends StatelessWidget {
               onTap: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const BrandSignupPage()),
+                  MaterialPageRoute(builder: (_) => const BrandSignupPage()),
                 );
               },
             ),
@@ -110,7 +109,10 @@ class SelectPortfolioPage extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     subtitle,
-                    style: AppTypography.body.copyWith(color: AppColors.inkSoft, height: 1.4),
+                    style: AppTypography.body.copyWith(
+                      color: AppColors.inkSoft,
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),

@@ -39,7 +39,7 @@ class BrandHomePage extends StatelessWidget {
                   .snapshots(),
               builder: (context, gigSnapshot) {
                 final gigsCount = gigSnapshot.data?.docs.length ?? 0;
-                
+
                 return StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
                       .collectionGroup('applications')
@@ -99,7 +99,7 @@ class BrandHomePage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            
+
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('gigs')
@@ -117,7 +117,10 @@ class BrandHomePage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppRadius.lg),
                       border: Border.all(color: AppColors.line),
                     ),
-                    child: Text('Could not load your gigs.', style: AppTypography.caption),
+                    child: Text(
+                      'Could not load your gigs.',
+                      style: AppTypography.caption,
+                    ),
                   );
                 }
 
@@ -159,8 +162,12 @@ class BrandHomePage extends StatelessWidget {
                   itemBuilder: (context, i) {
                     final d = docs[i];
                     final data = d.data() as Map<String, dynamic>;
-                    final roleReq = data['roleRequirements'] as Map<String, dynamic>? ?? {};
-                    final physical = roleReq['physicalAttributes'] as Map<String, dynamic>? ?? {};
+                    final roleReq =
+                        data['roleRequirements'] as Map<String, dynamic>? ?? {};
+                    final physical =
+                        roleReq['physicalAttributes']
+                            as Map<String, dynamic>? ??
+                        {};
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
@@ -180,9 +187,15 @@ class BrandHomePage extends StatelessWidget {
                           projectTitle: data['projectTitle'] ?? '',
                           description: data['description'] ?? '',
                           physicalAttributes: physical,
-                          eyeColors: List<String>.from(physical['eyeColor'] ?? const []),
-                          hairColors: List<String>.from(physical['hairColor'] ?? const []),
-                          skinComplexion: List<String>.from(physical['skinComplexion'] ?? const []),
+                          eyeColors: List<String>.from(
+                            physical['eyeColor'] ?? const [],
+                          ),
+                          hairColors: List<String>.from(
+                            physical['hairColor'] ?? const [],
+                          ),
+                          skinComplexion: List<String>.from(
+                            physical['skinComplexion'] ?? const [],
+                          ),
                           timeline: data['timeline'] ?? '',
                           durationHours: data['durationHours'] ?? 0,
                           budgetType: data['budgetType'] ?? '',

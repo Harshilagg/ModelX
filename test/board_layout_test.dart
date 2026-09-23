@@ -19,6 +19,13 @@ import 'package:flutter_application_modelx/widgets/portfolio_masonry.dart';
 /// of every redesigned screen at the smallest width the app realistically
 /// sees (320dp) and again at 1.5x text, and fail on any RenderFlex
 /// overflow, which Flutter surfaces as an exception in debug.
+/// The height one line of [style] occupies at a given text scale.
+///
+/// Tests that hardcode this drift the moment a type token changes,
+/// which is how the discovery rail came to clip by a few pixels.
+double lineHeight(TextStyle style, TextScaler scaler) =>
+    scaler.scale(style.fontSize!) * (style.height ?? 1.0);
+
 void main() {
   /// Pumps [child] at [width] and [textScale] and returns any layout
   /// exception Flutter raised while laying it out.
@@ -454,8 +461,16 @@ void main() {
     // The rail replaced a ~500px grid. Its card is a fixed crop plus a
     // caption, and the caption is the part that grows with the system
     // font — so the row height has to grow with it or the city clips off.
+    // Derived from the styles themselves rather than from copied
+    // numbers. The previous version hardcoded the condensed face's
+    // line heights, so retiring that face silently made this formula
+    // wrong and the rail clipped by a few pixels.
     double captionHeight(TextScaler scaler) =>
-        8 + scaler.scale(17) * 1.05 + 3 + scaler.scale(9.5) * 1.1 + 4;
+        8 +
+        lineHeight(BoardType.title(fontSize: 17, fontWeight: FontWeight.w700), scaler) +
+        3 +
+        lineHeight(BoardType.mono(fontSize: 9.5, fontWeight: FontWeight.w400), scaler) +
+        4;
 
     Widget railCard({required double cropHeight}) => SizedBox(
           width: 132,
@@ -524,7 +539,11 @@ void main() {
     // so it's the one most likely to clip when the font scales.
     testWidgets('the nearby rail fits circular cards at 1.5x text', (tester) async {
       final scaler = TextScaler.linear(1.5);
-      final caption = 8 + scaler.scale(12) * 1.05 + 2 + scaler.scale(9) * 1.1 + 4;
+      final caption = 8 +
+          lineHeight(BoardType.title(fontSize: 12), scaler) +
+          2 +
+          lineHeight(BoardType.mono(fontSize: 9), scaler) +
+          4;
 
       final error = await layout(
         tester,

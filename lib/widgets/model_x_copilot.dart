@@ -26,14 +26,15 @@ class ModelXCopilot extends StatefulWidget {
   State<ModelXCopilot> createState() => _ModelXCopilotState();
 }
 
-class _ModelXCopilotState extends State<ModelXCopilot> with TickerProviderStateMixin {
+class _ModelXCopilotState extends State<ModelXCopilot>
+    with TickerProviderStateMixin {
   final AiCopilotService _copilotService = AiCopilotService();
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  
+
   final List<Map<String, String>> _messages = [];
   bool _isLoading = false;
-  
+
   late AnimationController _glowController;
   late Animation<double> _glowAnimation;
 
@@ -44,7 +45,7 @@ class _ModelXCopilotState extends State<ModelXCopilot> with TickerProviderStateM
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
-    
+
     _glowAnimation = Tween<double>(begin: 4.0, end: 12.0).animate(
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
@@ -160,18 +161,21 @@ class _CopilotPanelState extends State<_CopilotPanel> {
     });
 
     try {
-      final response = await widget.copilotService.handleRequest(query, widget.pageContext);
-      
+      final response = await widget.copilotService.handleRequest(
+        query,
+        widget.pageContext,
+      );
+
       // If results were found, trigger callback immediately
       if (response is List<AiScoutResult> && widget.onResults != null) {
         widget.onResults!(response);
       } else if (response is List && widget.onResults != null) {
         // Try to cast if it's actually compatible
         try {
-           final results = response.cast<AiScoutResult>().toList();
-           widget.onResults!(results);
+          final results = response.cast<AiScoutResult>().toList();
+          widget.onResults!(results);
         } catch (e) {
-           // Silently ignore if cast fails (it's likely not a search result list)
+          // Silently ignore if cast fails (it's likely not a search result list)
         }
       }
 
@@ -180,9 +184,10 @@ class _CopilotPanelState extends State<_CopilotPanel> {
           _isLoading = false;
           _chat.add({'role': 'assistant', 'content': response});
         });
-        
+
         // Auto-close sheet if on scout page to show results immediately (with a tiny delay for feel)
-        if (response is List<AiScoutResult> && widget.pageContext['page'] == 'scout') {
+        if (response is List<AiScoutResult> &&
+            widget.pageContext['page'] == 'scout') {
           Future.delayed(const Duration(milliseconds: 600), () {
             if (mounted) Navigator.pop(context);
           });
@@ -218,19 +223,38 @@ class _CopilotPanelState extends State<_CopilotPanel> {
                 margin: const EdgeInsets.symmetric(vertical: 12),
                 width: 40,
                 height: 4,
-                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              
+
               // Header
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
-                    const Icon(Icons.auto_awesome, color: Color(0xFF0F172A), size: 20),
+                    const Icon(
+                      Icons.auto_awesome,
+                      color: Color(0xFF0F172A),
+                      size: 20,
+                    ),
                     const SizedBox(width: 10),
-                    const Text('ModelX Copilot', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    const Text(
+                      'ModelX Copilot',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
                     const Spacer(),
-                    IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                    ),
                   ],
                 ),
               ),
@@ -244,19 +268,25 @@ class _CopilotPanelState extends State<_CopilotPanel> {
                   itemCount: _chat.length + (_isLoading ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == _chat.length) {
-                      return const Align(alignment: Alignment.centerLeft, child: _TypingIndicator());
+                      return const Align(
+                        alignment: Alignment.centerLeft,
+                        child: _TypingIndicator(),
+                      );
                     }
                     final msg = _chat[index];
                     final isUser = msg['role'] == 'user';
-                    
+
                     if (!isUser && msg['content'] is List<AiScoutResult>) {
-                       return _ScoutResultsPreview(
-                         results: msg['content'] as List<AiScoutResult>,
-                         onResults: widget.onResults,
-                       );
+                      return _ScoutResultsPreview(
+                        results: msg['content'] as List<AiScoutResult>,
+                        onResults: widget.onResults,
+                      );
                     }
 
-                    return _ChatBubble(message: msg['content'].toString(), isUser: isUser);
+                    return _ChatBubble(
+                      message: msg['content'].toString(),
+                      isUser: isUser,
+                    );
                   },
                 ),
               ),
@@ -270,7 +300,12 @@ class _CopilotPanelState extends State<_CopilotPanel> {
 
               // Input Bar
               Padding(
-                padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 20, left: 20, right: 20, top: 10),
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                  left: 20,
+                  right: 20,
+                  top: 10,
+                ),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
@@ -282,13 +317,19 @@ class _CopilotPanelState extends State<_CopilotPanel> {
                       Expanded(
                         child: TextField(
                           controller: _controller,
-                          decoration: const InputDecoration(hintText: 'Ask anything...', border: InputBorder.none),
+                          decoration: const InputDecoration(
+                            hintText: 'Ask anything...',
+                            border: InputBorder.none,
+                          ),
                           onSubmitted: (_) => _handleSend(),
                         ),
                       ),
                       IconButton(
                         onPressed: _handleSend,
-                        icon: const Icon(Icons.send_rounded, color: Color(0xFF0F172A)),
+                        icon: const Icon(
+                          Icons.send_rounded,
+                          color: Color(0xFF0F172A),
+                        ),
                       ),
                     ],
                   ),
@@ -317,13 +358,21 @@ class _ChatBubble extends StatelessWidget {
         decoration: BoxDecoration(
           color: isUser ? const Color(0xFF0F172A) : Colors.grey[100],
           borderRadius: BorderRadius.circular(16).copyWith(
-            bottomRight: isUser ? const Radius.circular(0) : const Radius.circular(16),
-            bottomLeft: isUser ? const Radius.circular(16) : const Radius.circular(0),
+            bottomRight: isUser
+                ? const Radius.circular(0)
+                : const Radius.circular(16),
+            bottomLeft: isUser
+                ? const Radius.circular(16)
+                : const Radius.circular(0),
           ),
         ),
         child: Text(
           message,
-          style: TextStyle(color: isUser ? Colors.white : Colors.black87, fontSize: 14, height: 1.4),
+          style: TextStyle(
+            color: isUser ? Colors.white : Colors.black87,
+            fontSize: 14,
+            height: 1.4,
+          ),
         ),
       ),
     );
@@ -334,19 +383,24 @@ class _QuickActions extends StatelessWidget {
   final String page;
   final String role;
   final Function(String) onAction;
-  const _QuickActions({required this.page, required this.role, required this.onAction});
+  const _QuickActions({
+    required this.page,
+    required this.role,
+    required this.onAction,
+  });
 
   @override
   Widget build(BuildContext context) {
     List<String> actions = [];
     // Normalize role: User is a Model
     final String normalizedRole = (role == 'User') ? 'Model' : role;
-    final bool isBrandOrAgency = normalizedRole == 'Brand' || normalizedRole == 'Agency';
+    final bool isBrandOrAgency =
+        normalizedRole == 'Brand' || normalizedRole == 'Agency';
 
     if (page == 'scout') {
       actions = ['Find models for luxury campaign', 'Discover top talent'];
     } else if (page == 'profile') {
-      actions = normalizedRole == 'Model' 
+      actions = normalizedRole == 'Model'
           ? ['Analyze my bio', 'Improve my skills', 'Profile tips']
           : ['View my postings', 'Company profile tips'];
     } else if (page == 'chat') {
@@ -364,15 +418,19 @@ class _QuickActions extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
-        children: actions.map((a) => Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: ActionChip(
-            label: Text(a, style: const TextStyle(fontSize: 12)),
-            onPressed: () => onAction(a),
-            backgroundColor: Colors.white,
-            side: BorderSide(color: Colors.grey[300]!),
-          ),
-        )).toList(),
+        children: actions
+            .map(
+              (a) => Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ActionChip(
+                  label: Text(a, style: const TextStyle(fontSize: 12)),
+                  onPressed: () => onAction(a),
+                  backgroundColor: Colors.white,
+                  side: BorderSide(color: Colors.grey[300]!),
+                ),
+              ),
+            )
+            .toList(),
       ),
     );
   }
@@ -390,7 +448,10 @@ class _ScoutResultsPreview extends StatelessWidget {
       children: [
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 8),
-          child: Text('✨ Recommended Talent:', style: TextStyle(fontWeight: FontWeight.bold)),
+          child: Text(
+            '✨ Recommended Talent:',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
         SizedBox(
           height: 180,
@@ -410,16 +471,33 @@ class _ScoutResultsPreview extends StatelessWidget {
                   children: [
                     Expanded(
                       child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                        child: res.profile['profileImage'] != null 
-                          ? Image.network(res.profile['profileImage'], fit: BoxFit.cover, width: double.infinity)
-                          : Container(color: Colors.grey[200], child: const Icon(Icons.person)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(12),
+                        ),
+                        child: res.profile['profileImage'] != null
+                            ? Image.network(
+                                res.profile['profileImage'],
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              )
+                            : Container(
+                                color: Colors.grey[200],
+                                child: const Icon(Icons.person),
+                              ),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: Text(res.profile['fullName'] ?? 'Model', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                    )
+                      child: Text(
+                        res.profile['fullName'] ?? 'Model',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               );
@@ -428,12 +506,12 @@ class _ScoutResultsPreview extends StatelessWidget {
         ),
         TextButton(
           onPressed: () {
-             if (onResults != null) onResults!(results);
-             // If we are already on scout page, just close the sheet
-             Navigator.pop(context);
+            if (onResults != null) onResults!(results);
+            // If we are already on scout page, just close the sheet
+            Navigator.pop(context);
           },
           child: const Text('Back to results on Scout Page →'),
-        )
+        ),
       ],
     );
   }
@@ -445,7 +523,14 @@ class _TypingIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Text('Copilot is thinking...', style: TextStyle(color: Colors.grey[500], fontSize: 12, fontStyle: FontStyle.italic)),
+      child: Text(
+        'Copilot is thinking...',
+        style: TextStyle(
+          color: Colors.grey[500],
+          fontSize: 12,
+          fontStyle: FontStyle.italic,
+        ),
+      ),
     );
   }
 }

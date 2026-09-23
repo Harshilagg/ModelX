@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'app_type.dart';
 import 'board_palette.dart';
 import 'board_theme.dart';
@@ -93,60 +92,54 @@ class AppIconSize {
 /// caption/metadata/label). `ThemeData.textTheme` wires its slots to
 /// these so existing `Theme.of(context).textTheme.X` call sites keep
 /// resolving unchanged; new code can also reach these directly.
+/// The older type roles, now served by [AppType].
+///
+/// These are what the brand and agency screens still ask for. Like
+/// [BoardType], each role forwards rather than being edited out of a
+/// few hundred call sites at once, so those screens pick up Albert Sans
+/// with the rest of the app and can be renamed as each is touched.
+///
+/// The weights drop. Archivo at 800 was doing the work of a display
+/// face; Albert Sans at that weight reads as shouting, and the design
+/// is a light one.
 class AppTypography {
-  static TextStyle get display => GoogleFonts.archivo(
-    fontSize: 34,
-    fontWeight: FontWeight.w800,
-    letterSpacing: -0.5,
-    color: AppColors.ink,
-  );
-  static TextStyle get heading => GoogleFonts.archivo(
-    fontSize: 24,
-    fontWeight: FontWeight.w800,
-    letterSpacing: -0.3,
-    color: AppColors.ink,
-  );
-  static TextStyle get subheading => GoogleFonts.archivo(
-    fontSize: 19,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.2,
-    color: AppColors.ink,
-  );
+  static TextStyle get display =>
+      AppType.display(fontSize: 34, color: AppColors.ink);
+
+  static TextStyle get heading =>
+      AppType.title(fontSize: 24, color: AppColors.ink);
+
+  static TextStyle get subheading =>
+      AppType.heading(fontSize: 19, color: AppColors.ink);
+
   static TextStyle get bodyEmphasized =>
-      GoogleFonts.archivo(fontSize: 15, color: AppColors.ink);
-  static TextStyle get body =>
-      GoogleFonts.archivo(fontSize: 14, color: AppColors.ink);
+      AppType.body(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.ink);
+
+  static TextStyle get body => AppType.body(fontSize: 15, color: AppColors.ink);
+
   static TextStyle get caption =>
-      GoogleFonts.archivo(fontSize: 12.5, color: AppColors.inkFaint);
+      AppType.body(fontSize: 13, color: AppColors.inkFaint);
 
-  /// Timestamps, counts, meta rows — distinct from [label]'s bold
-  /// uppercase eyebrow voice, which shouldn't also carry this job.
-  static TextStyle get metadata => GoogleFonts.archivo(
-    fontSize: 11.5,
-    fontWeight: FontWeight.w500,
-    color: AppColors.inkFaint,
-  );
-  static TextStyle get label => GoogleFonts.archivo(
-    fontSize: 11,
-    fontWeight: FontWeight.w700,
-    letterSpacing: 0.4,
-    color: AppColors.inkFaint,
-  );
+  /// Timestamps, counts, meta rows.
+  static TextStyle get metadata =>
+      AppType.tabular(fontSize: 13, color: AppColors.inkFaint);
 
-  /// The one serif accent — Bodoni Moda, restrained to hero/display
-  /// moments (profile names, one emphasis word in a headline, a
-  /// featured feed item). Never in lists, cards, chips, or nav.
+  /// The small eyebrow label. Floored at 13px for the same reason the
+  /// board's monospace was: 11px is below a comfortable reading size,
+  /// and the tracking that made it legible as capitals is gone.
+  static TextStyle get label =>
+      AppType.label(color: AppColors.inkFaint);
+
+  /// The serif accent is retired along with the rest. It was restrained
+  /// to hero moments; the new direction has one family and no italic
+  /// display voice, so this forwards rather than introducing a second
+  /// face into screens that are otherwise consistent.
   static TextStyle displayAccent({
     double fontSize = 40,
     Color color = AppColors.ink,
     FontWeight fontWeight = FontWeight.w500,
-  }) => GoogleFonts.bodoniModa(
-    fontSize: fontSize,
-    fontWeight: fontWeight,
-    fontStyle: FontStyle.italic,
-    color: color,
-    height: 1.02,
-  );
+  }) =>
+      AppType.display(fontSize: fontSize, color: color, fontWeight: fontWeight);
 }
 
 /// Small snackbar helper so error toasts read distinctly from success/

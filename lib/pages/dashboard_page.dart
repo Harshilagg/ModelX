@@ -176,15 +176,18 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     const accent = _accent;
     final navBottom = MediaQuery.of(context).padding.bottom + 14;
-    // Profile carries its own ink header (back/title/exit), so the shared
-    // search bar would be a second, competing header on that tab.
-    final showTopBar = _selectedIndex != 4;
+    // Profile carries its own header, so the shared search bar would be
+    // a second one competing with it. This read `!= 4` against the old
+    // five-tab order and quietly started showing once Profile moved to
+    // index three.
+    final showTopBar = _selectedIndex != _tabProfile;
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        if (_selectedIndex != 0) {
+        // Back goes to Home first, and only leaves the app from there.
+        if (_selectedIndex != _tabHome) {
           setState(() => _selectedIndex = _tabHome);
           return;
         }
@@ -368,24 +371,13 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  /// The assistant: the mark on its own, no disc behind it.
+  ///
+  /// Which means it keeps the palette it was designed in -- pale blades
+  /// on a dark ground -- rather than being inverted to read against a
+  /// light circle. Sized to the bar so the row lines up.
   Widget _assistant() {
-    return Container(
-      width: AppNavBar.height,
-      height: AppNavBar.height,
-      decoration: const BoxDecoration(
-        color: Color(0xFFF2EFE8),
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: ApertureButton(
-          size: 46,
-          bladeColor: const Color(0xFFF2EFE8),
-          groundColor: const Color(0xFF0B0B0B),
-          ringColor: const Color(0xFF0B0B0B),
-          onPressed: _openAssistant,
-        ),
-      ),
-    );
+    return ApertureButton(size: AppNavBar.height, onPressed: _openAssistant);
   }
 
   Widget _searchOverlay() {

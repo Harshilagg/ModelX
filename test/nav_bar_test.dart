@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_modelx/ui/app_theme.dart';
@@ -50,6 +52,41 @@ Future<void> pumpBar(
 }
 
 void main() {
+  group('the shell', () {
+    // Twice now a destination has been compared against a bare number
+    // and quietly meant the wrong tab once the order changed: the "ALL
+    // n" link on the profile, and the rule that hides the top bar on
+    // Profile, which read != 4 and started showing a second header.
+    test('no destination is compared against a bare index', () {
+      final source = File('lib/pages/dashboard_page.dart').readAsStringSync();
+      final offenders = RegExp(
+        r'_selectedIndex\s*(==|!=)\s*[0-9]',
+      ).allMatches(source).map((m) => m.group(0)).toList();
+      expect(
+        offenders,
+        isEmpty,
+        reason: 'compare against the named constants instead',
+      );
+    });
+
+    test('the destinations and their search hints stay in step', () {
+      // The hints are indexed by the selected tab, so a list of the
+      // wrong length reads the wrong hint or throws.
+      final source = File('lib/pages/dashboard_page.dart').readAsStringSync();
+      // Counted as quoted entries, not by splitting on commas: one of
+      // the hints is "Search jobs, brands, cities".
+      final hints = RegExp(r"'[^']*'")
+          .allMatches(
+            RegExp(
+              r"_searchHints = \[(.*?)\];",
+              dotAll: true,
+            ).firstMatch(source)!.group(1)!,
+          )
+          .length;
+      expect(hints, destinations.length);
+    });
+  });
+
   group('the bar', () {
     testWidgets('names only the chosen destination', (tester) async {
       // Five labels at a legible size is most of the bar's width, which

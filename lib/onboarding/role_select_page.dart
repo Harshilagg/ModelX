@@ -276,15 +276,36 @@ class _Header extends StatelessWidget {
               ).copyWith(letterSpacing: 4.4),
             ),
           ),
-          SizedBox(
-            width: AppMetrics.tapTarget,
+          // A fixed 44 here balanced the back button so the wordmark
+          // sat centred -- but it also clamped the button to 44 wide
+          // when there was one, and "Log in" wrapped to a letter a
+          // line. The width is a floor now, not a cap.
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: AppMetrics.tapTarget),
             child: onLogIn == null
-                ? null
-                : TextButton(
-                    onPressed: onLogIn,
-                    child: Text(
-                      'Log in',
-                      style: AppType.label(color: p.onSurface),
+                ? const SizedBox(height: AppMetrics.tapTarget)
+                : Semantics(
+                    button: true,
+                    label: 'Log in',
+                    child: GestureDetector(
+                      onTap: onLogIn,
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        height: 36,
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          borderRadius: AppRadii.pill,
+                          border: Border.all(color: p.lineStrong),
+                        ),
+                        child: Text(
+                          'Log in',
+                          maxLines: 1,
+                          softWrap: false,
+                          style: AppType.label(color: p.onSurface),
+                        ),
+                      ),
                     ),
                   ),
           ),

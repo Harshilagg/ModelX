@@ -7,6 +7,7 @@ import 'package:flutter_application_modelx/onboarding/role_select_page.dart';
 import 'package:flutter_application_modelx/onboarding/splash_page.dart';
 import 'package:flutter_application_modelx/onboarding/success_page.dart';
 import 'package:flutter_application_modelx/ui/app_theme.dart';
+import 'package:flutter_application_modelx/ui/app_type.dart';
 import 'package:flutter_application_modelx/ui/board_theme.dart';
 import 'package:flutter_application_modelx/widgets/kit/kit.dart';
 
@@ -96,6 +97,53 @@ void main() {
       await tester.tap(find.text('Continue as brand'));
       await tester.pumpAndSettle();
       expect(chosen, SignupRole.brand);
+    });
+  });
+
+  group('header controls', () {
+    testWidgets('the log-in button reads on one line', (tester) async {
+      // It was inside a box fixed to the back button's width, so
+      // "Log in" wrapped to roughly one letter per line.
+      await pumpUnderLight(
+        tester,
+        RoleSelectPage(onSelected: (_) {}, onBack: () {}, onLogIn: () {}),
+      );
+
+      final label = find.text('Log in');
+      expect(label, findsOneWidget);
+
+      final size = tester.getSize(label);
+      final oneLine = AppType.label().fontSize! * AppType.label().height!;
+      expect(
+        size.height,
+        lessThan(oneLine * 1.6),
+        reason: 'the label wrapped onto more than one line',
+      );
+      // Wide enough to be the word rather than a stack of letters.
+      expect(size.width, greaterThan(size.height));
+    });
+
+    testWidgets('tapping it fires', (tester) async {
+      var tapped = false;
+      await pumpUnderLight(
+        tester,
+        RoleSelectPage(
+          onSelected: (_) {},
+          onBack: () {},
+          onLogIn: () => tapped = true,
+        ),
+      );
+      await tester.tap(find.text('Log in'));
+      await tester.pumpAndSettle();
+      expect(tapped, isTrue);
+    });
+
+    testWidgets('it is absent when there is nowhere to go', (tester) async {
+      await pumpUnderLight(
+        tester,
+        RoleSelectPage(onSelected: (_) {}, onBack: () {}),
+      );
+      expect(find.text('Log in'), findsNothing);
     });
   });
 

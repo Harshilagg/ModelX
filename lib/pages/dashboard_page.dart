@@ -44,11 +44,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
   int _selectedIndex = _tabHome;
 
-  /// Set when Home's Up next counts open Jobs, so the list arrives
-  /// already narrowed to whatever was tapped. Cleared as soon as the
-  /// user picks another tab, or the filter would stick on every later
-  /// visit.
-  String? _jobsStatus;
   DateTime? _lastBackPress;
 
   final SearchService _searchService = SearchService();
@@ -274,14 +269,8 @@ class _DashboardPageState extends State<DashboardPage> {
                           HomePage(
                             onOpenJobs: () =>
                                 setState(() => _selectedIndex = _tabJobs),
-                            // The counts on the Up next card open Jobs
-                            // already narrowed to what was counted.
-                            onOpenJobsFiltered: (status) => setState(() {
-                              _jobsStatus = status;
-                              _selectedIndex = _tabJobs;
-                            }),
                           ),
-                          JobsPage(initialStatus: _jobsStatus),
+                          const JobsPage(),
                           const NetworkPage(),
                           const ProfilePage(embedded: true),
                         ],
@@ -364,11 +353,6 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                         ],
                         onTap: (i) {
-                          // Picking a tab by hand clears any filter
-                          // Home asked for, or Jobs would stay narrowed
-                          // on every later visit with nothing on screen
-                          // explaining why.
-                          if (i != _tabJobs) _jobsStatus = null;
                           _dismissSearch();
                           setState(() => _selectedIndex = i);
                         },

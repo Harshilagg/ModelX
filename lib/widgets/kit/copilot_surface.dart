@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/copilot_conversation.dart';
 import '../../ui/app_type.dart';
 import '../../ui/board_theme.dart';
+import 'answer_text.dart';
 import 'app_field.dart';
 import 'app_metrics.dart';
 
@@ -200,6 +201,10 @@ class CopilotPanel extends StatefulWidget {
   /// what a result looks like.
   final Widget Function(CopilotMessage message)? resultBuilder;
 
+  /// True when something above already draws the surface and its
+  /// rounded top, so this must not draw a second one over it.
+  final bool chromeless;
+
   const CopilotPanel({
     super.key,
     required this.conversation,
@@ -207,6 +212,7 @@ class CopilotPanel extends StatefulWidget {
     required this.onCollapse,
     this.suggestions = const [],
     this.resultBuilder,
+    this.chromeless = false,
   });
 
   @override
@@ -252,11 +258,15 @@ class _CopilotPanelState extends State<CopilotPanel> {
     final p = BoardColors.of(context);
 
     return Container(
-      decoration: BoxDecoration(
-        color: p.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        border: Border(top: BorderSide(color: p.line)),
-      ),
+      decoration: widget.chromeless
+          ? null
+          : BoxDecoration(
+              color: p.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+              border: Border(top: BorderSide(color: p.line)),
+            ),
       child: Column(
         children: [
           _Header(
@@ -389,10 +399,17 @@ class _Bubble extends StatelessWidget {
             color: mine ? p.onSurface : p.surfaceField,
             borderRadius: BorderRadius.circular(AppRadii.card),
           ),
-          child: SelectableText(
-            message.text,
-            style: AppType.body(color: mine ? p.surface : p.onSurface),
-          ),
+          // The assistant writes Markdown; a question does not.
+          child: mine
+              ? SelectableText(
+                  message.text,
+                  style: AppType.body(color: p.surface),
+                )
+              : AnswerText(
+                  text: message.text,
+                  color: p.onSurface,
+                  strongColor: p.onSurface,
+                ),
         ),
       ),
     );
@@ -506,6 +523,150 @@ class _Composer extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The conversation as a page of its own, pulled down to dismiss.
+///
+/// Full screen rather than a sheet in the shell's stack: as a sheet it
+/// sat under the floating nav bar, which covered the composer -- the
+/// one control it cannot do without. A route also gives it the back
+/// gesture for free.
+class CopilotRoute extends StatefulWidget {
+  final CopilotConversation conversation;
+  final Map<String, dynamic> pageContext;
+  final List<String> suggestions;
+  final Widget Function(CopilotMessage message)? resultBuilder;
+
+  const CopilotRoute({
+    super.key,
+    required this.conversation,
+    required this.pageContext,
+    this.suggestions = const [],
+    this.resultBuilder,
+  });
+
+  /// Opens it, rising from the bottom.
+  static Future<void> open(
+    BuildContext context, {
+    required CopilotConversation conversation,
+    required Map<String, dynamic> pageContext,
+    List<String> suggestions = const [],
+    Widget Function(CopilotMessage message)? resultBuilder,
+  }) {
+    return Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: false,
+        barrierColor: BoardColors.ink.withValues(alpha: 0.4),
+        transitionDuration: const Duration(milliseconds: 260),
+        reverseTransitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (_, __, ___) => CopilotRoute(
+          conversation: conversation,
+          pageContext: pageContext,
+          suggestions: suggestions,
+          resultBuilder: resultBuilder,
+        ),
+        transitionsBuilder: (_, animation, __, child) => SlideTransition(
+          position: Tween(begin: const Offset(0, 1), end: Offset.zero).animate(
+            CurvedAnimation(
+              parent: animation,
+              curve: AppMotion.settle,
+              reverseCurve: Curves.easeIn,
+            ),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  @override
+  State<CopilotRoute> createState() => _CopilotRouteState();
+}
+
+class _CopilotRouteState extends State<CopilotRoute> {
+  double _drag = 0;
+
+  /// Far enough that it cannot be triggered by a scroll that overshot.
+  static const double _dismissAfter = 120;
+
+  void _update(DragUpdateDetails d) {
+    // Downward only: dragging up is how you reach the top of a long
+    // answer, and should not start a dismiss.
+    setState(() => _drag = (_drag + d.delta.dy).clamp(0, double.infinity));
+  }
+
+  void _end(DragEndDetails d) {
+    final flung = (d.primaryVelocity ?? 0) > 700;
+    if (flung || _drag > _dismissAfter) {
+      Navigator.of(context).maybePop();
+    } else {
+      setState(() => _drag = 0);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = BoardColors.of(context);
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      // The composer lifts with the keyboard; nothing else needs to.
+      resizeToAvoidBottomInset: true,
+      body: Transform.translate(
+        offset: Offset(0, _drag),
+        child: Padding(
+          // Clear of the status bar, so it reads as a sheet over the
+          // screen rather than a new screen.
+          padding: EdgeInsets.only(top: AppMetrics.topInset(context) + 12),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: p.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+            ),
+            child: Column(
+              children: [
+                // The grip, and the only place a drag starts: dragging
+                // the conversation itself has to scroll it.
+                GestureDetector(
+                  onVerticalDragUpdate: _update,
+                  onVerticalDragEnd: _end,
+                  behavior: HitTestBehavior.opaque,
+                  child: Semantics(
+                    label: 'Drag down to close',
+                    child: SizedBox(
+                      height: 24,
+                      child: Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: p.lineStrong,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: CopilotPanel(
+                    conversation: widget.conversation,
+                    pageContext: widget.pageContext,
+                    suggestions: widget.suggestions,
+                    resultBuilder: widget.resultBuilder,
+                    onCollapse: () => Navigator.of(context).maybePop(),
+                    chromeless: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

@@ -20,7 +20,103 @@ Future<void> pump(WidgetTester tester, Widget child) async {
   await tester.pumpAndSettle();
 }
 
+/// Everything actually painted, from both plain and selectable text.
+///
+/// An answer is rendered selectable so it can be copied, which means it
+/// goes through EditableText rather than RichText.
+String painted(WidgetTester tester) => [
+  ...tester
+      .widgetList<RichText>(find.byType(RichText))
+      .map((r) => r.text.toPlainText()),
+  ...tester
+      .widgetList<EditableText>(find.byType(EditableText))
+      .map((e) => e.controller.text),
+].join('\n');
+
 void main() {
+  group('answer formatting', () {
+    // Answers arrived with their syntax showing: ### before headings,
+    // ** around emphasis, a literal hyphen starting every bullet.
+    test('headings are read, not printed', () {
+      final blocks = AnswerText.parse('### Lead with Impact');
+      expect(blocks, hasLength(1));
+      expect(blocks.single.kind, AnswerBlockKind.heading);
+      expect(blocks.single.text, 'Lead with Impact');
+      expect(blocks.single.text, isNot(contains('#')));
+    });
+
+    test('heading depth is kept', () {
+      expect(AnswerText.parse('# One').single.level, 1);
+      expect(AnswerText.parse('#### Four').single.level, 4);
+    });
+
+    test('bullets become bullets', () {
+      for (final line in ['- First', '* First', '• First']) {
+        final block = AnswerText.parse(line).single;
+        expect(block.kind, AnswerBlockKind.bullet, reason: line);
+        expect(block.text, 'First');
+        expect(block.marker, '\u2022');
+      }
+    });
+
+    test('numbered steps keep their number', () {
+      final block = AnswerText.parse('2. Use the pattern').single;
+      expect(block.kind, AnswerBlockKind.numbered);
+      expect(block.marker, '2.');
+      expect(block.text, 'Use the pattern');
+    });
+
+    test('blank lines separate rather than render', () {
+      final blocks = AnswerText.parse('One\n\n\nTwo');
+      expect(blocks, hasLength(2));
+    });
+
+    test('a hash inside a sentence is not a heading', () {
+      final block = AnswerText.parse('Booking #4 is confirmed').single;
+      expect(block.kind, AnswerBlockKind.paragraph);
+      expect(block.text, 'Booking #4 is confirmed');
+    });
+
+    testWidgets('emphasis renders without its markers', (tester) async {
+      await pump(
+        tester,
+        const AnswerText(
+          text: 'A **bold** claim and an *aside*.',
+          color: Colors.black,
+          strongColor: Colors.black,
+        ),
+      );
+
+      final shown = painted(tester);
+      expect(shown, contains('bold'));
+      expect(shown, isNot(contains('**')));
+      expect(shown, isNot(contains('*aside*')));
+    });
+
+    testWidgets('a whole answer renders with no syntax left', (tester) async {
+      await pump(
+        tester,
+        const AnswerText(
+          text:
+              '### 1. Lead with Impact\n'
+              '- **First sentence = hook.** Mention your core role *and* a '
+              'result.\n'
+              '- Avoid generic titles alone.\n\n'
+              '2. Use the pattern',
+          color: Colors.black,
+          strongColor: Colors.black,
+        ),
+      );
+
+      final shown = painted(tester);
+      for (final syntax in ['###', '**']) {
+        expect(shown, isNot(contains(syntax)), reason: syntax);
+      }
+      expect(shown, contains('Lead with Impact'));
+      expect(shown, contains('hook.'));
+    });
+  });
+
   group('the conversation', () {
     test('starts empty and reports no history', () {
       final c = CopilotConversation();
@@ -130,6 +226,78 @@ void main() {
       );
       // Nothing was actually sent, so it still reads as a fresh start.
       expect(find.text('Ask about this screen'), findsOneWidget);
+    });
+  });
+
+  group('the full-screen conversation', () {
+    testWidgets('has a grip and dismisses on a downward drag', (tester) async {
+      // As a layer in the shell's stack it sat under the floating nav
+      // bar, which covered the composer.
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(),
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () => CopilotRoute.open(
+                    context,
+                    conversation: CopilotConversation(),
+                    pageContext: const {},
+                  ),
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CopilotRoute), findsOneWidget);
+      expect(find.bySemanticsLabel('Drag down to close'), findsOneWidget);
+
+      await tester.drag(
+        find.bySemanticsLabel('Drag down to close'),
+        const Offset(0, 300),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(CopilotRoute), findsNothing);
+    });
+
+    testWidgets('a short drag springs back rather than closing', (
+      tester,
+    ) async {
+      // Otherwise a scroll that overshot the top throws the answer away.
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(),
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () => CopilotRoute.open(
+                    context,
+                    conversation: CopilotConversation(),
+                    pageContext: const {},
+                  ),
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      await tester.drag(
+        find.bySemanticsLabel('Drag down to close'),
+        const Offset(0, 40),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(CopilotRoute), findsOneWidget);
     });
   });
 

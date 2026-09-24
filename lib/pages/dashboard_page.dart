@@ -176,6 +176,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     const accent = _accent;
     final navBottom = MediaQuery.of(context).padding.bottom + 14;
+    final keyboardUp = MediaQuery.viewInsetsOf(context).bottom > 0;
     // Profile carries its own header, so the shared search bar would be
     // a second one competing with it. This read `!= 4` against the old
     // five-tab order and quietly started showing once Profile moved to
@@ -321,44 +322,10 @@ class _DashboardPageState extends State<DashboardPage> {
                     conversation: CopilotConversation.instance,
                     pageContext: _copilotContext,
                     suggestions: _copilotOpeners,
-                    onExpand: () =>
-                        setState(() => _copilot = CopilotStage.open),
+                    onExpand: _openConversation,
                     onDismiss: () =>
                         setState(() => _copilot = CopilotStage.closed),
                   ),
-                ),
-              ),
-
-            if (_copilot == CopilotStage.open)
-              Positioned.fill(
-                child: Stack(
-                  children: [
-                    // Tapping away puts it back down rather than
-                    // closing it, so the thread is still there.
-                    Positioned.fill(
-                      child: GestureDetector(
-                        onTap: () =>
-                            setState(() => _copilot = CopilotStage.docked),
-                        behavior: HitTestBehavior.opaque,
-                        child: ColoredBox(
-                          color: BoardColors.ink.withValues(alpha: 0.35),
-                        ),
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: FractionallySizedBox(
-                        heightFactor: 0.82,
-                        child: CopilotPanel(
-                          conversation: CopilotConversation.instance,
-                          pageContext: _copilotContext,
-                          suggestions: _copilotOpeners,
-                          onCollapse: () =>
-                              setState(() => _copilot = CopilotStage.closed),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ),
 
@@ -374,33 +341,41 @@ class _DashboardPageState extends State<DashboardPage> {
               // it covered whatever was underneath on every screen.
               child: Row(
                 children: [
-                  Expanded(
-                    child: AppNavBar(
-                      currentIndex: _selectedIndex,
-                      accent: accent,
-                      destinations: const [
-                        NavDestination(label: 'Home', glyph: NavGlyph.home),
-                        NavDestination(label: 'Jobs', glyph: NavGlyph.jobs),
-                        NavDestination(
-                          label: 'Network',
-                          glyph: NavGlyph.network,
-                        ),
-                        NavDestination(
-                          label: 'Profile',
-                          glyph: NavGlyph.profile,
-                        ),
-                      ],
-                      onTap: (i) {
-                        // Picking a tab by hand clears any filter Home
-                        // asked for, or Jobs would stay narrowed on
-                        // every later visit with nothing on screen
-                        // explaining why.
-                        if (i != _tabJobs) _jobsStatus = null;
-                        _dismissSearch();
-                        setState(() => _selectedIndex = i);
-                      },
-                    ),
-                  ),
+                  // With the keyboard up, the destinations step aside
+                  // and only the assistant stays. They were riding above
+                  // the keyboard alongside it, which is a row of tabs
+                  // you cannot reach without dismissing what you are
+                  // typing into.
+                  if (!keyboardUp)
+                    Expanded(
+                      child: AppNavBar(
+                        currentIndex: _selectedIndex,
+                        accent: accent,
+                        destinations: const [
+                          NavDestination(label: 'Home', glyph: NavGlyph.home),
+                          NavDestination(label: 'Jobs', glyph: NavGlyph.jobs),
+                          NavDestination(
+                            label: 'Network',
+                            glyph: NavGlyph.network,
+                          ),
+                          NavDestination(
+                            label: 'Profile',
+                            glyph: NavGlyph.profile,
+                          ),
+                        ],
+                        onTap: (i) {
+                          // Picking a tab by hand clears any filter
+                          // Home asked for, or Jobs would stay narrowed
+                          // on every later visit with nothing on screen
+                          // explaining why.
+                          if (i != _tabJobs) _jobsStatus = null;
+                          _dismissSearch();
+                          setState(() => _selectedIndex = i);
+                        },
+                      ),
+                    )
+                  else
+                    const Spacer(),
                   const SizedBox(width: 10),
                   _assistant(),
                 ],
@@ -455,6 +430,24 @@ class _DashboardPageState extends State<DashboardPage> {
           ? CopilotStage.docked
           : CopilotStage.closed;
     });
+  }
+
+  /// Opens the conversation full screen.
+  ///
+  /// A route rather than another layer in this stack: as a layer it sat
+  /// under the floating bar, which covered the composer -- the one
+  /// control it cannot do without.
+  Future<void> _openConversation() async {
+    setState(() => _copilot = CopilotStage.closed);
+    FocusScope.of(context).unfocus();
+    await CopilotRoute.open(
+      context,
+      conversation: CopilotConversation.instance,
+      pageContext: _copilotContext,
+      suggestions: _copilotOpeners,
+    );
+    // Back to the dock, so the thread is one tap away rather than gone.
+    if (mounted) setState(() => _copilot = CopilotStage.docked);
   }
 
   /// The button reflects what the assistant is doing, which is the

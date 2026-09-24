@@ -169,6 +169,35 @@ void main() {
     });
   });
 
+  group('signing up with Google', () {
+    // The single-page model signup this replaced offered Google, so
+    // dropping it would have been a regression rather than a redesign.
+    // The prototype puts it on step 1 of all three.
+    final sides = <String, (String chip, String cta)>{
+      'model': ('Model', 'Continue as model'),
+      'brand': ('Brand', 'Continue as brand'),
+      'agency': ('Agency', 'Continue as agency'),
+    };
+
+    sides.forEach((name, spec) {
+      final (chip, cta) = spec;
+      testWidgets('$name offers it on step 1', (tester) async {
+        await start(tester);
+        await toRoleSelect(tester);
+        if (chip != 'Model') {
+          await tester.tap(find.text(chip));
+          await tester.pumpAndSettle();
+        }
+        await tester.tap(find.text(cta));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Continue with Google'), findsOneWidget);
+        expect(find.text('or use your email'), findsOneWidget);
+        await tester.pumpWidget(const SizedBox());
+      });
+    });
+  });
+
   group('the way back out', () {
     testWidgets('back from a signup returns to the role picker', (
       tester,

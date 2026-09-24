@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../agency/scouting/ai_scout_service.dart';
@@ -94,6 +95,70 @@ class _ModelSignupPageState extends State<ModelSignupPage> {
   /// Creates the auth user and the profile document together.
   ///
   /// Returns null on success, or the errors to show.
+  /// Signs up with Google and jumps to step 2.
+  ///
+  /// Google supplies the email and usually the name, so step 1 has
+  /// nothing left to ask. It does not supply a username, which is why
+  /// this lands on step 2 rather than skipping further in.
+  ///
+  /// The auth user exists the moment Google returns, which breaks the
+  /// rule that the account is created at the end of step 2. So the
+  /// profile document is written immediately, incomplete: an auth user
+  /// with no document is the one state AuthGate cannot classify, and
+  /// somebody who closes the app here would be signed out of an account
+  /// they could neither use nor register again. Written this way they
+  /// land on the repair path instead, like any other unfinished signup.
+  Future<void> _signUpWithGoogle() async {
+    setState(() {
+      _busy = true;
+      _errors = {};
+    });
+    try {
+      final account = await GoogleSignIn().signIn();
+      if (account == null) {
+        if (mounted) setState(() => _busy = false);
+        return;
+      }
+      final auth = await account.authentication;
+      final credential = await FirebaseAuth.instance.signInWithCredential(
+        GoogleAuthProvider.credential(
+          accessToken: auth.accessToken,
+          idToken: auth.idToken,
+        ),
+      );
+
+      final user = credential.user!;
+      _data.email = user.email ?? '';
+      _data.fullName = user.displayName ?? '';
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .set(
+            _data.accountDocument(
+              uid: user.uid,
+              userType: widget.userType,
+              viaGoogle: true,
+            ),
+            SetOptions(merge: true),
+          );
+
+      _uid = user.uid;
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _reversing = false;
+        _step = 1;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _errors = {'form': 'Could not sign up with Google. Please try again.'};
+      });
+    }
+  }
+
   Future<Map<String, String>?> _createAccount() async {
     final username = _data.username.trim();
 
@@ -107,6 +172,27 @@ class _ModelSignupPageState extends State<ModelSignupPage> {
       // A failed lookup must not block signup. The write below is a
       // merge on the user's own document, and a duplicate username is
       // recoverable; being unable to register is not.
+    }
+
+    // Signed up with Google: the account exists and its document was
+    // written at step 1, so this only has to merge what step 2 added.
+    if (_uid != null) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(_uid)
+            .set(
+              _data.accountDocument(
+                uid: _uid!,
+                userType: widget.userType,
+                viaGoogle: true,
+              ),
+              SetOptions(merge: true),
+            );
+        return null;
+      } catch (_) {
+        return {'form': 'Could not save your details. Please try again.'};
+      }
     }
 
     UserCredential? credential;
@@ -367,6 +453,17 @@ class _ModelSignupPageState extends State<ModelSignupPage> {
   }
 
   List<Widget> _accountStep(BoardPalette p) => [
+    AppPillButton(
+      label: 'Continue with Google',
+      kind: AppButtonKind.outlined,
+      busyLabel: 'Signing up...',
+      busy: _busy,
+      leading: const GoogleMark(),
+      onPressed: _signUpWithGoogle,
+    ),
+    const SizedBox(height: 20),
+    const OrDivider(label: 'or use your email'),
+    const SizedBox(height: 20),
     AppField(
       label: 'Email',
       error: _errors['email'],

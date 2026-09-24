@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../agency/agency_dashboard_page.dart';
@@ -70,6 +71,10 @@ class _AgencySignupFlowState extends State<AgencySignupFlow> {
   int _step = 0;
   bool _reversing = false;
   bool _busy = false;
+
+  /// Set once Google has made the auth user, so the final submit writes
+  /// against it rather than registering the same address again.
+  String? _googleUid;
   Map<String, String> _errors = {};
 
   @override
@@ -156,15 +161,71 @@ class _AgencySignupFlowState extends State<AgencySignupFlow> {
     });
   }
 
+  /// Signs up with Google, then carries on at step 2.
+  ///
+  /// Google gives an email and a name; everything this side of the app
+  /// stores is still to come, so this advances one step rather than
+  /// skipping ahead.
+  ///
+  /// Unlike the email path, the auth user exists from here on while the
+  /// document is only written at the end. Quitting in between leaves an
+  /// account with no document -- recoverable, since the same Google
+  /// account signs straight back in, but it is why the final submit
+  /// reuses this uid instead of registering again.
+  Future<void> _signUpWithGoogle() async {
+    setState(() {
+      _busy = true;
+      _errors = {};
+    });
+    try {
+      final account = await GoogleSignIn().signIn();
+      if (account == null) {
+        if (mounted) setState(() => _busy = false);
+        return;
+      }
+      final auth = await account.authentication;
+      final credential = await FirebaseAuth.instance.signInWithCredential(
+        GoogleAuthProvider.credential(
+          accessToken: auth.accessToken,
+          idToken: auth.idToken,
+        ),
+      );
+
+      _googleUid = credential.user!.uid;
+      _email = credential.user!.email ?? '';
+
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _reversing = false;
+        _step = 1;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _errors = {'form': 'Could not sign up with Google. Please try again.'};
+      });
+    }
+  }
+
   Future<void> _submit() async {
     setState(() => _busy = true);
+
+    // Null when Google already created the account: there is then
+    // nothing of ours to roll back, because we did not create it.
     UserCredential? credential;
     try {
-      credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _email.trim().toLowerCase(),
-        password: _password,
-      );
-      final uid = credential.user!.uid;
+      final String uid;
+      if (_googleUid != null) {
+        uid = _googleUid!;
+      } else {
+        credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: _email.trim().toLowerCase(),
+          password: _password,
+        );
+        uid = credential.user!.uid;
+      }
 
       // Uploaded after the account exists, because the upload is keyed
       // by uid, and before the document is written so the URLs land in
@@ -198,7 +259,7 @@ class _AgencySignupFlowState extends State<AgencySignupFlow> {
           'createdAt': FieldValue.serverTimestamp(),
         });
       } catch (_) {
-        await credential.user?.delete();
+        await credential?.user?.delete();
         rethrow;
       }
 
@@ -323,6 +384,17 @@ class _AgencySignupFlowState extends State<AgencySignupFlow> {
   }
 
   List<Widget> _accountStep(BoardPalette p) => [
+    AppPillButton(
+      label: 'Continue with Google',
+      kind: AppButtonKind.outlined,
+      busyLabel: 'Signing up...',
+      busy: _busy,
+      leading: const GoogleMark(),
+      onPressed: _signUpWithGoogle,
+    ),
+    const SizedBox(height: 20),
+    const OrDivider(label: 'or use your email'),
+    const SizedBox(height: 20),
     AppField(
       label: 'Work email',
       hint: "Use your agency's email address if you have one.",

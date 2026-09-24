@@ -62,6 +62,59 @@ void main() {
       expect(angleAt(50), lessThan(angleAt(120)));
     });
 
+    test('frames lean away from the middle, not toward it', () {
+      // The direction, not just the symmetry. Flutter rotates
+      // clockwise for a positive angle with y pointing down, so a frame
+      // to the right of the middle leaning outward is a positive angle.
+      // The WebGL original's formula is the opposite sign, because its
+      // y axis points up -- copying it across unchanged mirrors the
+      // whole row and the frames converge inward.
+      final right = CircularGallery.arc(
+        x: 120,
+        halfWidth: halfWidth,
+        bend: bend,
+      );
+      final left = CircularGallery.arc(
+        x: -120,
+        halfWidth: halfWidth,
+        bend: bend,
+      );
+
+      expect(right.angle, greaterThan(0), reason: 'right frame leans in');
+      expect(left.angle, lessThan(0), reason: 'left frame leans in');
+    });
+
+    test('the lean is gentle enough to read as a curve', () {
+      // At phone width the neighbours land near the edge of the circle,
+      // where the raw arc angle is past thirty degrees and the row
+      // looks like scattered prints rather than a curve.
+      final at = CircularGallery.arc(
+        x: halfWidth,
+        halfWidth: halfWidth,
+        bend: bend,
+        tilt: 0.38,
+      );
+      expect(at.angle.abs() * 180 / math.pi, lessThan(15));
+    });
+
+    test('tilt softens the lean without moving the frame', () {
+      // The curve is the shape; the lean is how much each frame follows
+      // it. Changing one must not change the other.
+      final full = CircularGallery.arc(
+        x: 120,
+        halfWidth: halfWidth,
+        bend: bend,
+      );
+      final soft = CircularGallery.arc(
+        x: 120,
+        halfWidth: halfWidth,
+        bend: bend,
+        tilt: 0.5,
+      );
+      expect(soft.drop, closeTo(full.drop, 1e-9));
+      expect(soft.angle, closeTo(full.angle * 0.5, 1e-9));
+    });
+
     test('the two sides mirror each other', () {
       final left = CircularGallery.arc(
         x: -120,

@@ -48,6 +48,16 @@ class CircularGallery extends StatefulWidget {
 
   final double borderRadius;
 
+  /// How much of the arc's own angle each frame actually leans, 0 to 1.
+  ///
+  /// The original ties the lean to the curve exactly, which works on a
+  /// wide canvas where a dozen frames span the viewport and each one
+  /// sits near the middle. At phone width only three fit, so the
+  /// neighbours land at the edge of the circle where that angle is past
+  /// thirty degrees and the row reads as a fan of scattered prints
+  /// rather than a curve. This keeps the curve and softens the lean.
+  final double tilt;
+
   const CircularGallery({
     super.key,
     required this.shots,
@@ -56,22 +66,31 @@ class CircularGallery extends StatefulWidget {
     this.height = 300,
     this.frameFraction = 0.58,
     this.borderRadius = 10,
+    this.tilt = 0.38,
   });
 
   /// Where a frame sits on the arc, given how far it is from the middle.
   ///
   /// [x] and [halfWidth] are in the same units; [bend] is the drop at
   /// `x == halfWidth`. Returns the vertical drop and the rotation in
-  /// radians.
+  /// radians, clockwise-positive as Flutter measures it.
   ///
   /// Solved rather than approximated: for a circle of radius R through
   /// the middle of the row, the drop at x is `R - sqrt(R^2 - x^2)`, and
   /// R is whatever makes that equal [bend] at the edge. Rotation is the
   /// angle subtended, so each frame stays tangent to the curve.
+  ///
+  /// The sign is the opposite of the WebGL original's, and has to be.
+  /// There, z-rotation is counter-clockwise-positive with the y axis
+  /// pointing up; Flutter's Transform.rotate is clockwise-positive with
+  /// y pointing down. Copying the formula across unchanged mirrors the
+  /// whole row: frames lean in toward the middle instead of splaying
+  /// away from it.
   static ({double drop, double angle}) arc({
     required double x,
     required double halfWidth,
     required double bend,
+    double tilt = 1,
   }) {
     if (bend <= 0 || halfWidth <= 0) return (drop: 0, angle: 0);
 
@@ -80,9 +99,9 @@ class CircularGallery extends StatefulWidget {
     // past it on their way out of view.
     final effective = math.min(x.abs(), halfWidth);
     final drop = radius - math.sqrt(radius * radius - effective * effective);
-    final angle = math.asin(effective / radius);
+    final angle = math.asin(effective / radius) * tilt;
 
-    return (drop: drop, angle: -x.sign * angle);
+    return (drop: drop, angle: x.sign * angle);
   }
 
   @override
@@ -154,6 +173,7 @@ class _CircularGalleryState extends State<CircularGallery> {
                 x: offset,
                 halfWidth: halfWidth,
                 bend: widget.bend,
+                tilt: widget.tilt,
               );
 
               return _Frame(

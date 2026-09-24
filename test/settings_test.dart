@@ -80,7 +80,14 @@ void main() {
       await pump(0);
       await tester.pumpAndSettle();
       expect(find.text('0'), findsNothing);
-      expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsOneWidget);
+      // Drawn from the design's own paths now rather than a Material
+      // icon, so the bar's glyphs all share one stroke language.
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is NavGlyphIcon && w.glyph == NavGlyph.messages,
+        ),
+        findsOneWidget,
+      );
 
       await pump(4);
       await tester.pumpAndSettle();

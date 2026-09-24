@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../ui/app_type.dart';
+import 'kit/kit.dart';
 import '../ui/board_theme.dart';
 
 /// ---------------------------------------------------------------------
@@ -660,6 +661,14 @@ class BoardTopBar extends StatelessWidget {
   final VoidCallback? onAvatar;
   final VoidCallback? onSearch;
   final VoidCallback? onMessages;
+
+  /// Opens notifications. It used to be a destination in the bottom
+  /// bar; the redesigned bar has room for four, and notifications is
+  /// the one people arrive at from a badge rather than by browsing.
+  final VoidCallback? onNotifications;
+
+  /// Unread notifications, badged the same way messages are.
+  final int unreadNotifications;
   final TextEditingController? controller;
   final FocusNode? focusNode;
   final ValueChanged<String>? onChanged;
@@ -676,6 +685,8 @@ class BoardTopBar extends StatelessWidget {
     this.controller,
     this.focusNode,
     this.onChanged,
+    this.onNotifications,
+    this.unreadNotifications = 0,
   });
 
   @override
@@ -758,61 +769,20 @@ class BoardTopBar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 10),
-          // Messages, with the unread count as a badge.
-          //
-          // This used to be the count on its own in a square box, which
-          // said nothing about what it counted or where it went -- and
-          // at zero it read as a broken counter rather than an inbox
-          // with nothing in it. The badge is hidden at zero for the
-          // same reason.
-          Semantics(
-            button: true,
-            label: unread == 0 ? 'Messages' : 'Messages, $unread unread',
-            child: GestureDetector(
-              onTap: onMessages,
-              behavior: HitTestBehavior.opaque,
-              child: SizedBox(
-                // The visible mark is 30px; the tap target is not.
-                width: 44,
-                height: 44,
-                child: Stack(
-                  alignment: Alignment.center,
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Icon(
-                      Icons.chat_bubble_outline_rounded,
-                      size: 22,
-                      color: BoardColors.ink,
-                    ),
-                    if (unread > 0)
-                      Positioned(
-                        top: 6,
-                        right: 4,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 5,
-                            vertical: 1,
-                          ),
-                          constraints: const BoxConstraints(minWidth: 16),
-                          decoration: BoxDecoration(
-                            color: BoardColors.rejected,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            unread > 99 ? '99+' : unread.toString(),
-                            textAlign: TextAlign.center,
-                            style: AppType.tabular(
-                              fontSize: 10,
-                              color: BoardColors.onInk,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+          const SizedBox(width: 6),
+          if (onNotifications != null)
+            _BadgedGlyph(
+              glyph: NavGlyph.notifications,
+              count: unreadNotifications,
+              label: 'Notifications',
+              onTap: onNotifications!,
             ),
+          const SizedBox(width: 2),
+          _BadgedGlyph(
+            glyph: NavGlyph.messages,
+            count: unread,
+            label: 'Messages',
+            onTap: onMessages,
           ),
         ],
       ),
@@ -833,6 +803,73 @@ class BoardTopBar extends StatelessWidget {
 /// Material glyphs so the bar keeps the board's flat, geometric voice.
 /// The active item takes that screen's accent — this is the one place
 /// where all four accents are allowed to appear over a session.
+/// An icon in the top bar with an unread count over it.
+///
+/// Shared so notifications and messages cannot drift apart sitting
+/// beside each other. The badge is hidden at zero rather than showing
+/// "0", which reads as a broken counter rather than an empty inbox.
+class _BadgedGlyph extends StatelessWidget {
+  final NavGlyph glyph;
+  final int count;
+  final String label;
+  final VoidCallback? onTap;
+
+  const _BadgedGlyph({
+    required this.glyph,
+    required this.count,
+    required this.label,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: count == 0 ? label : '$label, $count unread',
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox(
+          // The mark is 22pt; the target is not.
+          width: AppMetrics.tapTarget,
+          height: AppMetrics.tapTarget,
+          child: Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              NavGlyphIcon(glyph: glyph, size: 22, color: BoardColors.ink),
+              if (count > 0)
+                Positioned(
+                  top: 6,
+                  right: 4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 1,
+                    ),
+                    constraints: const BoxConstraints(minWidth: 16),
+                    decoration: BoxDecoration(
+                      color: BoardColors.rejected,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      count > 99 ? '99+' : count.toString(),
+                      textAlign: TextAlign.center,
+                      style: AppType.tabular(
+                        fontSize: 10,
+                        color: BoardColors.onInk,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class BoardNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;

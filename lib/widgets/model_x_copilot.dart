@@ -24,6 +24,30 @@ class ModelXCopilot extends StatefulWidget {
 
   @override
   State<ModelXCopilot> createState() => _ModelXCopilotState();
+
+  /// Opens the assistant without going through this widget.
+  ///
+  /// The launcher and the panel were one thing, so the only way to
+  /// reach the panel was to mount the launcher. The model side now
+  /// draws its own launcher in the nav bar, and the brand and agency
+  /// dashboards still use the widget, so the panel has to be reachable
+  /// both ways.
+  static Future<void> open(
+    BuildContext context, {
+    required Map<String, dynamic> pageContext,
+    Function(List<AiScoutResult>)? onResults,
+  }) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _CopilotPanel(
+        pageContext: pageContext,
+        copilotService: AiCopilotService(),
+        onResults: onResults,
+      ),
+    );
+  }
 }
 
 class _ModelXCopilotState extends State<ModelXCopilot>
@@ -59,18 +83,11 @@ class _ModelXCopilotState extends State<ModelXCopilot>
     super.dispose();
   }
 
-  void _showCopilotSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _CopilotPanel(
-        pageContext: widget.pageContext,
-        copilotService: _copilotService,
-        onResults: widget.onResults,
-      ),
-    );
-  }
+  void _showCopilotSheet() => ModelXCopilot.open(
+    context,
+    pageContext: widget.pageContext,
+    onResults: widget.onResults,
+  );
 
   @override
   Widget build(BuildContext context) {

@@ -20,7 +20,7 @@ class AppMetrics {
   static const double titleGap = 28;
 
   /// Pill buttons, and anything that has to line up with them.
-  static const double control = 57;
+  static const double control = 56;
 
   /// The height of a single-line input.
   ///
@@ -36,9 +36,14 @@ class AppMetrics {
   /// same height reads as a thin bar. Kept separate from [control] for
   /// exactly that reason -- inputs and buttons do not have to match.
   ///
-  /// Sensible range is roughly 52 to 64. Past that the form starts
+  /// Both a text field and a password field are locked to this one
+  /// number, deliberately: they sit one above the other on every form,
+  /// and two inputs that disagree about their height is what makes a
+  /// form look unconsidered. Raising it moves both together.
+  ///
+  /// Sensible range is roughly 52 to 68. Past that the form starts
   /// scrolling on a short phone.
-  static const double field = 58;
+  static const double field = 64;
 
   /// Chips, and the segmented control's inner buttons.
   static const double chip = 40;

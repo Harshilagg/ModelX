@@ -134,6 +134,32 @@ void main() {
       expect(find.text('Continue with Apple'), findsNothing);
     });
 
+    testWidgets('both boxes are the same size and both carry a hint', (
+      tester,
+    ) async {
+      // Equal height was never the whole story. An email box with grey
+      // placeholder text beside an empty password box reads as two
+      // different controls even when they measure the same, which is
+      // what made the form look unconsidered.
+      await pumpLogin(tester);
+
+      final boxes = find.byType(InputDecorator);
+      expect(boxes, findsNWidgets(2));
+      expect(tester.getSize(boxes.at(0)), tester.getSize(boxes.at(1)));
+
+      for (var i = 0; i < 2; i++) {
+        final decoration = tester
+            .widget<InputDecorator>(boxes.at(i))
+            .decoration;
+        expect(
+          decoration.hintText,
+          isNotNull,
+          reason: 'input $i renders as an empty box',
+        );
+        expect(decoration.hintText, isNotEmpty);
+      }
+    });
+
     testWidgets('lays out at 360x640', (tester) async {
       await pumpLogin(tester, size: const Size(360, 640));
       expect(tester.takeException(), isNull);

@@ -386,6 +386,7 @@ class _OnboardingLoginPageState extends State<OnboardingLoginPage> {
           error: _passwordError,
           spaced: false,
           child: AppPasswordField(
+            hintText: 'Your password',
             controller: _password,
             hasError: _passwordError != null,
             isNew: false,

@@ -481,6 +481,7 @@ class _ModelSignupPageState extends State<ModelSignupPage> {
       hint: 'At least 8 characters.',
       error: _errors['password'],
       child: AppPasswordField(
+        hintText: 'At least 8 characters',
         hasError: _errors['password'] != null,
         onChanged: (v) => _set(() => _data.password = v),
       ),

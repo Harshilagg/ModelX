@@ -5,9 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'chat_page.dart';
 import '../ui/board_theme.dart';
 import '../widgets/board_widgets.dart';
+import '../widgets/circular_gallery.dart';
 import '../widgets/portfolio_masonry.dart';
 import '../widgets/profile_photo_viewer.dart';
-import '../widgets/shot_carousel.dart';
 import '../widgets/state_views.dart';
 
 /// A profile as other people see it (style board 7d).
@@ -272,7 +272,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Circular: an identity, not a portfolio tile. Their
-                  // work keeps the comp-card cut, in Latest shots and the
+                  // work keeps the comp-card cut, in Featured shots and the
                   // Portfolio tab below.
                   //
                   // Tappable — somebody else's profile photo had no way
@@ -506,7 +506,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             BoardSectionLabel(
-              'Latest shots',
+              'Featured shots',
               trailing: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => setState(() => _tab = _tabPortfolio),
@@ -518,10 +518,18 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 ),
               ),
             ),
-            const SizedBox(height: 10),
-            ShotCarousel(
-              urls: urls,
-              accent: BoardColors.brass,
+            const SizedBox(height: 4),
+            CircularGallery(
+              shots: [
+                for (var i = 0; i < urls.length; i++)
+                  GalleryShot(
+                    url: urls[i],
+                    // The portfolio collection carries no captions, so
+                    // the frames are numbered. A blank strip under each
+                    // one reads as something failing to load.
+                    label: (i + 1).toString().padLeft(2, '0'),
+                  ),
+              ],
               onTap: (i) => _openShot(urls, i),
             ),
           ],

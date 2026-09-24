@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../ui/app_theme.dart';
+import '../ui/board_palette.dart';
 
 /// Wraps an onboarding route so it is dark in both themes.
 ///
@@ -17,6 +18,20 @@ class OnboardingTheme extends StatelessWidget {
   final Widget child;
 
   const OnboardingTheme({super.key, required this.child});
+
+  /// The palette every onboarding screen draws with.
+  ///
+  /// Read this rather than `BoardColors.of(context)` when the context
+  /// in question is the one that *installs* this widget. A page that
+  /// returns `OnboardingTheme(...)` from its own build method sits
+  /// above the Theme it is installing, so looking the palette up from
+  /// there returns the app's theme, not this one -- which produced a
+  /// light page with dark inputs, a white scrim over the splash
+  /// masonry, and bone buttons invisible against bone paper.
+  ///
+  /// Descendants are below the Theme and can keep using
+  /// `BoardColors.of(context)` as normal.
+  static final BoardPalette palette = BoardPalette.night();
 
   @override
   Widget build(BuildContext context) {

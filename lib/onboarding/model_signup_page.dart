@@ -12,7 +12,6 @@ import '../pages/dashboard_page.dart';
 import '../services/cloudinary_service.dart';
 import '../ui/app_type.dart';
 import '../ui/board_palette.dart';
-import '../ui/board_theme.dart';
 import '../widgets/kit/kit.dart';
 import 'model_signup_data.dart';
 import 'onboarding_theme.dart';
@@ -304,7 +303,7 @@ class _ModelSignupPageState extends State<ModelSignupPage> {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
     final isLast = _step == _titles.length - 1;
 
     return OnboardingTheme(
@@ -596,7 +595,7 @@ class _Measure extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -630,7 +629,7 @@ class _DateField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
 
     return Semantics(
       button: true,
@@ -696,7 +695,7 @@ class _PhotoSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
 
     return AspectRatio(
       aspectRatio: 3 / 4,

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../agency/team_access/invite_acceptance_page.dart';
 import '../ui/app_type.dart';
 import '../ui/board_palette.dart';
-import '../ui/board_theme.dart';
 import '../widgets/kit/kit.dart';
 import 'auth_router.dart';
 import 'onboarding_theme.dart';
@@ -255,7 +254,7 @@ class _OnboardingLoginPageState extends State<OnboardingLoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
     final reduced = AppMotion.reduced(context);
 
     return OnboardingTheme(
@@ -533,7 +532,7 @@ class _Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
     return Row(
       children: [
         Expanded(child: Divider(color: p.line, height: 1)),

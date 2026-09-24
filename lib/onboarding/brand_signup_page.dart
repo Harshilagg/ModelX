@@ -6,7 +6,6 @@ import '../agency/team_access/invite_acceptance_page.dart';
 import '../brand/brand_dashboard_page.dart';
 import '../ui/app_type.dart';
 import '../ui/board_palette.dart';
-import '../ui/board_theme.dart';
 import '../widgets/kit/kit.dart';
 import 'onboarding_theme.dart';
 import 'success_page.dart';
@@ -202,7 +201,7 @@ class _BrandSignupFlowState extends State<BrandSignupFlow> {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
     final isLast = _step == _titles.length - 1;
 
     return OnboardingTheme(

@@ -115,6 +115,11 @@ class _AppPillButtonState extends State<AppPillButton> {
       enabled: _enabled,
       label: label,
       child: GestureDetector(
+        // Opaque, not the default deferToChild: the child is an
+        // AnimatedOpacity over an AnimatedScale, and whether a tap
+        // lands should not depend on how either of them happens to be
+        // painting at that moment.
+        behavior: HitTestBehavior.opaque,
         onTapDown: _enabled ? (_) => setState(() => _down = true) : null,
         onTapUp: _enabled ? (_) => setState(() => _down = false) : null,
         onTapCancel: _enabled ? () => setState(() => _down = false) : null,

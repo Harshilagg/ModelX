@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../ui/app_type.dart';
-import '../ui/board_theme.dart';
 import '../widgets/kit/kit.dart';
 import 'onboarding_theme.dart';
 
@@ -68,7 +67,7 @@ class SuccessPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
     final (title, subtitle, cta, next) = _copy;
 
     return OnboardingTheme(
@@ -141,7 +140,7 @@ class _WhatsNext extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -204,7 +203,7 @@ class _Mark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
 
     if (photoUrl == null) {
       return _DrawnTick(colour: p.onSurface);

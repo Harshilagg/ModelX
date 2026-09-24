@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../ui/app_type.dart';
-import '../ui/board_theme.dart';
 import '../widgets/kit/kit.dart';
 import 'onboarding_theme.dart';
 import 'splash_page.dart' show kWordmark;
@@ -103,7 +102,7 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
 
     return OnboardingTheme(
       child: Scaffold(
@@ -258,7 +257,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
       child: Row(
@@ -316,7 +315,7 @@ class _RoleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
     final reduced = AppMotion.reduced(context);
 
     return Semantics(
@@ -477,7 +476,7 @@ class _RadioDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
     return AnimatedContainer(
       duration: AppMotion.medium,
       width: 24,

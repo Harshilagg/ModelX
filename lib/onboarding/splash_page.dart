@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../ui/app_type.dart';
-import '../ui/board_theme.dart';
 import '../widgets/kit/kit.dart';
 import 'masonry_background.dart';
 import 'onboarding_theme.dart';
@@ -95,7 +94,7 @@ class _SplashPageState extends State<SplashPage> {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
     final slide = SplashPage.slides[_index];
 
     return OnboardingTheme(
@@ -199,7 +198,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -263,7 +262,7 @@ class _SlideCopy extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
     final reduced = AppMotion.reduced(context);
 
     return TweenAnimationBuilder<double>(
@@ -305,7 +304,7 @@ class _TermsLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = BoardColors.of(context);
+    final p = OnboardingTheme.palette;
     return Text(
       'By continuing you agree to our Terms and Privacy Policy.',
       textAlign: TextAlign.center,

@@ -21,11 +21,11 @@ double contrast(Color a, Color b) {
 
 /// Flattens a translucent colour onto an opaque one.
 Color over(Color fg, Color bg) => Color.from(
-      alpha: 1,
-      red: fg.a * fg.r + (1 - fg.a) * bg.r,
-      green: fg.a * fg.g + (1 - fg.a) * bg.g,
-      blue: fg.a * fg.b + (1 - fg.a) * bg.b,
-    );
+  alpha: 1,
+  red: fg.a * fg.r + (1 - fg.a) * bg.r,
+  green: fg.a * fg.g + (1 - fg.a) * bg.g,
+  blue: fg.a * fg.b + (1 - fg.a) * bg.b,
+);
 
 void main() {
   // WCAG AA: 4.5:1 for body text, 3:1 for large text and glyphs.
@@ -40,11 +40,16 @@ void main() {
         (day.surfaceRaised, 'card'),
         (day.surfaceField, 'shell'),
       ]) {
-        expect(contrast(day.onSurface, surface), greaterThanOrEqualTo(bodyMinimum),
-            reason: 'onSurface on $name');
-        expect(contrast(over(day.onSurfaceSoft, surface), surface),
-            greaterThanOrEqualTo(bodyMinimum),
-            reason: 'onSurfaceSoft on $name');
+        expect(
+          contrast(day.onSurface, surface),
+          greaterThanOrEqualTo(bodyMinimum),
+          reason: 'onSurface on $name',
+        );
+        expect(
+          contrast(over(day.onSurfaceSoft, surface), surface),
+          greaterThanOrEqualTo(bodyMinimum),
+          reason: 'onSurfaceSoft on $name',
+        );
       }
     });
 
@@ -52,17 +57,22 @@ void main() {
       // AppColors.inkFaint measured 3.03:1 on paper -- fine as an icon,
       // below the bar as the text colour it is used as in about thirty
       // places.
-      expect(contrast(AppColors.inkFaint, BoardColors.paper),
-          greaterThanOrEqualTo(bodyMinimum));
-      expect(contrast(AppColors.inkFaint, BoardColors.shell),
-          greaterThanOrEqualTo(4.4));
+      expect(
+        contrast(AppColors.inkFaint, BoardColors.paper),
+        greaterThanOrEqualTo(bodyMinimum),
+      );
+      expect(
+        contrast(AppColors.inkFaint, BoardColors.shell),
+        greaterThanOrEqualTo(4.4),
+      );
     });
 
     test('mushroom is never asked to be a foreground', () {
       // The palette's own rule. It measures 1.97:1 on shell, which is
       // below even the 3:1 a non-text glyph needs.
       expect(contrast(BoardColors.mushroom, BoardColors.shell), lessThan(3.0));
-      final nav = AppTheme.light().bottomNavigationBarTheme.unselectedItemColor!;
+      final nav =
+          AppTheme.light().bottomNavigationBarTheme.unselectedItemColor!;
       expect(nav, isNot(BoardColors.mushroom));
       expect(contrast(nav, BoardColors.paper), greaterThanOrEqualTo(3.0));
     });
@@ -72,29 +82,44 @@ void main() {
     final night = BoardPalette.night();
 
     test('body text clears AA on ink', () {
-      expect(contrast(night.onSurface, night.surface),
-          greaterThanOrEqualTo(bodyMinimum));
-      expect(contrast(over(night.onSurfaceSoft, night.surface), night.surface),
-          greaterThanOrEqualTo(bodyMinimum));
+      expect(
+        contrast(night.onSurface, night.surface),
+        greaterThanOrEqualTo(bodyMinimum),
+      );
+      expect(
+        contrast(over(night.onSurfaceSoft, night.surface), night.surface),
+        greaterThanOrEqualTo(bodyMinimum),
+      );
     });
 
     test('form fields are readable, not just distinguishable', () {
-      expect(contrast(night.onSurface, night.surfaceField),
-          greaterThanOrEqualTo(bodyMinimum));
+      expect(
+        contrast(night.onSurface, night.surfaceField),
+        greaterThanOrEqualTo(bodyMinimum),
+      );
     });
 
-    test('the error tint reads on ink, where the full-strength hue does not', () {
-      // This is why errors on dark use the tint: rejected at full
-      // strength is a block colour and goes muddy as a word.
-      expect(contrast(night.rejectedText, night.surface),
-          greaterThanOrEqualTo(3.0));
-      expect(contrast(night.rejectedText, night.surface),
-          greaterThan(contrast(night.rejected, night.surface)));
-    });
+    test(
+      'the error tint reads on ink, where the full-strength hue does not',
+      () {
+        // This is why errors on dark use the tint: rejected at full
+        // strength is a block colour and goes muddy as a word.
+        expect(
+          contrast(night.rejectedText, night.surface),
+          greaterThanOrEqualTo(3.0),
+        );
+        expect(
+          contrast(night.rejectedText, night.surface),
+          greaterThan(contrast(night.rejected, night.surface)),
+        );
+      },
+    );
 
     test('amber needs ink on it, which is why the badge uses ink', () {
-      expect(contrast(night.ink, night.negotiating),
-          greaterThan(contrast(night.onPanel, night.negotiating)));
+      expect(
+        contrast(night.ink, night.negotiating),
+        greaterThan(contrast(night.onPanel, night.negotiating)),
+      );
     });
   });
 }

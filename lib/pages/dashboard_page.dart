@@ -11,9 +11,9 @@ import 'search_results_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../widgets/model_x_copilot.dart';
 import '../ui/board_theme.dart';
 import '../widgets/board_widgets.dart';
+import '../services/copilot_conversation.dart';
 import '../widgets/kit/kit.dart';
 
 /// The app shell for the model side.
@@ -304,6 +304,64 @@ class _DashboardPageState extends State<DashboardPage> {
             if (showTopBar && (showRecent || searchResults.isNotEmpty))
               _searchOverlay(),
 
+            // The assistant, docked or open.
+            //
+            // Rendered in the shell's own Stack rather than pushed as a
+            // route or a modal sheet: the aperture has to stay visible
+            // and tappable while it works, which is what its states are
+            // for, and a modal would cover it with the thing it opened.
+            if (_copilot == CopilotStage.docked)
+              Positioned(
+                left: 14,
+                right: 14,
+                bottom: navBottom + AppNavBar.height + 12,
+                child: AnimatedBuilder(
+                  animation: CopilotConversation.instance,
+                  builder: (context, _) => CopilotDock(
+                    conversation: CopilotConversation.instance,
+                    pageContext: _copilotContext,
+                    suggestions: _copilotOpeners,
+                    onExpand: () =>
+                        setState(() => _copilot = CopilotStage.open),
+                    onDismiss: () =>
+                        setState(() => _copilot = CopilotStage.closed),
+                  ),
+                ),
+              ),
+
+            if (_copilot == CopilotStage.open)
+              Positioned.fill(
+                child: Stack(
+                  children: [
+                    // Tapping away puts it back down rather than
+                    // closing it, so the thread is still there.
+                    Positioned.fill(
+                      child: GestureDetector(
+                        onTap: () =>
+                            setState(() => _copilot = CopilotStage.docked),
+                        behavior: HitTestBehavior.opaque,
+                        child: ColoredBox(
+                          color: BoardColors.ink.withValues(alpha: 0.35),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: FractionallySizedBox(
+                        heightFactor: 0.82,
+                        child: CopilotPanel(
+                          conversation: CopilotConversation.instance,
+                          pageContext: _copilotContext,
+                          suggestions: _copilotOpeners,
+                          onCollapse: () =>
+                              setState(() => _copilot = CopilotStage.closed),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             // The floating pill bar rides above the content rather than
             // taking a row of its own, which is why every board screen
             // pads its scroll view clear of it at the bottom.
@@ -359,16 +417,52 @@ class _DashboardPageState extends State<DashboardPage> {
   /// Dark blades on a pale ground here rather than the reverse: the
   /// button sits against a dark bar, and it is the one thing on the row
   /// that is not a destination.
+  /// Where the assistant is: shut, docked over the bar, or open.
+  CopilotStage _copilot = CopilotStage.closed;
+
+  Map<String, dynamic> get _copilotContext => {
+    'page': 'home',
+    'role': _userType,
+    'tab': const ['Home', 'Jobs', 'Network', 'Profile'][_selectedIndex],
+  };
+
+  /// Openers for the destination underneath, so the first tap is a
+  /// question rather than a blank field.
+  List<String> get _copilotOpeners {
+    final model = _userType != 'Brand' && _userType != 'Agency';
+    return switch (_selectedIndex) {
+      _tabJobs =>
+        model
+            ? const ['Which of these fit me?', 'How do I stand out?']
+            : const ['How do I post a gig?', 'Who should I shortlist?'],
+      _tabProfile =>
+        model
+            ? const ['Analyze my bio', 'Portfolio tips']
+            : const ['Company profile tips', 'View my postings'],
+      _ =>
+        model
+            ? const ['How do I get hired?', 'Portfolio tips']
+            : const ['How do I scout models?', 'Hiring tips'],
+    };
+  }
+
   void _openAssistant() {
     _dismissSearch();
-    ModelXCopilot.open(
-      context,
-      pageContext: {
-        'page': 'home',
-        'role': _userType,
-        'tab': const ['Home', 'Jobs', 'Network', 'Profile'][_selectedIndex],
-      },
-    );
+    setState(() {
+      // Tapping it again puts it away, since the button stays on screen
+      // rather than being covered by what it opened.
+      _copilot = _copilot == CopilotStage.closed
+          ? CopilotStage.docked
+          : CopilotStage.closed;
+    });
+  }
+
+  /// The button reflects what the assistant is doing, which is the
+  /// reason it has states and the reason it stays visible.
+  ApertureState get _apertureState {
+    if (_copilot == CopilotStage.closed) return ApertureState.idle;
+    if (CopilotConversation.instance.sending) return ApertureState.thinking;
+    return ApertureState.listening;
   }
 
   /// The assistant: the mark on its own, no disc behind it.
@@ -378,6 +472,7 @@ class _DashboardPageState extends State<DashboardPage> {
   /// light circle. Sized to the bar so the row lines up.
   Widget _assistant() {
     return ApertureButton(
+      state: _apertureState,
       size: AppNavBar.height,
       // Ink, not the reference's grey. With no disc behind it the ring
       // sits straight on the page, where grey-on-paper barely reads --

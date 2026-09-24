@@ -22,3 +22,4 @@ export 'google_mark.dart';
 export 'app_nav_bar.dart';
 export 'aperture_button.dart';
 export 'nav_glyphs.dart';
+export 'copilot_surface.dart';

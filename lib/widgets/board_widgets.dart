@@ -548,9 +548,6 @@ class BoardMedia extends StatelessWidget {
     );
 
     // Scaled by one app-wide setting -- see BoardShape.photoCornerFold.
-    // At zero the frame is left unclipped rather than clipped to a
-    // rectangle it already fills, which saves a clip layer per tile on
-    // screens that draw dozens of them.
     final notch = (cut ?? 0) * BoardShape.photoCornerFold;
 
     if (notch > 0) {
@@ -558,6 +555,13 @@ class BoardMedia extends StatelessWidget {
         clipper: CompCardClipper(cut: notch),
         child: content,
       );
+    } else if (cut != null) {
+      // A square frame still has to clip. Nothing inside one keeps to
+      // its box on its own: a cover-fitted image paints past its edges
+      // by design, and the hatch placeholder draws its diagonals well
+      // outside the box so they still reach the corners. Dropping the
+      // clip here let both bleed across the whole rail.
+      content = ClipRect(child: content);
     } else if (radius != null) {
       content = ClipRRect(borderRadius: radius!, child: content);
     }

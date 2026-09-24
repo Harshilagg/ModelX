@@ -5,6 +5,38 @@ import 'package:flutter_application_modelx/widgets/board_widgets.dart';
 
 void main() {
   group('photo frames', () {
+    testWidgets('always clip, square corners or not', (tester) async {
+      // This is what broke when the fold was removed. Nothing inside a
+      // frame keeps to its box on its own -- a cover-fitted image
+      // paints past its edges by design, and the hatch placeholder
+      // draws its diagonals from outside the box so they reach the
+      // corners. With no clip they bled across the whole rail.
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 120,
+                height: 160,
+                child: BoardMedia(cut: 20),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final clipped = find.descendant(
+        of: find.byType(BoardMedia),
+        matching: find.byWidgetPredicate((w) => w is ClipRect || w is ClipPath),
+      );
+      expect(
+        clipped,
+        findsWidgets,
+        reason: 'a frame with no clip lets its placeholder escape',
+      );
+    });
+
     testWidgets('are square-cornered, not folded', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -21,10 +53,15 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // No clip path at all, rather than one clipped to the rectangle
-      // it already fills -- that saves a layer per tile on screens
-      // drawing dozens of them.
+      // Square means no ClipPath; the rectangular ClipRect stays.
       expect(find.byType(ClipPath), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(BoardMedia),
+          matching: find.byType(ClipRect),
+        ),
+        findsWidgets,
+      );
     });
 
     testWidgets('fold returns when the switch is turned up', (tester) async {

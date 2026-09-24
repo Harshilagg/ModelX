@@ -296,6 +296,12 @@ class _HatchPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // The diagonals below are drawn from outside the box on both
+    // sides so they reach every corner, so this has to hold them in.
+    // Leaving it to the caller meant an unclipped placeholder painted
+    // its stripes across everything beside it.
+    canvas.clipRect(Offset.zero & size);
+
     final base = dark ? const Color(0xFF1D1E1A) : const Color(0xFFCBC8BD);
     final stripe = dark ? const Color(0xFF2A2B27) : const Color(0xFFD6D3C9);
     canvas.drawRect(Offset.zero & size, Paint()..color = base);

@@ -14,13 +14,26 @@ class AppTag extends StatelessWidget {
   final AppTagVariant variant;
   final IconData? icon;
 
-  const AppTag(this.label, {super.key, this.variant = AppTagVariant.neutral, this.icon});
+  const AppTag(
+    this.label, {
+    super.key,
+    this.variant = AppTagVariant.neutral,
+    this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
     final (Color bg, Color fg, Color? border) = switch (variant) {
-      AppTagVariant.neutral => (AppColors.paperRaised, AppColors.inkSoft, AppColors.line),
-      AppTagVariant.outline => (Colors.transparent, AppColors.inkSoft, AppColors.lineStrong),
+      AppTagVariant.neutral => (
+        AppColors.paperRaised,
+        AppColors.inkSoft,
+        AppColors.line,
+      ),
+      AppTagVariant.outline => (
+        Colors.transparent,
+        AppColors.inkSoft,
+        AppColors.lineStrong,
+      ),
       AppTagVariant.gold => (AppColors.goldBg, AppColors.gold, null),
       AppTagVariant.success => (AppColors.successBg, AppColors.success, null),
     };
@@ -39,7 +52,14 @@ class AppTag extends StatelessWidget {
             Icon(icon, size: AppIconSize.xs, color: fg),
             const SizedBox(width: 4),
           ],
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: fg,
+            ),
+          ),
         ],
       ),
     );

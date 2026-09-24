@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../services/agency_service.dart';
 import '../../models/agency_models.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../pages/login_page.dart';
+import '../../onboarding/login_page.dart';
 import '../../ui/app_theme.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/state_views.dart';
@@ -45,7 +45,8 @@ class _InviteAcceptancePageState extends State<InviteAcceptancePage> {
           _isLoading = false;
         });
       }
-      if (widget.autoAcceptOnLoad && FirebaseAuth.instance.currentUser != null) {
+      if (widget.autoAcceptOnLoad &&
+          FirebaseAuth.instance.currentUser != null) {
         await _acceptInvite();
       }
     } catch (e) {
@@ -66,7 +67,9 @@ class _InviteAcceptancePageState extends State<InviteAcceptancePage> {
       // Prompt login if not authenticated
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => LoginPage(inviteToken: widget.token)),
+        MaterialPageRoute(
+          builder: (_) => OnboardingLoginPage(inviteToken: widget.token),
+        ),
       );
       return;
     }
@@ -102,8 +105,8 @@ class _InviteAcceptancePageState extends State<InviteAcceptancePage> {
         child: _isLoading
             ? const LoadingState()
             : _error != null
-                ? _buildErrorView()
-                : _buildInviteView(),
+            ? _buildErrorView()
+            : _buildInviteView(),
       ),
     );
   }
@@ -117,8 +120,15 @@ class _InviteAcceptancePageState extends State<InviteAcceptancePage> {
           Container(
             width: 64,
             height: 64,
-            decoration: const BoxDecoration(color: AppColors.paperRaised, shape: BoxShape.circle),
-            child: const Icon(Icons.error_outline_rounded, size: 30, color: AppColors.select),
+            decoration: const BoxDecoration(
+              color: AppColors.paperRaised,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.error_outline_rounded,
+              size: 30,
+              color: AppColors.select,
+            ),
           ),
           const SizedBox(height: 20),
           Text(
@@ -146,8 +156,15 @@ class _InviteAcceptancePageState extends State<InviteAcceptancePage> {
           Container(
             width: 88,
             height: 88,
-            decoration: const BoxDecoration(color: AppColors.goldBg, shape: BoxShape.circle),
-            child: const Icon(Icons.group_add_outlined, size: 40, color: AppColors.gold),
+            decoration: const BoxDecoration(
+              color: AppColors.goldBg,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.group_add_outlined,
+              size: 40,
+              color: AppColors.gold,
+            ),
           ),
           const SizedBox(height: 28),
           Text(

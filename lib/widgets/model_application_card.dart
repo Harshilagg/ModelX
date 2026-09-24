@@ -22,8 +22,7 @@ class ModelApplicationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userRef =
-        FirebaseFirestore.instance.collection('users').doc(modelId);
+    final userRef = FirebaseFirestore.instance.collection('users').doc(modelId);
 
     final portfolioRef = FirebaseFirestore.instance
         .collection('portfolio')
@@ -38,8 +37,9 @@ class ModelApplicationCard extends StatelessWidget {
         }
 
         final user = userSnap.data!.data() as Map<String, dynamic>;
-        final followersCount =
-            (user['followers'] is List) ? user['followers'].length : 0;
+        final followersCount = (user['followers'] is List)
+            ? user['followers'].length
+            : 0;
 
         return Container(
           margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -53,7 +53,6 @@ class ModelApplicationCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // ================= IMAGE SECTION =================
               SizedBox(
                 width: 115,
@@ -66,17 +65,22 @@ class ModelApplicationCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(AppRadius.md),
                         child: Container(
                           color: AppColors.paperRaised,
-                          child: Icon(Icons.image_outlined, color: AppColors.inkFaint),
+                          child: Icon(
+                            Icons.image_outlined,
+                            color: AppColors.inkFaint,
+                          ),
                         ),
                       );
                     }
 
                     final images = snap.data!.docs
                         .map((e) => e.data() as Map<String, dynamic>)
-                        .where((d) =>
-                            d['mediaUrl'] != null &&
-                            d['mediaUrl'].toString().isNotEmpty &&
-                            d['mediaUrl'].toString().startsWith('http'))
+                        .where(
+                          (d) =>
+                              d['mediaUrl'] != null &&
+                              d['mediaUrl'].toString().isNotEmpty &&
+                              d['mediaUrl'].toString().startsWith('http'),
+                        )
                         .map((d) => d['mediaUrl'].toString())
                         .toList();
 
@@ -85,7 +89,10 @@ class ModelApplicationCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(AppRadius.md),
                         child: Container(
                           color: AppColors.paperRaised,
-                          child: Icon(Icons.image_outlined, color: AppColors.inkFaint),
+                          child: Icon(
+                            Icons.image_outlined,
+                            color: AppColors.inkFaint,
+                          ),
                         ),
                       );
                     }
@@ -101,7 +108,6 @@ class ModelApplicationCard extends StatelessWidget {
                 ),
               ),
 
-
               const SizedBox(width: 12),
 
               // ================= INFO SECTION =================
@@ -109,7 +115,6 @@ class ModelApplicationCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     // NAME + STATUS
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,7 +124,9 @@ class ModelApplicationCard extends StatelessWidget {
                             user['fullName'] ?? 'Unnamed',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTypography.bodyEmphasized.copyWith(fontWeight: FontWeight.w700),
+                            style: AppTypography.bodyEmphasized.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -156,7 +163,8 @@ class ModelApplicationCard extends StatelessWidget {
                             color: AppColors.gold,
                             onTap: () => _updateStatus(context, 'SHORTLISTED'),
                           )
-                        else if (status == 'SHORTLISTED' || status == 'shortlisted')
+                        else if (status == 'SHORTLISTED' ||
+                            status == 'shortlisted')
                           _actionButton(
                             label: 'Connect',
                             color: AppColors.gold,
@@ -166,7 +174,11 @@ class ModelApplicationCard extends StatelessWidget {
                               final brandId = current.uid;
                               final chatService = ChatService();
                               try {
-                                final chatId = await chatService.createGigChat(gigId, modelId, brandId);
+                                final chatId = await chatService.createGigChat(
+                                  gigId,
+                                  modelId,
+                                  brandId,
+                                );
                                 if (context.mounted) {
                                   Navigator.push(
                                     context,
@@ -182,7 +194,11 @@ class ModelApplicationCard extends StatelessWidget {
                                 }
                               } catch (e) {
                                 if (context.mounted) {
-                                  showAppToast(context, 'Failed to connect: $e', isError: true);
+                                  showAppToast(
+                                    context,
+                                    'Failed to connect: $e',
+                                    isError: true,
+                                  );
                                 }
                               }
                             },
@@ -192,7 +208,10 @@ class ModelApplicationCard extends StatelessWidget {
                             label: 'Message',
                             color: AppColors.ink,
                             onTap: () {
-                              final list = [FirebaseAuth.instance.currentUser!.uid, modelId]..sort();
+                              final list = [
+                                FirebaseAuth.instance.currentUser!.uid,
+                                modelId,
+                              ]..sort();
                               final chatId = list.join('--');
                               Navigator.push(
                                 context,
@@ -210,10 +229,10 @@ class ModelApplicationCard extends StatelessWidget {
 
                         if (status != 'rejected')
                           _actionButton(
-                              label: 'Reject',
-                              color: AppColors.select,
-                              onTap: () => _updateStatus(context, 'rejected'),
-                            ),
+                            label: 'Reject',
+                            color: AppColors.select,
+                            onTap: () => _updateStatus(context, 'rejected'),
+                          ),
                       ],
                     ),
 
@@ -223,19 +242,24 @@ class ModelApplicationCard extends StatelessWidget {
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.person_outline, color: AppColors.inkSoft),
+                          icon: const Icon(
+                            Icons.person_outline,
+                            color: AppColors.inkSoft,
+                          ),
                           onPressed: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    UserProfilePage(uid: modelId),
+                                builder: (_) => UserProfilePage(uid: modelId),
                               ),
                             );
                           },
                         ),
                         IconButton(
-                          icon: const Icon(Icons.favorite_border, color: AppColors.inkSoft),
+                          icon: const Icon(
+                            Icons.favorite_border,
+                            color: AppColors.inkSoft,
+                          ),
                           onPressed: () {},
                         ),
                       ],
@@ -258,8 +282,7 @@ class ModelApplicationCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: onTap == null
               ? AppColors.paperRaised
@@ -278,10 +301,7 @@ class ModelApplicationCard extends StatelessWidget {
     );
   }
 
-  Future<void> _updateStatus(
-    BuildContext context,
-    String newStatus,
-  ) async {
+  Future<void> _updateStatus(BuildContext context, String newStatus) async {
     await FirebaseFirestore.instance
         .collection('gigs')
         .doc(gigId)

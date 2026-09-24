@@ -46,14 +46,12 @@ class SearchService {
 
     for (final doc in usernameLowerQuery.docs) {
       allDocs.putIfAbsent(doc.id, () => {...doc.data(), 'uid': doc.id});
-      
     }
     for (final doc in usernameQuery.docs) {
       allDocs.putIfAbsent(doc.id, () => {...doc.data(), 'uid': doc.id});
     }
     for (final doc in fullNameLowerQuery.docs) {
       allDocs.putIfAbsent(doc.id, () => {...doc.data(), 'uid': doc.id});
-      
     }
     for (final doc in fullNameQuery.docs) {
       allDocs.putIfAbsent(doc.id, () => {...doc.data(), 'uid': doc.id});

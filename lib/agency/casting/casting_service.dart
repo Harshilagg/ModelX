@@ -14,12 +14,24 @@ class CastingService {
 
   Future<QuerySnapshot> fetchCastingsForAgency(String agencyId) async {
     // Default fetch: returns most recent castings for the agency.
-    return _db.collection('castings').where('agencyId', isEqualTo: agencyId).orderBy('createdAt', descending: true).get();
+    return _db
+        .collection('castings')
+        .where('agencyId', isEqualTo: agencyId)
+        .orderBy('createdAt', descending: true)
+        .get();
   }
 
   /// Paginated fetch: provide optional [startAfter] document to page through results.
-  Future<QuerySnapshot> fetchCastingsForAgencyPage(String agencyId, {DocumentSnapshot? startAfter, int limit = 20}) async {
-    Query q = _db.collection('castings').where('agencyId', isEqualTo: agencyId).orderBy('createdAt', descending: true).limit(limit);
+  Future<QuerySnapshot> fetchCastingsForAgencyPage(
+    String agencyId, {
+    DocumentSnapshot? startAfter,
+    int limit = 20,
+  }) async {
+    Query q = _db
+        .collection('castings')
+        .where('agencyId', isEqualTo: agencyId)
+        .orderBy('createdAt', descending: true)
+        .limit(limit);
     if (startAfter != null) {
       q = q.startAfterDocument(startAfter);
     }
@@ -30,8 +42,14 @@ class CastingService {
     return _db.collection('castings').doc(id).get();
   }
 
-  Future<void> applyToCasting(String castingId, Map<String, dynamic> applicant) async {
-    final applicantsRef = _db.collection('castings').doc(castingId).collection('applicants');
+  Future<void> applyToCasting(
+    String castingId,
+    Map<String, dynamic> applicant,
+  ) async {
+    final applicantsRef = _db
+        .collection('castings')
+        .doc(castingId)
+        .collection('applicants');
     final modelId = (applicant['modelId'] as String?);
 
     if (modelId == null || modelId.isEmpty) {
@@ -41,7 +59,9 @@ class CastingService {
         'appliedAt': FieldValue.serverTimestamp(),
         'status': applicant['status'] ?? 'pending',
       });
-      await _db.collection('castings').doc(castingId).update({'applicationsCount': FieldValue.increment(1)});
+      await _db.collection('castings').doc(castingId).update({
+        'applicationsCount': FieldValue.increment(1),
+      });
       return;
     }
 
@@ -62,10 +82,24 @@ class CastingService {
   }
 
   Future<QuerySnapshot> fetchApplicants(String castingId) async {
-    return _db.collection('castings').doc(castingId).collection('applicants').orderBy('appliedAt', descending: true).get();
+    return _db
+        .collection('castings')
+        .doc(castingId)
+        .collection('applicants')
+        .orderBy('appliedAt', descending: true)
+        .get();
   }
 
-  Future<void> updateApplicantStatus(String castingId, String applicantId, String status) async {
-    await _db.collection('castings').doc(castingId).collection('applicants').doc(applicantId).update({'status': status});
+  Future<void> updateApplicantStatus(
+    String castingId,
+    String applicantId,
+    String status,
+  ) async {
+    await _db
+        .collection('castings')
+        .doc(castingId)
+        .collection('applicants')
+        .doc(applicantId)
+        .update({'status': status});
   }
 }

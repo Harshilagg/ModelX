@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../pages/login_page.dart';
+import '../onboarding/login_page.dart';
 import '../ui/app_theme.dart';
 import '../widgets/app_action_bar.dart';
 import '../widgets/app_card.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/section_header.dart';
 import '../widgets/state_views.dart';
-
 
 class BrandProfilePage extends StatefulWidget {
   const BrandProfilePage({super.key});
@@ -73,16 +72,12 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
   }
 
   Future<void> _save() async {
-    await FirebaseFirestore.instance
-        .collection('brands')
-        .doc(uid)
-        .update({
+    await FirebaseFirestore.instance.collection('brands').doc(uid).update({
       'brandName': brandName.text.trim(),
       'industry': industry.text.trim(),
       'aboutBrand': about.text.trim(),
       'website': website.text.trim(),
-      'locations':
-          locations.text.split(',').map((e) => e.trim()).toList(),
+      'locations': locations.text.split(',').map((e) => e.trim()).toList(),
       'socialLinks': {
         'instagram': instagram.text.trim(),
         'linkedin': linkedin.text.trim(),
@@ -92,30 +87,27 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
     });
 
     setState(() => isEdit = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile updated')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Profile updated')));
   }
 
   Future<void> _signOut() async {
-  await FirebaseAuth.instance.signOut();
+    await FirebaseAuth.instance.signOut();
 
-  if (!mounted) return;
+    if (!mounted) return;
 
-  Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(builder: (_) => const LoginPage()),
-    (_) => false,
-  );
-}
-
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const OnboardingLoginPage()),
+      (_) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return const Scaffold(
-        body: LoadingState(),
-      );
+      return const Scaffold(body: LoadingState());
     }
 
     return Scaffold(
@@ -124,7 +116,11 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
         backgroundColor: AppColors.backstage,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.onBackstage),
-        titleTextStyle: const TextStyle(color: AppColors.onBackstage, fontWeight: FontWeight.w700, fontSize: 18),
+        titleTextStyle: const TextStyle(
+          color: AppColors.onBackstage,
+          fontWeight: FontWeight.w700,
+          fontSize: 18,
+        ),
         title: const Text('Brand Profile'),
         actions: [
           TextButton(
@@ -132,10 +128,7 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
             onPressed: () => setState(() => isEdit = !isEdit),
             child: Text(isEdit ? 'Cancel' : 'Edit'),
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _signOut,
-          ),
+          IconButton(icon: const Icon(Icons.logout), onPressed: _signOut),
         ],
       ),
       bottomNavigationBar: isEdit
@@ -149,7 +142,6 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             // ================= HERO (backstage) =================
             Container(
               width: double.infinity,
@@ -162,13 +154,20 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
                   const SizedBox(height: 22),
                   Text(
                     brandName.text.isEmpty ? 'Your Brand' : brandName.text,
-                    style: AppTypography.displayAccent(fontSize: 44, color: AppColors.onBackstage),
+                    style: AppTypography.displayAccent(
+                      fontSize: 44,
+                      color: AppColors.onBackstage,
+                    ),
                   ),
                   if (industry.text.trim().isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Text(
                       industry.text.trim(),
-                      style: const TextStyle(color: AppColors.onBackstageSoft, fontSize: 14.5, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        color: AppColors.onBackstageSoft,
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ],
@@ -224,7 +223,11 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
                     child: Column(
                       children: [
                         _field('About Brand', about, maxLines: 6),
-                        _field('Locations (comma separated)', locations, last: true),
+                        _field(
+                          'Locations (comma separated)',
+                          locations,
+                          last: true,
+                        ),
                       ],
                     ),
                   ),
@@ -247,9 +250,7 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
 
                   SectionHeader(title: 'Campaign Gallery'),
                   const SizedBox(height: AppSpacing.md),
-                  AppCard(
-                    child: _projectPlaceholder(),
-                  ),
+                  AppCard(child: _projectPlaceholder()),
 
                   const SizedBox(height: AppSpacing.xl),
                 ],
@@ -263,17 +264,19 @@ class _BrandProfilePageState extends State<BrandProfilePage> {
 
   // ================= UI HELPERS =================
 
-  Widget _field(String label, TextEditingController c,
-      {int maxLines = 1, bool last = false}) {
+  Widget _field(
+    String label,
+    TextEditingController c, {
+    int maxLines = 1,
+    bool last = false,
+  }) {
     return Padding(
       padding: EdgeInsets.only(bottom: last ? 0 : AppSpacing.md),
       child: TextField(
         controller: c,
         maxLines: maxLines,
         enabled: isEdit,
-        decoration: InputDecoration(
-          labelText: label,
-        ),
+        decoration: InputDecoration(labelText: label),
       ),
     );
   }

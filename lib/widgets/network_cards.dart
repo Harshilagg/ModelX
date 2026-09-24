@@ -46,19 +46,20 @@ class PersonCropCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
-    final name = (data['fullName'] ??
-            '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}')
-        .toString()
-        .trim();
+    final name =
+        (data['fullName'] ??
+                '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}')
+            .toString()
+            .trim();
     final location = (data['location'] ?? '').toString();
     final height = (data['height'] ?? '').toString();
 
     // City first, then height — the two things that decide whether a
     // stranger is worth a tap.
     final meta = [
-      if (location.isNotEmpty) location.toUpperCase(),
+      if (location.isNotEmpty) location,
       if (height.isNotEmpty)
-        '$height ${(data['heightUnit'] ?? 'cm').toString().toUpperCase()}',
+        '$height ${(data['heightUnit'] ?? 'cm').toString()}',
     ].join(' · ');
 
     final card = GestureDetector(
@@ -100,11 +101,14 @@ class PersonCropCard extends StatelessWidget {
           const SizedBox(height: 8),
           Flexible(
             child: Text(
-              (name.isEmpty ? 'User' : name).toUpperCase(),
+              (name.isEmpty ? 'User' : name),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: BoardType.title(
-                  fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
           if (meta.isNotEmpty) ...[
@@ -232,14 +236,13 @@ class BoardPoster {
 
     // Hiring now, then most active, then alphabetical so the order is
     // stable between snapshots.
-    return posters.values.toList()
-      ..sort((a, b) {
-        final byOpen = b.openCount.compareTo(a.openCount);
-        if (byOpen != 0) return byOpen;
-        final byPostings = b.postingCount.compareTo(a.postingCount);
-        if (byPostings != 0) return byPostings;
-        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-      });
+    return posters.values.toList()..sort((a, b) {
+      final byOpen = b.openCount.compareTo(a.openCount);
+      if (byOpen != 0) return byOpen;
+      final byPostings = b.postingCount.compareTo(a.postingCount);
+      if (byPostings != 0) return byPostings;
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
   }
 }
 
@@ -333,7 +336,7 @@ class PosterCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    poster.isGig ? 'BRAND' : 'AGENCY',
+                    poster.isGig ? 'Brand' : 'Agency',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: BoardType.mono(
@@ -348,7 +351,7 @@ class PosterCard extends StatelessWidget {
             const SizedBox(height: 10),
             Flexible(
               child: Text(
-                (trimmed.isEmpty ? 'Unnamed' : trimmed).toUpperCase(),
+                (trimmed.isEmpty ? 'Unnamed' : trimmed),
                 maxLines: _nameLines,
                 overflow: TextOverflow.ellipsis,
                 style: BoardType.display(

@@ -7,7 +7,12 @@ class PortfolioGrid extends StatelessWidget {
   final void Function(DocumentSnapshot) onDelete;
   final void Function(String, String) onView;
 
-  const PortfolioGrid({super.key, required this.stream, required this.onDelete, required this.onView});
+  const PortfolioGrid({
+    super.key,
+    required this.stream,
+    required this.onDelete,
+    required this.onView,
+  });
 
   @override
   Widget build(BuildContext context) {

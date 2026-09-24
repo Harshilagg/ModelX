@@ -24,73 +24,68 @@ class CloudinaryService {
     File imageFile,
     String publicId,
   ) async {
-    return _uploadImage(
-      imageFile: imageFile,
-      publicId: "portfolio/$publicId",
-    );
+    return _uploadImage(imageFile: imageFile, publicId: "portfolio/$publicId");
   }
 
   // ================= CORE UPLOAD =================
   static Future<String?> _uploadImage({
-  required File imageFile,
-  required String publicId,
-}) async {
-  final uri = Uri.parse(
-    "https://api.cloudinary.com/v1_1/$_cloudName/image/upload",
-  );
-
-  print("📤 Uploading image to Cloudinary...");
-  print("📁 File path: ${imageFile.path}");
-  print("🆔 Public ID: $publicId");
-  print("☁️ Cloud name: $_cloudName");
-  print("🎯 Upload preset: $_uploadPreset");
-
-  final request = http.MultipartRequest("POST", uri)
-    ..fields["upload_preset"] = _uploadPreset
-    ..fields["public_id"] = publicId
-    ..files.add(
-      await http.MultipartFile.fromPath("file", imageFile.path),
+    required File imageFile,
+    required String publicId,
+  }) async {
+    final uri = Uri.parse(
+      "https://api.cloudinary.com/v1_1/$_cloudName/image/upload",
     );
 
-  try {
-    final response = await request.send();
-    final responseBody = await response.stream.bytesToString();
+    print("📤 Uploading image to Cloudinary...");
+    print("📁 File path: ${imageFile.path}");
+    print("🆔 Public ID: $publicId");
+    print("☁️ Cloud name: $_cloudName");
+    print("🎯 Upload preset: $_uploadPreset");
 
-    print("📨 Status code: ${response.statusCode}");
-    print("📨 Response body: $responseBody");
+    final request = http.MultipartRequest("POST", uri)
+      ..fields["upload_preset"] = _uploadPreset
+      ..fields["public_id"] = publicId
+      ..files.add(await http.MultipartFile.fromPath("file", imageFile.path));
 
-    if (response.statusCode == 200) {
-      final decoded = jsonDecode(responseBody);
-      return decoded["secure_url"];
-    } else {
-      print("❌ Cloudinary upload failed");
+    try {
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+
+      print("📨 Status code: ${response.statusCode}");
+      print("📨 Response body: $responseBody");
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(responseBody);
+        return decoded["secure_url"];
+      } else {
+        print("❌ Cloudinary upload failed");
+        return null;
+      }
+    } catch (e) {
+      print("🔥 Cloudinary exception: $e");
       return null;
     }
-  } catch (e) {
-    print("🔥 Cloudinary exception: $e");
-    return null;
   }
-}
-static Future<bool> deleteImage(String publicId) async {
-  final uri = Uri.parse(
-    "https://api.cloudinary.com/v1_1/$_cloudName/image/destroy",
-  );
 
-  final request = http.MultipartRequest("POST", uri)
-    ..fields["public_id"] = publicId
-    ..fields["upload_preset"] = _uploadPreset;
+  static Future<bool> deleteImage(String publicId) async {
+    final uri = Uri.parse(
+      "https://api.cloudinary.com/v1_1/$_cloudName/image/destroy",
+    );
 
-  try {
-    final response = await request.send();
-    final body = await response.stream.bytesToString();
+    final request = http.MultipartRequest("POST", uri)
+      ..fields["public_id"] = publicId
+      ..fields["upload_preset"] = _uploadPreset;
 
-    debugPrint("🗑 Cloudinary delete response: $body");
+    try {
+      final response = await request.send();
+      final body = await response.stream.bytesToString();
 
-    return response.statusCode == 200;
-  } catch (e) {
-    debugPrint("🔥 Cloudinary delete error: $e");
-    return false;
+      debugPrint("🗑 Cloudinary delete response: $body");
+
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint("🔥 Cloudinary delete error: $e");
+      return false;
+    }
   }
-}
-
 }

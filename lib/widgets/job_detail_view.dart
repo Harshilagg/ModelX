@@ -85,12 +85,16 @@ class BoardJobDetail extends StatelessWidget {
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () => Navigator.of(context).maybePop(),
-            child: const Icon(Icons.arrow_back, size: 18, color: BoardColors.ink),
+            child: const Icon(
+              Icons.arrow_back,
+              size: 18,
+              color: BoardColors.ink,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              title.toUpperCase(),
+              title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: BoardType.title(fontSize: 14, letterSpacing: 1.7),
@@ -118,19 +122,23 @@ class BoardJobDetail extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      title.toUpperCase(),
-                      maxLines: 3,
+                      title,
+                      // Two lines, not three. Sentence case fits more
+                      // per line than the condensed capitals this
+                      // replaced, and a third line of 32pt type pushed
+                      // the hero past the screen at large text sizes --
+                      // the band does not scroll.
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: BoardType.display(
                         fontSize: 32,
                         color: BoardColors.onInk,
-                        height: 0.92,
                       ),
                     ),
                     if (posterLine.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Text(
-                        posterLine.toUpperCase(),
+                        posterLine,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: BoardType.mono(
@@ -229,7 +237,10 @@ class BoardJobDetail extends StatelessWidget {
                     v,
                     neutral: true,
                     fontSize: 10,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 7,
+                    ),
                   ),
               ],
             ),
@@ -248,15 +259,15 @@ class BoardJobDetail extends StatelessWidget {
             children: [
               for (final m in measurements)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: BoardColors.card,
                     border: Border.all(color: BoardColors.inkLine),
                   ),
-                  child: Text(
-                    m.toUpperCase(),
-                    style: BoardType.mono(fontSize: 10),
-                  ),
+                  child: Text(m, style: BoardType.mono(fontSize: 10)),
                 ),
             ],
           ),
@@ -270,7 +281,7 @@ class BoardJobDetail extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  applicationsLine.toUpperCase(),
+                  applicationsLine,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: BoardType.mono(
@@ -312,10 +323,13 @@ class BoardJobDetail extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    depValue.toUpperCase(),
+                    depValue,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: BoardType.mono(fontSize: 13, color: BoardColors.onInk),
+                    style: BoardType.mono(
+                      fontSize: 13,
+                      color: BoardColors.onInk,
+                    ),
                   ),
                 ],
               ),
@@ -325,17 +339,26 @@ class BoardJobDetail extends StatelessWidget {
               const SizedBox(
                 width: 22,
                 height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2.2, color: BoardColors.onInk),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.2,
+                  color: BoardColors.onInk,
+                ),
               )
             else if (hasApplied)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 13),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 13,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: BoardColors.onInk.withValues(alpha: 0.35), width: 1.5),
+                  border: Border.all(
+                    color: BoardColors.onInk.withValues(alpha: 0.35),
+                    width: 1.5,
+                  ),
                 ),
                 child: Text(
-                  appliedLabel.toUpperCase(),
+                  appliedLabel,
                   style: BoardType.title(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -349,13 +372,16 @@ class BoardJobDetail extends StatelessWidget {
                 behavior: HitTestBehavior.opaque,
                 onTap: onApply,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 13),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 30,
+                    vertical: 13,
+                  ),
                   decoration: BoxDecoration(
                     color: BoardColors.brass,
                     borderRadius: BorderRadius.circular(24),
                   ),
                   child: Text(
-                    'APPLY',
+                    'Apply',
                     style: BoardType.title(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,

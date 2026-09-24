@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'login_page.dart';
+import '../onboarding/login_page.dart';
 import 'connected_users_page.dart';
 import 'user_profile_page.dart';
 import 'create_post_page.dart';
@@ -14,6 +14,7 @@ import 'package:flutter_application_modelx/services/cloudinary_service.dart';
 import '../agency/scouting/ai_scout_service.dart'; // Import AI Service
 import '../ui/app_theme.dart';
 import '../ui/board_theme.dart';
+import 'settings_page.dart';
 import '../widgets/board_widgets.dart';
 import '../widgets/portfolio_masonry.dart';
 import '../widgets/profile_photo_viewer.dart';
@@ -165,7 +166,10 @@ class _ProfilePageState extends State<ProfilePage> {
     if (user == null) return;
 
     try {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
         setState(() {
@@ -173,7 +177,8 @@ class _ProfilePageState extends State<ProfilePage> {
           if (data['fullName'] != null) {
             fullNameController.text = data['fullName'];
           } else if (data['firstName'] != null || data['lastName'] != null) {
-            fullNameController.text = "${data['firstName'] ?? ''} ${data['lastName'] ?? ''}".trim();
+            fullNameController.text =
+                "${data['firstName'] ?? ''} ${data['lastName'] ?? ''}".trim();
           } else {
             fullNameController.text = '';
           }
@@ -255,21 +260,23 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => loading = true);
 
     final user = _auth.currentUser!;
-    final imageUrl = await CloudinaryService.uploadProfileImage(cropped, user.uid);
+    final imageUrl = await CloudinaryService.uploadProfileImage(
+      cropped,
+      user.uid,
+    );
 
     if (!mounted) return;
     if (imageUrl == null) {
       setState(() => loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Upload failed")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Upload failed")));
       return;
     }
 
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .set({'profileImage': imageUrl}, SetOptions(merge: true));
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      'profileImage': imageUrl,
+    }, SetOptions(merge: true));
 
     if (!mounted) return;
     setState(() {
@@ -307,7 +314,9 @@ class _ProfilePageState extends State<ProfilePage> {
         'tagline': taglineController.text.trim(),
         'heightUnit': heightUnit,
         'shoeSizeUnit': shoeSizeUnit,
-        'usernameLower': username.trim().isNotEmpty ? username.trim().toLowerCase() : null,
+        'usernameLower': username.trim().isNotEmpty
+            ? username.trim().toLowerCase()
+            : null,
         'skinColor': skinColorController.text.trim(),
         'waist': waistController.text.trim(),
         'hips': hipsController.text.trim(),
@@ -337,7 +346,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
       if (!mounted) return;
       setState(() => loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile updated')));
       _loadUserData();
     }
   }
@@ -348,7 +359,7 @@ class _ProfilePageState extends State<ProfilePage> {
     // After sign out, go to LoginPage and clear the stack so the user can
     // log in or create an account.
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginPage()),
+      MaterialPageRoute(builder: (_) => const OnboardingLoginPage()),
       (Route<dynamic> route) => false,
     );
   }
@@ -361,8 +372,12 @@ class _ProfilePageState extends State<ProfilePage> {
     final user = _auth.currentUser!;
     final file = File(pickedFile.path);
 
-    final publicId = "portfolio/${user.uid}_${DateTime.now().millisecondsSinceEpoch}";
-    final imageUrl = await CloudinaryService.uploadPortfolioImage(file, publicId);
+    final publicId =
+        "portfolio/${user.uid}_${DateTime.now().millisecondsSinceEpoch}";
+    final imageUrl = await CloudinaryService.uploadPortfolioImage(
+      file,
+      publicId,
+    );
     if (imageUrl == null) return;
 
     await FirebaseFirestore.instance.collection('portfolio').add({
@@ -384,7 +399,10 @@ class _ProfilePageState extends State<ProfilePage> {
         await CloudinaryService.deleteImage(publicId);
       }
 
-      await FirebaseFirestore.instance.collection('portfolio').doc(mediaDoc.id).delete();
+      await FirebaseFirestore.instance
+          .collection('portfolio')
+          .doc(mediaDoc.id)
+          .delete();
 
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -409,7 +427,11 @@ class _ProfilePageState extends State<ProfilePage> {
           body: Center(
             child: type == "image"
                 ? Image.network(url)
-                : const Icon(Icons.play_circle_fill, size: 80, color: Colors.white),
+                : const Icon(
+                    Icons.play_circle_fill,
+                    size: 80,
+                    color: Colors.white,
+                  ),
           ),
         ),
       ),
@@ -419,14 +441,20 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _showFollowersList() async {
     final user = _auth.currentUser;
     if (user == null) return;
-    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
     final data = doc.data() ?? {};
     final followers = data['followers'] ?? [];
 
     final List<Map<String, dynamic>> followerData = [];
     for (var fid in followers) {
       try {
-        final fdoc = await FirebaseFirestore.instance.collection('users').doc(fid).get();
+        final fdoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(fid)
+            .get();
         if (fdoc.exists && fdoc.data() != null) {
           final d = fdoc.data()!;
           d['uid'] = fid;
@@ -444,17 +472,22 @@ class _ProfilePageState extends State<ProfilePage> {
         itemCount: followerData.length,
         itemBuilder: (context, index) {
           final f = followerData[index];
-          final name = (f['fullName'] ?? '${f['firstName'] ?? ''} ${f['lastName'] ?? ''}')
-              .toString()
-              .trim();
+          final name =
+              (f['fullName'] ??
+                      '${f['firstName'] ?? ''} ${f['lastName'] ?? ''}')
+                  .toString()
+                  .trim();
           return ListTile(
             leading: SizedBox(
               width: 36,
               height: 42,
-              child: BoardMedia(url: (f['profileImage'] ?? '').toString(), cut: 10),
+              child: BoardMedia(
+                url: (f['profileImage'] ?? '').toString(),
+                cut: 10,
+              ),
             ),
             title: Text(
-              name.isEmpty ? 'User' : name.toUpperCase(),
+              name.isEmpty ? 'User' : name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: BoardType.title(fontSize: 16, fontWeight: FontWeight.w700),
@@ -462,14 +495,19 @@ class _ProfilePageState extends State<ProfilePage> {
             subtitle: f['username'] != null
                 ? Text(
                     '@${f['username']}',
-                    style: BoardType.mono(fontSize: 10, color: BoardColors.inkSoft),
+                    style: BoardType.mono(
+                      fontSize: 10,
+                      color: BoardColors.inkSoft,
+                    ),
                   )
                 : null,
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => UserProfilePage(uid: f['uid'])),
+                MaterialPageRoute(
+                  builder: (_) => UserProfilePage(uid: f['uid']),
+                ),
               );
             },
           );
@@ -501,7 +539,10 @@ class _ProfilePageState extends State<ProfilePage> {
           accent: BoardColors.brass,
         ),
         Expanded(
-          child: IndexedStack(index: _tab, children: [_detailsTab(), _portfolioTab(), _postsTab()]),
+          child: IndexedStack(
+            index: _tab,
+            children: [_detailsTab(), _portfolioTab(), _postsTab()],
+          ),
         ),
       ],
     );
@@ -515,7 +556,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     final handle = [
       if (username.trim().isNotEmpty) '@${username.trim()}',
-      if (location.isNotEmpty) location.toUpperCase(),
+      if (location.isNotEmpty) location,
     ].join(' · ');
 
     return Container(
@@ -534,13 +575,17 @@ class _ProfilePageState extends State<ProfilePage> {
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () => Navigator.of(context).maybePop(),
-                      child: const Icon(Icons.arrow_back, size: 18, color: BoardColors.onInk),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        size: 18,
+                        color: BoardColors.onInk,
+                      ),
                     )
                   else
                     const SizedBox(width: 18),
                   Expanded(
                     child: Text(
-                      'PROFILE',
+                      'Profile',
                       textAlign: TextAlign.center,
                       style: BoardType.title(
                         fontSize: 15,
@@ -550,22 +595,54 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                   ),
-                  // Edit lives here, not at the foot of a long scroll.
-                  // It is the thing a model reaches for most and it used
-                  // to be the furthest away. Log out moved the other way,
-                  // to the bottom of Details — rare, and not something to
-                  // put a thumb's width from the avatar.
+                  // Edit lives here, not at the foot of a long
+                  // scroll. It is the thing a model reaches for most and
+                  // it used to be the furthest away.
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () => _showEditProfileModal(context),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('EDIT',
-                            style: BoardType.mono(fontSize: 10, color: BoardColors.brass)),
+                        Text(
+                          'Edit',
+                          style: BoardType.mono(
+                            fontSize: 10,
+                            color: BoardColors.brass,
+                          ),
+                        ),
                         const SizedBox(width: 5),
-                        const Icon(Icons.edit_outlined, size: 14, color: BoardColors.brass),
+                        const Icon(
+                          Icons.edit_outlined,
+                          size: 14,
+                          color: BoardColors.brass,
+                        ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  // Settings: the theme switch, the unit switches and
+                  // log out. Those were scattered -- the units buried
+                  // inside the measurements editor, log out at the foot
+                  // of a long scroll -- and a gear is where people look
+                  // for them.
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsPage()),
+                    ),
+                    child: Semantics(
+                      button: true,
+                      label: 'Settings',
+                      child: const SizedBox(
+                        width: 44,
+                        height: 44,
+                        child: Icon(
+                          Icons.settings_outlined,
+                          size: 18,
+                          color: BoardColors.onInk,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -606,7 +683,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          (name.isEmpty ? 'Your name' : name).toUpperCase(),
+                          (name.isEmpty ? 'Your name' : name),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: BoardType.display(
@@ -621,7 +698,10 @@ class _ProfilePageState extends State<ProfilePage> {
                             handle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: BoardType.mono(fontSize: 10, color: BoardColors.onInkSoft),
+                            style: BoardType.mono(
+                              fontSize: 10,
+                              color: BoardColors.onInkSoft,
+                            ),
                           ),
                         ],
                         const SizedBox(height: 8),
@@ -641,7 +721,9 @@ class _ProfilePageState extends State<ProfilePage> {
                               child: GestureDetector(
                                 onTap: () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => const ConnectedUsersPage()),
+                                  MaterialPageRoute(
+                                    builder: (_) => const ConnectedUsersPage(),
+                                  ),
                                 ),
                                 child: BoardStatWell(
                                   label: 'Following',
@@ -690,19 +772,19 @@ class _ProfilePageState extends State<ProfilePage> {
           behavior: HitTestBehavior.opaque,
           onTap: _editAbout,
           child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-          decoration: BoxDecoration(
-            color: BoardColors.card,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            bio.isEmpty ? 'Add a short bio.' : bio,
-            style: BoardType.body(
-              fontSize: 13,
-              color: bio.isEmpty ? BoardColors.inkSoft : BoardColors.ink,
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+            decoration: BoxDecoration(
+              color: BoardColors.card,
+              borderRadius: BorderRadius.circular(8),
             ),
-          ),
+            child: Text(
+              bio.isEmpty ? 'Add a short bio.' : bio,
+              style: BoardType.body(
+                fontSize: 13,
+                color: bio.isEmpty ? BoardColors.inkSoft : BoardColors.ink,
+              ),
+            ),
           ),
         ),
 
@@ -720,18 +802,28 @@ class _ProfilePageState extends State<ProfilePage> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: (contactValue.isEmpty && emailValue.isEmpty)
-                ? Text('Add a phone number brands can reach you on.',
-                    style: BoardType.body(fontSize: 13, color: BoardColors.inkSoft))
+                ? Text(
+                    'Add a phone number brands can reach you on.',
+                    style: BoardType.body(
+                      fontSize: 13,
+                      color: BoardColors.inkSoft,
+                    ),
+                  )
                 : Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (contactValue.isNotEmpty)
-                        SpecRow(label: 'Tel', value: contactValue, topBorder: false),
+                        SpecRow(
+                          label: 'Tel',
+                          value: contactValue,
+                          topBorder: false,
+                        ),
                       if (emailValue.isNotEmpty)
                         SpecRow(
-                            label: 'Eml',
-                            value: emailValue,
-                            topBorder: contactValue.isNotEmpty),
+                          label: 'Eml',
+                          value: emailValue,
+                          topBorder: contactValue.isNotEmpty,
+                        ),
                     ],
                   ),
           ),
@@ -752,7 +844,11 @@ class _ProfilePageState extends State<ProfilePage> {
         const SizedBox(height: 6),
         _specRow(
           'Appearance',
-          _summary([skinColorController.text, eyeColorController.text, hairColorController.text]),
+          _summary([
+            skinColorController.text,
+            eyeColorController.text,
+            hairColorController.text,
+          ]),
           _openAppearance,
         ),
         const SizedBox(height: 6),
@@ -774,16 +870,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
         const SizedBox(height: 12),
         _compCardRow(),
-
-        const SizedBox(height: 14),
-        // Edit moved to the header; this slot is log out. Without it the
-        // action had nowhere left to live at all.
-        BoardButton(
-          label: 'Log out',
-          background: BoardColors.shell,
-          foreground: BoardColors.ink,
-          onTap: logout,
-        ),
       ],
     );
   }
@@ -796,14 +882,14 @@ class _ProfilePageState extends State<ProfilePage> {
         .where((p) => p.isNotEmpty && p != '—')
         .toList();
     if (kept.isEmpty) return 'NOT SET YET';
-    return kept.join(' · ').toUpperCase();
+    return kept.join(' · ');
   }
 
   Widget _quadStats() {
     final cells = [
-      ('Height', _statValue(heightController.text, heightUnit.toUpperCase())),
+      ('Height', _statValue(heightController.text, heightUnit)),
       ('Waist', _statValue(waistController.text)),
-      ('Shoe', _statValue(shoeSizeController.text, shoeSizeUnit.toUpperCase())),
+      ('Shoe', _statValue(shoeSizeController.text, shoeSizeUnit)),
       ('Age', _statValue(ageController.text)),
     ];
 
@@ -823,13 +909,16 @@ class _ProfilePageState extends State<ProfilePage> {
                 Expanded(
                   child: Container(
                     color: BoardColors.card,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 10,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          cells[i].$1.toUpperCase(),
+                          cells[i].$1,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: BoardType.mono(
@@ -844,7 +933,10 @@ class _ProfilePageState extends State<ProfilePage> {
                           cells[i].$2,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: BoardType.mono(fontSize: 12.5, letterSpacing: 0.2),
+                          style: BoardType.mono(
+                            fontSize: 12.5,
+                            letterSpacing: 0.2,
+                          ),
                         ),
                       ],
                     ),
@@ -882,21 +974,29 @@ class _ProfilePageState extends State<ProfilePage> {
                   setState(() => heightUnit = unit);
                   final user = _auth.currentUser;
                   if (user == null) return;
-                  await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-                    'heightUnit': unit,
-                  }, SetOptions(merge: true));
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .set({'heightUnit': unit}, SetOptions(merge: true));
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
-                    color: heightUnit == unit ? BoardColors.ink : BoardColors.inkWell,
+                    color: heightUnit == unit
+                        ? BoardColors.ink
+                        : BoardColors.inkWell,
                     borderRadius: BorderRadius.circular(13),
                   ),
                   child: Text(
-                    unit.toUpperCase(),
+                    unit,
                     style: BoardType.mono(
                       fontSize: 10,
-                      color: heightUnit == unit ? BoardColors.onInk : BoardColors.inkSoft,
+                      color: heightUnit == unit
+                          ? BoardColors.onInk
+                          : BoardColors.inkSoft,
                     ),
                   ),
                 ),
@@ -913,7 +1013,10 @@ class _ProfilePageState extends State<ProfilePage> {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: BoardColors.card, borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(
+          color: BoardColors.card,
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Row(
           children: [
             Expanded(
@@ -922,7 +1025,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    title.toUpperCase(),
+                    title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: BoardType.title(
@@ -936,7 +1039,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     detail,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: BoardType.mono(fontSize: 10, color: BoardColors.inkSoft),
+                    style: BoardType.mono(
+                      fontSize: 10,
+                      color: BoardColors.inkSoft,
+                    ),
                   ),
                 ],
               ),
@@ -946,8 +1052,15 @@ class _ProfilePageState extends State<ProfilePage> {
               width: 28,
               height: 28,
               alignment: Alignment.center,
-              decoration: const BoxDecoration(shape: BoxShape.circle, color: BoardColors.ink),
-              child: const Icon(Icons.arrow_outward_rounded, size: 14, color: BoardColors.brass),
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: BoardColors.ink,
+              ),
+              child: const Icon(
+                Icons.arrow_outward_rounded,
+                size: 14,
+                color: BoardColors.brass,
+              ),
             ),
           ],
         ),
@@ -978,7 +1091,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CompCardPage())),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CompCardPage()),
+      ),
       child: Container(
         padding: const EdgeInsets.all(13),
         decoration: BoxDecoration(
@@ -993,7 +1109,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'COMP CARD',
+                    'Comp card',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: BoardType.title(
@@ -1008,7 +1124,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     'FREE · NO WATERMARK · DETAILS $statsPct% READY',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: BoardType.mono(fontSize: 9.5, color: BoardColors.onInkSoft),
+                    style: BoardType.mono(
+                      fontSize: 9.5,
+                      color: BoardColors.onInkSoft,
+                    ),
                   ),
                 ],
               ),
@@ -1018,8 +1137,15 @@ class _ProfilePageState extends State<ProfilePage> {
               width: 28,
               height: 28,
               alignment: Alignment.center,
-              decoration: const BoxDecoration(shape: BoxShape.circle, color: BoardColors.brass),
-              child: const Icon(Icons.arrow_outward_rounded, size: 14, color: BoardColors.ink),
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: BoardColors.brass,
+              ),
+              child: const Icon(
+                Icons.arrow_outward_rounded,
+                size: 14,
+                color: BoardColors.ink,
+              ),
             ),
           ],
         ),
@@ -1029,16 +1155,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
   /// The edit affordance beside a section heading.
   Widget _editChip(VoidCallback onTap) => GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: const MonoChip(
-          'EDIT',
-          filled: true,
-          accent: BoardColors.ink,
-          fontSize: 9,
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-        ),
-      );
+    behavior: HitTestBehavior.opaque,
+    onTap: onTap,
+    child: const MonoChip(
+      'EDIT',
+      filled: true,
+      accent: BoardColors.ink,
+      fontSize: 9,
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+    ),
+  );
 
   // ---- section editing ----------------------------------------------
 
@@ -1065,11 +1191,20 @@ class _ProfilePageState extends State<ProfilePage> {
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          labelStyle: BoardType.mono(fontSize: 10, color: BoardColors.onInkSoft),
-          hintStyle: BoardType.body(fontSize: 13, color: BoardColors.onInkFaint),
+          labelStyle: BoardType.mono(
+            fontSize: 10,
+            color: BoardColors.onInkSoft,
+          ),
+          hintStyle: BoardType.body(
+            fontSize: 13,
+            color: BoardColors.onInkFaint,
+          ),
           filled: true,
           fillColor: BoardColors.slate,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ),
           border: const OutlineInputBorder(borderSide: BorderSide.none),
           enabledBorder: const OutlineInputBorder(borderSide: BorderSide.none),
           focusedBorder: const OutlineInputBorder(
@@ -1095,7 +1230,13 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: _field(label, controller, keyboardType: TextInputType.number)),
+            Expanded(
+              child: _field(
+                label,
+                controller,
+                keyboardType: TextInputType.number,
+              ),
+            ),
             const SizedBox(width: 8),
             for (final unit in units)
               Padding(
@@ -1107,13 +1248,20 @@ class _ProfilePageState extends State<ProfilePage> {
                     setState(() {});
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 12),
-                    color: current == unit ? BoardColors.brass : BoardColors.slate,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 11,
+                      vertical: 12,
+                    ),
+                    color: current == unit
+                        ? BoardColors.brass
+                        : BoardColors.slate,
                     child: Text(
-                      unit.toUpperCase(),
+                      unit,
                       style: BoardType.mono(
                         fontSize: 10,
-                        color: current == unit ? BoardColors.ink : BoardColors.onInkSoft,
+                        color: current == unit
+                            ? BoardColors.ink
+                            : BoardColors.onInkSoft,
                       ),
                     ),
                   ),
@@ -1132,14 +1280,18 @@ class _ProfilePageState extends State<ProfilePage> {
       barrierColor: BoardColors.scrim,
       isScrollControlled: true,
       builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+        ),
         child: Container(
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(sheetContext).size.height * 0.86,
           ),
           decoration: const BoxDecoration(
             color: BoardColors.ink,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(BoardRadius.sheet)),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(BoardRadius.sheet),
+            ),
           ),
           child: SafeArea(
             top: false,
@@ -1161,19 +1313,26 @@ class _ProfilePageState extends State<ProfilePage> {
                     children: [
                       Expanded(
                         child: Text(
-                          title.toUpperCase(),
+                          title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: BoardType.display(
-                              fontSize: 26, color: BoardColors.onInk, height: 1),
+                            fontSize: 26,
+                            color: BoardColors.onInk,
+                            height: 1,
+                          ),
                         ),
                       ),
                       GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: () => Navigator.of(sheetContext).pop(),
-                        child: Text('CANCEL',
-                            style: BoardType.mono(
-                                fontSize: 11, color: BoardColors.onInkSoft)),
+                        child: Text(
+                          'Cancel',
+                          style: BoardType.mono(
+                            fontSize: 11,
+                            color: BoardColors.onInkSoft,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -1208,53 +1367,101 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _editMeasurements() => _editSection('Measurements', () => [
-        _unitField('Height', heightController, const ['cm', 'in', 'ft'], heightUnit,
-            (u) => heightUnit = u),
-        _field('Bust · waist · hips', measurementsController,
-            hint: 'e.g. 82-60-88'),
-        _field('Waist', waistController, keyboardType: TextInputType.number),
-        _field('Hips', hipsController, keyboardType: TextInputType.number),
-        _field('Shoulder', shoulderWidthController, keyboardType: TextInputType.number),
-        _field('Weight (kg)', weightController, keyboardType: TextInputType.number),
-        _unitField('Shoe size', shoeSizeController, const ['US', 'EU', 'UK'], shoeSizeUnit,
-            (u) => shoeSizeUnit = u),
-      ]);
+  void _editMeasurements() => _editSection(
+    'Measurements',
+    () => [
+      _unitField(
+        'Height',
+        heightController,
+        const ['cm', 'in', 'ft'],
+        heightUnit,
+        (u) => heightUnit = u,
+      ),
+      _field(
+        'Bust · waist · hips',
+        measurementsController,
+        hint: 'e.g. 82-60-88',
+      ),
+      _field('Waist', waistController, keyboardType: TextInputType.number),
+      _field('Hips', hipsController, keyboardType: TextInputType.number),
+      _field(
+        'Shoulder',
+        shoulderWidthController,
+        keyboardType: TextInputType.number,
+      ),
+      _field(
+        'Weight (kg)',
+        weightController,
+        keyboardType: TextInputType.number,
+      ),
+      _unitField(
+        'Shoe size',
+        shoeSizeController,
+        const ['US', 'EU', 'UK'],
+        shoeSizeUnit,
+        (u) => shoeSizeUnit = u,
+      ),
+    ],
+  );
 
-  void _editAppearance() => _editSection('Appearance', () => [
-        _field('Skin tone', skinColorController),
-        _field('Eye colour', eyeColorController),
-        _field('Hair colour', hairColorController),
-        _field('Tattoos', tattoosController),
-        _field('Piercing', piercingController),
-        _field('Gender', genderController, hint: 'Male / Female / Other'),
-      ]);
+  void _editAppearance() => _editSection(
+    'Appearance',
+    () => [
+      _field('Skin tone', skinColorController),
+      _field('Eye colour', eyeColorController),
+      _field('Hair colour', hairColorController),
+      _field('Tattoos', tattoosController),
+      _field('Piercing', piercingController),
+      _field('Gender', genderController, hint: 'Male / Female / Other'),
+    ],
+  );
 
-  void _editProfessional() => _editSection('Professional', () => [
-        _field('Skills', skillsController, hint: 'Comma separated'),
-        _field('Preferred work', preferredWorkController),
-        _field('Availability', availabilityController, hint: 'Full-time, freelance'),
-        _field('Experience', experienceController, maxLines: 2),
-        _field('Achievements', achievementsController, maxLines: 3),
-        _field('Tagline', taglineController),
-      ]);
+  void _editProfessional() => _editSection(
+    'Professional',
+    () => [
+      _field('Skills', skillsController, hint: 'Comma separated'),
+      _field('Preferred work', preferredWorkController),
+      _field(
+        'Availability',
+        availabilityController,
+        hint: 'Full-time, freelance',
+      ),
+      _field('Experience', experienceController, maxLines: 2),
+      _field('Achievements', achievementsController, maxLines: 3),
+      _field('Tagline', taglineController),
+    ],
+  );
 
-  void _editCareer() => _editSection('Career History', () => [
-        _field('Projects', projectsController, maxLines: 4, hint: 'One per line'),
-        _field('Agency associations', agenciesController, maxLines: 3, hint: 'One per line'),
-      ]);
+  void _editCareer() => _editSection(
+    'Career History',
+    () => [
+      _field('Projects', projectsController, maxLines: 4, hint: 'One per line'),
+      _field(
+        'Agency associations',
+        agenciesController,
+        maxLines: 3,
+        hint: 'One per line',
+      ),
+    ],
+  );
 
-  void _editAbout() => _editSection('About', () => [
-        _field('Bio', bioController, maxLines: 5),
-      ]);
+  void _editAbout() =>
+      _editSection('About', () => [_field('Bio', bioController, maxLines: 5)]);
 
-  void _editContact() => _editSection('Contact', () => [
-        _field('Full name', fullNameController),
-        _field('City', locationController),
-        _field('Age', ageController, keyboardType: TextInputType.number),
-        _field('Phone', contactController, keyboardType: TextInputType.phone),
-        _field('Email', emailController, keyboardType: TextInputType.emailAddress),
-      ]);
+  void _editContact() => _editSection(
+    'Contact',
+    () => [
+      _field('Full name', fullNameController),
+      _field('City', locationController),
+      _field('Age', ageController, keyboardType: TextInputType.number),
+      _field('Phone', contactController, keyboardType: TextInputType.phone),
+      _field(
+        'Email',
+        emailController,
+        keyboardType: TextInputType.emailAddress,
+      ),
+    ],
+  );
 
   // ---- spec sheets --------------------------------------------------
 
@@ -1308,12 +1515,12 @@ class _ProfilePageState extends State<ProfilePage> {
         const SizedBox(height: 14),
         SpecRow(
           label: 'Height',
-          value: _statValue(heightController.text, heightUnit.toUpperCase()),
+          value: _statValue(heightController.text, heightUnit),
           onDark: true,
         ),
         SpecRow(
           label: 'Shoe size',
-          value: _statValue(shoeSizeController.text, shoeSizeUnit.toUpperCase()),
+          value: _statValue(shoeSizeController.text, shoeSizeUnit),
           onDark: true,
         ),
         SpecRow(
@@ -1332,11 +1539,31 @@ class _ProfilePageState extends State<ProfilePage> {
       title: 'Appearance',
       onEdit: _editAppearance,
       children: [
-        SpecRow(label: 'Skin tone', value: _orDash(skinColorController.text), onDark: true),
-        SpecRow(label: 'Eye color', value: _orDash(eyeColorController.text), onDark: true),
-        SpecRow(label: 'Hair color', value: _orDash(hairColorController.text), onDark: true),
-        SpecRow(label: 'Tattoos', value: _orDash(tattoosController.text), onDark: true),
-        SpecRow(label: 'Piercing', value: _orDash(piercingController.text), onDark: true),
+        SpecRow(
+          label: 'Skin tone',
+          value: _orDash(skinColorController.text),
+          onDark: true,
+        ),
+        SpecRow(
+          label: 'Eye color',
+          value: _orDash(eyeColorController.text),
+          onDark: true,
+        ),
+        SpecRow(
+          label: 'Hair color',
+          value: _orDash(hairColorController.text),
+          onDark: true,
+        ),
+        SpecRow(
+          label: 'Tattoos',
+          value: _orDash(tattoosController.text),
+          onDark: true,
+        ),
+        SpecRow(
+          label: 'Piercing',
+          value: _orDash(piercingController.text),
+          onDark: true,
+        ),
         SpecRow(
           label: 'Gender',
           value: _orDash(genderController.text),
@@ -1353,15 +1580,31 @@ class _ProfilePageState extends State<ProfilePage> {
       title: 'Professional',
       onEdit: _editProfessional,
       children: [
-        SpecRow(label: 'Skills', value: _orDash(skillsController.text), onDark: true),
+        SpecRow(
+          label: 'Skills',
+          value: _orDash(skillsController.text),
+          onDark: true,
+        ),
         SpecRow(
           label: 'Preferred work',
           value: _orDash(preferredWorkController.text),
           onDark: true,
         ),
-        SpecRow(label: 'Availability', value: _orDash(availabilityController.text), onDark: true),
-        SpecRow(label: 'Experience', value: _orDash(experienceController.text), onDark: true),
-        SpecRow(label: 'Achievements', value: _orDash(achievementsController.text), onDark: true),
+        SpecRow(
+          label: 'Availability',
+          value: _orDash(availabilityController.text),
+          onDark: true,
+        ),
+        SpecRow(
+          label: 'Experience',
+          value: _orDash(experienceController.text),
+          onDark: true,
+        ),
+        SpecRow(
+          label: 'Achievements',
+          value: _orDash(achievementsController.text),
+          onDark: true,
+        ),
         SpecRow(
           label: 'Tagline',
           value: _orDash(taglineController.text),
@@ -1417,7 +1660,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     color: BoardColors.brass,
                     borderRadius: BorderRadius.circular(7),
                   ),
-                  child: const Icon(Icons.add, size: 15, color: BoardColors.ink),
+                  child: const Icon(
+                    Icons.add,
+                    size: 15,
+                    color: BoardColors.ink,
+                  ),
                 ),
               ),
             ),
@@ -1440,8 +1687,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   return GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap: () =>
-                        _viewMediaFullScreen(url, (data['mediaType'] ?? 'image').toString()),
+                    onTap: () => _viewMediaFullScreen(
+                      url,
+                      (data['mediaType'] ?? 'image').toString(),
+                    ),
                     onLongPress: () => _confirmDeleteShot(doc),
                     child: BoardMedia(
                       url: url,
@@ -1452,11 +1701,17 @@ class _ProfilePageState extends State<ProfilePage> {
                         child: Padding(
                           padding: const EdgeInsets.all(8),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 4,
+                            ),
                             color: BoardColors.ink,
                             child: Text(
                               'SHOT ${(i + 1).toString().padLeft(2, '0')}',
-                              style: BoardType.mono(fontSize: 9, color: BoardColors.brass),
+                              style: BoardType.mono(
+                                fontSize: 9,
+                                color: BoardColors.brass,
+                              ),
                             ),
                           ),
                         ),
@@ -1485,10 +1740,16 @@ class _ProfilePageState extends State<ProfilePage> {
           style: BoardType.body(fontSize: 13),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: BoardColors.brass)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: BoardColors.brass),
+            ),
           ),
         ],
       ),
@@ -1523,7 +1784,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     color: BoardColors.brass,
                     borderRadius: BorderRadius.circular(7),
                   ),
-                  child: const Icon(Icons.add, size: 15, color: BoardColors.ink),
+                  child: const Icon(
+                    Icons.add,
+                    size: 15,
+                    color: BoardColors.ink,
+                  ),
                 ),
               ),
             ),
@@ -1538,7 +1803,10 @@ class _ProfilePageState extends State<ProfilePage> {
               )
             else
               for (final doc in docs)
-                Padding(padding: const EdgeInsets.only(bottom: 9), child: _ownPost(doc)),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 9),
+                  child: _ownPost(doc),
+                ),
           ],
         );
       },
@@ -1561,7 +1829,8 @@ class _ProfilePageState extends State<ProfilePage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (imageUrl.isNotEmpty) AspectRatio(aspectRatio: 1.35, child: BoardMedia(url: imageUrl)),
+          if (imageUrl.isNotEmpty)
+            AspectRatio(aspectRatio: 1.35, child: BoardMedia(url: imageUrl)),
           Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
@@ -1585,7 +1854,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         onTap: () => showCommentsSheet(context, doc.id),
                         child: Text(
                           '♥ ${likes.length} · COMMENT',
-                          style: BoardType.mono(fontSize: 10, color: BoardColors.inkSoft),
+                          style: BoardType.mono(
+                            fontSize: 10,
+                            color: BoardColors.inkSoft,
+                          ),
                         ),
                       ),
                     ],
@@ -1621,10 +1893,16 @@ class _ProfilePageState extends State<ProfilePage> {
           style: BoardType.title(fontSize: 20, fontWeight: FontWeight.w700),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: BoardColors.brass)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: BoardColors.brass),
+            ),
           ),
         ],
       ),
@@ -1656,7 +1934,11 @@ class _ProfilePageState extends State<ProfilePage> {
                       children: [
                         Container(height: 28, color: BoardColors.slate),
                         const SizedBox(height: 10),
-                        Container(height: 12, width: 140, color: BoardColors.slate),
+                        Container(
+                          height: 12,
+                          width: 140,
+                          color: BoardColors.slate,
+                        ),
                       ],
                     ),
                   ),
@@ -1709,7 +1991,10 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('EDIT PROFILE', style: BoardType.display(fontSize: 26, height: 1)),
+                Text(
+                  'Edit profile',
+                  style: BoardType.display(fontSize: 26, height: 1),
+                ),
                 const SizedBox(height: 20),
 
                 // Basic info
@@ -1739,7 +2024,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: bioController,
-                  decoration: const InputDecoration(labelText: 'Bio', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'Bio',
+                    border: OutlineInputBorder(),
+                  ),
                   maxLines: 3,
                 ),
                 const SizedBox(height: 12),
@@ -1755,7 +2043,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 TextField(
                   controller: ageController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Age', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'Age',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -1799,9 +2090,18 @@ class _ProfilePageState extends State<ProfilePage> {
                                 value: heightUnit,
                                 isExpanded: true,
                                 items: const [
-                                  DropdownMenuItem(value: 'cm', child: Text('cm')),
-                                  DropdownMenuItem(value: 'in', child: Text('in')),
-                                  DropdownMenuItem(value: 'ft', child: Text('ft')),
+                                  DropdownMenuItem(
+                                    value: 'cm',
+                                    child: Text('cm'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'in',
+                                    child: Text('in'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'ft',
+                                    child: Text('ft'),
+                                  ),
                                 ],
                                 onChanged: (v) {
                                   if (v == null) return;
@@ -1866,9 +2166,18 @@ class _ProfilePageState extends State<ProfilePage> {
                                 value: shoeSizeUnit,
                                 isExpanded: true,
                                 items: const [
-                                  DropdownMenuItem(value: 'US', child: Text('US')),
-                                  DropdownMenuItem(value: 'EU', child: Text('EU')),
-                                  DropdownMenuItem(value: 'UK', child: Text('UK')),
+                                  DropdownMenuItem(
+                                    value: 'US',
+                                    child: Text('US'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'EU',
+                                    child: Text('EU'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'UK',
+                                    child: Text('UK'),
+                                  ),
                                 ],
                                 onChanged: (v) {
                                   if (v == null) return;

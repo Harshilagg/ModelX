@@ -157,7 +157,9 @@ class _ShotCarouselState extends State<ShotCarousel> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 5),
                         child: GestureDetector(
-                          onTap: widget.onTap == null ? null : () => widget.onTap!(i),
+                          onTap: widget.onTap == null
+                              ? null
+                              : () => widget.onTap!(i),
                           child: BoardMedia(
                             url: widget.urls[i],
                             dark: i.isOdd,
@@ -183,7 +185,9 @@ class _ShotCarouselState extends State<ShotCarousel> {
                 width: i == active ? 16 : 5,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: i == active ? widget.accent : BoardColors.inkLineStrong,
+                  color: i == active
+                      ? widget.accent
+                      : BoardColors.inkLineStrong,
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),

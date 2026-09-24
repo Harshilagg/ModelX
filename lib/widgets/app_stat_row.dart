@@ -30,7 +30,10 @@ class AppStatRow extends StatelessWidget {
           for (var i = 0; i < stats.length; i++)
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 8, horizontal: 6),
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppSpacing.sm + 8,
+                  horizontal: 6,
+                ),
                 decoration: BoxDecoration(
                   border: i == stats.length - 1
                       ? null

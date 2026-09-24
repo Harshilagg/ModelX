@@ -39,7 +39,8 @@ class AppSearchBar extends StatefulWidget {
 
 class _AppSearchBarState extends State<AppSearchBar> {
   TextEditingController? _internalController;
-  TextEditingController get _controller => widget.controller ?? (_internalController ??= TextEditingController());
+  TextEditingController get _controller =>
+      widget.controller ?? (_internalController ??= TextEditingController());
 
   @override
   void dispose() {
@@ -59,7 +60,11 @@ class _AppSearchBarState extends State<AppSearchBar> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.search, color: AppColors.inkFaint, size: AppIconSize.md),
+          const Icon(
+            Icons.search,
+            color: AppColors.inkFaint,
+            size: AppIconSize.md,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
@@ -74,7 +79,9 @@ class _AppSearchBarState extends State<AppSearchBar> {
                 border: InputBorder.none,
                 isDense: true,
                 hintText: widget.hintText,
-                hintStyle: AppTypography.body.copyWith(color: AppColors.inkFaint),
+                hintStyle: AppTypography.body.copyWith(
+                  color: AppColors.inkFaint,
+                ),
               ),
             ),
           ),

@@ -5,6 +5,7 @@ import '../ui/app_theme.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
 import '../widgets/gig_card.dart';
+
 class PostGigPage extends StatefulWidget {
   const PostGigPage({super.key});
 
@@ -26,7 +27,9 @@ class _PostGigPageState extends State<PostGigPage> {
 
   void _updateScrollProgress() {
     final max = _scrollController.position.maxScrollExtent;
-    final progress = max <= 0 ? 1.0 : (_scrollController.offset / max).clamp(0.0, 1.0);
+    final progress = max <= 0
+        ? 1.0
+        : (_scrollController.offset / max).clamp(0.0, 1.0);
     if ((progress - _scrollProgress).abs() > 0.005) {
       setState(() => _scrollProgress = progress);
     }
@@ -67,11 +70,11 @@ class _PostGigPageState extends State<PostGigPage> {
   RangeValues inseamRange = const RangeValues(34, 40);
   final shoeController = TextEditingController();
   final List<String> skinOptions = [
-  'Very Fair',
-  'Fair',
-  'Wheatish',
-  'Dusky',
-  'Dark',
+    'Very Fair',
+    'Fair',
+    'Wheatish',
+    'Dusky',
+    'Dark',
   ];
 
   final List<String> eyeOptions = [
@@ -92,14 +95,14 @@ class _PostGigPageState extends State<PostGigPage> {
     'White',
   ];
   final List<String> locationOptions = [
-  'Mumbai',
-  'Delhi',
-  'Bangalore',
-  'Hyderabad',
-  'Chennai',
-  'Pune',
-  'Kolkata',
-];
+    'Mumbai',
+    'Delhi',
+    'Bangalore',
+    'Hyderabad',
+    'Chennai',
+    'Pune',
+    'Kolkata',
+  ];
 
   List<String> selectedLocations = [];
   List<String> selectedSkin = [];
@@ -198,14 +201,13 @@ class _PostGigPageState extends State<PostGigPage> {
       _formKey.currentState!.reset();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save gig: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to save gig: $e')));
     } finally {
       if (mounted) setState(() => loading = false);
     }
   }
-
 
   // ================= UI =================
   @override
@@ -226,7 +228,12 @@ class _PostGigPageState extends State<PostGigPage> {
       ),
       body: SingleChildScrollView(
         controller: _scrollController,
-        padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xl),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.xl,
+        ),
         child: Form(
           key: _formKey,
           child: Column(
@@ -234,46 +241,50 @@ class _PostGigPageState extends State<PostGigPage> {
             children: [
               _section('Project details'),
               AppCard(
-                child: Column(children: [
-                  _textField('Project title', titleController),
-                  _dropdown(
-                    label: 'Project type',
-                    value: projectType,
-                    items: const [
-                      'Photoshoot',
-                      'Video Shoot',
-                      'Ramp Walk',
-                      'Ad Campaign',
-                    ],
-                    onChanged: (v) => setState(() => projectType = v),
-                  ),
-                  _textField('Brand name', brandNameController, last: true),
-                ]),
+                child: Column(
+                  children: [
+                    _textField('Project title', titleController),
+                    _dropdown(
+                      label: 'Project type',
+                      value: projectType,
+                      items: const [
+                        'Photoshoot',
+                        'Video Shoot',
+                        'Ramp Walk',
+                        'Ad Campaign',
+                      ],
+                      onChanged: (v) => setState(() => projectType = v),
+                    ),
+                    _textField('Brand name', brandNameController, last: true),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
 
               _section('Role details'),
               AppCard(
-                child: Column(children: [
-                  _dropdown(
-                    label: 'Role type',
-                    value: roleType,
-                    items: const [
-                      'Model',
-                      'Influencer',
-                      'Photographer',
-                      'Fashion Designer',
-                      'MUA',
-                    ],
-                    onChanged: (v) => setState(() => roleType = v),
-                  ),
-                  _textField(
-                    'Number of openings',
-                    openingsController,
-                    keyboardType: TextInputType.number,
-                    last: true,
-                  ),
-                ]),
+                child: Column(
+                  children: [
+                    _dropdown(
+                      label: 'Role type',
+                      value: roleType,
+                      items: const [
+                        'Model',
+                        'Influencer',
+                        'Photographer',
+                        'Fashion Designer',
+                        'MUA',
+                      ],
+                      onChanged: (v) => setState(() => roleType = v),
+                    ),
+                    _textField(
+                      'Number of openings',
+                      openingsController,
+                      keyboardType: TextInputType.number,
+                      last: true,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
 
@@ -281,196 +292,221 @@ class _PostGigPageState extends State<PostGigPage> {
               if (roleType == 'Model') ...[
                 _section('General requirements'),
                 AppCard(
-                  child: Column(children: [
-                    _dropdown(
-                      label: 'Gender',
-                      value: gender,
-                      items: const ['Male', 'Female', 'Transgender', 'All'],
-                      onChanged: (v) => setState(() => gender = v),
-                    ),
-                    _textField('Ethnicity', ethnicityController),
-                    _checkbox(
-                      'Tattoos allowed',
-                      tattoosAllowed,
-                      (v) => setState(() => tattoosAllowed = v),
-                    ),
-                    _checkbox(
-                      'Piercings allowed',
-                      piercingsAllowed,
-                      (v) => setState(() => piercingsAllowed = v),
-                    ),
-                  ]),
+                  child: Column(
+                    children: [
+                      _dropdown(
+                        label: 'Gender',
+                        value: gender,
+                        items: const ['Male', 'Female', 'Transgender', 'All'],
+                        onChanged: (v) => setState(() => gender = v),
+                      ),
+                      _textField('Ethnicity', ethnicityController),
+                      _checkbox(
+                        'Tattoos allowed',
+                        tattoosAllowed,
+                        (v) => setState(() => tattoosAllowed = v),
+                      ),
+                      _checkbox(
+                        'Piercings allowed',
+                        piercingsAllowed,
+                        (v) => setState(() => piercingsAllowed = v),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
                 _section('Physical attributes'),
                 AppCard(
-                  child: Column(children: [
-                    _rangeSlider(
-                      label: 'Height',
-                      values: heightRange,
-                      min: 140,
-                      max: 210,
-                      divisions: 70,
-                      unit: 'cm',
-                      onChanged: (v) => setState(() => heightRange = v),
-                    ),
-                    _rangeSlider(
-                      label: 'Chest / Bust',
-                      values: chestRange,
-                      min: 28,
-                      max: 48,
-                      divisions: 20,
-                      unit: 'in',
-                      onChanged: (v) => setState(() => chestRange = v),
-                    ),
-                    _rangeSlider(
-                      label: 'Waist',
-                      values: waistRange,
-                      min: 22,
-                      max: 40,
-                      divisions: 18,
-                      unit: 'in',
-                      onChanged: (v) => setState(() => waistRange = v),
-                    ),
-                    _rangeSlider(
-                      label: 'Hips',
-                      values: hipsRange,
-                      min: 30,
-                      max: 48,
-                      divisions: 18,
-                      unit: 'in',
-                      onChanged: (v) => setState(() => hipsRange = v),
-                    ),
-                    _rangeSlider(
-                      label: 'Shoulder width',
-                      values: shoulderRange,
-                      min: 30,
-                      max: 48,
-                      divisions: 18,
-                      unit: 'in',
-                      onChanged: (v) => setState(() => shoulderRange = v),
-                    ),
-                    _rangeSlider(
-                      label: 'Inseam',
-                      values: inseamRange,
-                      min: 30,
-                      max: 48,
-                      divisions: 18,
-                      unit: 'in',
-                      onChanged: (v) => setState(() => inseamRange = v),
-                    ),
-                    _textField('Shoe size (UK/US)', shoeController),
-                    _multiSelectGrid(
-                      title: 'Skin complexion',
-                      options: skinOptions,
-                      selected: selectedSkin,
-                      onTap: (v) {
-                        setState(() {
-                          selectedSkin.contains(v) ? selectedSkin.remove(v) : selectedSkin.add(v);
-                        });
-                      },
-                    ),
-                    _multiSelectGrid(
-                      title: 'Eye color',
-                      options: eyeOptions,
-                      selected: selectedEyes,
-                      onTap: (v) {
-                        setState(() {
-                          selectedEyes.contains(v) ? selectedEyes.remove(v) : selectedEyes.add(v);
-                        });
-                      },
-                    ),
-                    _multiSelectGrid(
-                      title: 'Hair color',
-                      options: hairOptions,
-                      selected: selectedHair,
-                      onTap: (v) {
-                        setState(() {
-                          selectedHair.contains(v) ? selectedHair.remove(v) : selectedHair.add(v);
-                        });
-                      },
-                      last: true,
-                    ),
-                  ]),
+                  child: Column(
+                    children: [
+                      _rangeSlider(
+                        label: 'Height',
+                        values: heightRange,
+                        min: 140,
+                        max: 210,
+                        divisions: 70,
+                        unit: 'cm',
+                        onChanged: (v) => setState(() => heightRange = v),
+                      ),
+                      _rangeSlider(
+                        label: 'Chest / Bust',
+                        values: chestRange,
+                        min: 28,
+                        max: 48,
+                        divisions: 20,
+                        unit: 'in',
+                        onChanged: (v) => setState(() => chestRange = v),
+                      ),
+                      _rangeSlider(
+                        label: 'Waist',
+                        values: waistRange,
+                        min: 22,
+                        max: 40,
+                        divisions: 18,
+                        unit: 'in',
+                        onChanged: (v) => setState(() => waistRange = v),
+                      ),
+                      _rangeSlider(
+                        label: 'Hips',
+                        values: hipsRange,
+                        min: 30,
+                        max: 48,
+                        divisions: 18,
+                        unit: 'in',
+                        onChanged: (v) => setState(() => hipsRange = v),
+                      ),
+                      _rangeSlider(
+                        label: 'Shoulder width',
+                        values: shoulderRange,
+                        min: 30,
+                        max: 48,
+                        divisions: 18,
+                        unit: 'in',
+                        onChanged: (v) => setState(() => shoulderRange = v),
+                      ),
+                      _rangeSlider(
+                        label: 'Inseam',
+                        values: inseamRange,
+                        min: 30,
+                        max: 48,
+                        divisions: 18,
+                        unit: 'in',
+                        onChanged: (v) => setState(() => inseamRange = v),
+                      ),
+                      _textField('Shoe size (UK/US)', shoeController),
+                      _multiSelectGrid(
+                        title: 'Skin complexion',
+                        options: skinOptions,
+                        selected: selectedSkin,
+                        onTap: (v) {
+                          setState(() {
+                            selectedSkin.contains(v)
+                                ? selectedSkin.remove(v)
+                                : selectedSkin.add(v);
+                          });
+                        },
+                      ),
+                      _multiSelectGrid(
+                        title: 'Eye color',
+                        options: eyeOptions,
+                        selected: selectedEyes,
+                        onTap: (v) {
+                          setState(() {
+                            selectedEyes.contains(v)
+                                ? selectedEyes.remove(v)
+                                : selectedEyes.add(v);
+                          });
+                        },
+                      ),
+                      _multiSelectGrid(
+                        title: 'Hair color',
+                        options: hairOptions,
+                        selected: selectedHair,
+                        onTap: (v) {
+                          setState(() {
+                            selectedHair.contains(v)
+                                ? selectedHair.remove(v)
+                                : selectedHair.add(v);
+                          });
+                        },
+                        last: true,
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
               ],
 
               _section('Company location'),
               AppCard(
-                child: Column(children: [
-                  _textField('Office address', addressController),
-                  _textField('Office city', cityController, last: true),
-                ]),
+                child: Column(
+                  children: [
+                    _textField('Office address', addressController),
+                    _textField('Office city', cityController, last: true),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
 
               _section('Job location'),
               AppCard(
-                child: Column(children: [
-                  _multiSelectGrid(
-                    title: 'Select cities',
-                    options: locationOptions,
-                    selected: selectedLocations,
-                    onTap: (v) {
-                      setState(() {
-                        selectedLocations.contains(v) ? selectedLocations.remove(v) : selectedLocations.add(v);
-                      });
-                    },
-                  ),
-                  _dropdown(
-                    label: 'Venue visibility',
-                    value: venueType,
-                    items: const ['Public', 'Reveal after booking'],
-                    onChanged: (v) => setState(() => venueType = v),
-                    last: true,
-                  ),
-                ]),
+                child: Column(
+                  children: [
+                    _multiSelectGrid(
+                      title: 'Select cities',
+                      options: locationOptions,
+                      selected: selectedLocations,
+                      onTap: (v) {
+                        setState(() {
+                          selectedLocations.contains(v)
+                              ? selectedLocations.remove(v)
+                              : selectedLocations.add(v);
+                        });
+                      },
+                    ),
+                    _dropdown(
+                      label: 'Venue visibility',
+                      value: venueType,
+                      items: const ['Public', 'Reveal after booking'],
+                      onChanged: (v) => setState(() => venueType = v),
+                      last: true,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
 
               _section('Job description'),
               AppCard(
-                child: _textField('Description', descriptionController, maxLines: 5, last: true),
+                child: _textField(
+                  'Description',
+                  descriptionController,
+                  maxLines: 5,
+                  last: true,
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
 
               _section('Timeline & duration'),
               AppCard(
-                child: Column(children: [
-                  _dropdown(
-                    label: 'Timeline',
-                    value: timeline,
-                    items: const ['Fixed', 'Tentative'],
-                    onChanged: (v) => setState(() => timeline = v),
-                  ),
-                  _textField(
-                    'Job duration (hours)',
-                    hoursController,
-                    keyboardType: TextInputType.number,
-                    last: true,
-                  ),
-                ]),
+                child: Column(
+                  children: [
+                    _dropdown(
+                      label: 'Timeline',
+                      value: timeline,
+                      items: const ['Fixed', 'Tentative'],
+                      onChanged: (v) => setState(() => timeline = v),
+                    ),
+                    _textField(
+                      'Job duration (hours)',
+                      hoursController,
+                      keyboardType: TextInputType.number,
+                      last: true,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
 
               _section('Budget'),
               AppCard(
-                child: Column(children: [
-                  _dropdown(
-                    label: 'Budget type',
-                    value: budgetType,
-                    items: const ['Fixed', 'Hourly', 'Range'],
-                    onChanged: (v) => setState(() => budgetType = v),
-                  ),
-                  _textField(
-                    'Budget amount',
-                    budgetController,
-                    keyboardType: TextInputType.number,
-                    last: true,
-                  ),
-                ]),
+                child: Column(
+                  children: [
+                    _dropdown(
+                      label: 'Budget type',
+                      value: budgetType,
+                      items: const ['Fixed', 'Hourly', 'Range'],
+                      onChanged: (v) => setState(() => budgetType = v),
+                    ),
+                    _textField(
+                      'Budget amount',
+                      budgetController,
+                      keyboardType: TextInputType.number,
+                      last: true,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
 
@@ -502,7 +538,9 @@ class _PostGigPageState extends State<PostGigPage> {
                     child: AppButton(
                       label: 'Save as draft',
                       variant: AppButtonVariant.secondary,
-                      onPressed: loading ? null : () => _saveGig(status: 'draft'),
+                      onPressed: loading
+                          ? null
+                          : () => _saveGig(status: 'draft'),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm + 4),
@@ -525,12 +563,17 @@ class _PostGigPageState extends State<PostGigPage> {
   // ================= HELPERS =================
 
   Widget _section(String text) => Padding(
-        padding: const EdgeInsets.only(left: 4, bottom: AppSpacing.sm + 2),
-        child: Text(
-          text,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.inkFaint, letterSpacing: 0.3),
-        ),
-      );
+    padding: const EdgeInsets.only(left: 4, bottom: AppSpacing.sm + 2),
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: AppColors.inkFaint,
+        letterSpacing: 0.3,
+      ),
+    ),
+  );
 
   Widget _textField(
     String label,
@@ -545,8 +588,7 @@ class _PostGigPageState extends State<PostGigPage> {
         controller: controller,
         maxLines: maxLines,
         keyboardType: keyboardType,
-        validator: (v) =>
-            v == null || v.isEmpty ? 'Required' : null,
+        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
         decoration: InputDecoration(labelText: label),
       ),
     );
@@ -564,8 +606,7 @@ class _PostGigPageState extends State<PostGigPage> {
       child: DropdownButtonFormField<String>(
         initialValue: value,
         items: items
-            .map((e) =>
-                DropdownMenuItem(value: e, child: Text(e)))
+            .map((e) => DropdownMenuItem(value: e, child: Text(e)))
             .toList(),
         onChanged: (v) => onChanged(v!),
         decoration: InputDecoration(labelText: label),
@@ -573,8 +614,7 @@ class _PostGigPageState extends State<PostGigPage> {
     );
   }
 
-  Widget _checkbox(
-      String label, bool value, Function(bool) onChanged) {
+  Widget _checkbox(String label, bool value, Function(bool) onChanged) {
     return CheckboxListTile(
       value: value,
       onChanged: (v) => onChanged(v!),
@@ -586,13 +626,13 @@ class _PostGigPageState extends State<PostGigPage> {
   }
 
   Widget _rangeSlider({
-  required String label,
-  required RangeValues values,
-  required double min,
-  required double max,
-  required int divisions,
-  required String unit,
-  required Function(RangeValues) onChanged,
+    required String label,
+    required RangeValues values,
+    required double min,
+    required double max,
+    required int divisions,
+    required String unit,
+    required Function(RangeValues) onChanged,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -601,7 +641,11 @@ class _PostGigPageState extends State<PostGigPage> {
         children: [
           Text(
             '$label: ${values.start.round()} – ${values.end.round()} $unit',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, color: AppColors.ink),
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 13.5,
+              color: AppColors.ink,
+            ),
           ),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
@@ -627,6 +671,7 @@ class _PostGigPageState extends State<PostGigPage> {
       ),
     );
   }
+
   Widget _multiSelectGrid({
     required String title,
     required List<String> options,
@@ -641,7 +686,11 @@ class _PostGigPageState extends State<PostGigPage> {
         children: [
           Text(
             title,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.ink),
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: AppColors.ink,
+            ),
           ),
           const SizedBox(height: AppSpacing.sm + 2),
           GridView.builder(
@@ -663,7 +712,9 @@ class _PostGigPageState extends State<PostGigPage> {
                 onTap: () => onTap(option),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.goldBg : AppColors.paperRaised,
+                    color: isSelected
+                        ? AppColors.goldBg
+                        : AppColors.paperRaised,
                     borderRadius: BorderRadius.circular(AppRadius.pill),
                     border: Border.all(
                       color: isSelected ? Colors.transparent : AppColors.line,
@@ -674,7 +725,9 @@ class _PostGigPageState extends State<PostGigPage> {
                     option,
                     style: TextStyle(
                       fontSize: 12.5,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                       color: isSelected ? AppColors.gold : AppColors.inkSoft,
                     ),
                   ),
@@ -688,36 +741,33 @@ class _PostGigPageState extends State<PostGigPage> {
   }
 
   void _previewGig() {
-  final Map<String, dynamic> physicalAttributes = {};
+    final Map<String, dynamic> physicalAttributes = {};
 
-  if (roleType == 'Model') {
-    physicalAttributes.addAll({
-      'height': {
-        'min': heightRange.start.round(),
-        'max': heightRange.end.round(),
-      },
-      'chest': {
-        'min': chestRange.start.round(),
-        'max': chestRange.end.round(),
-      },
-      'waist': {
-        'min': waistRange.start.round(),
-        'max': waistRange.end.round(),
-      },
-      'hips': {
-        'min': hipsRange.start.round(),
-        'max': hipsRange.end.round(),
-      },
-      'shoulderWidth': {
-        'min': shoulderRange.start.round(),
-        'max': shoulderRange.end.round(),
-      },
-      'inseam': {
-        'min': inseamRange.start.round(),
-        'max': inseamRange.end.round(),
-      },
-    });
-  }
+    if (roleType == 'Model') {
+      physicalAttributes.addAll({
+        'height': {
+          'min': heightRange.start.round(),
+          'max': heightRange.end.round(),
+        },
+        'chest': {
+          'min': chestRange.start.round(),
+          'max': chestRange.end.round(),
+        },
+        'waist': {
+          'min': waistRange.start.round(),
+          'max': waistRange.end.round(),
+        },
+        'hips': {'min': hipsRange.start.round(), 'max': hipsRange.end.round()},
+        'shoulderWidth': {
+          'min': shoulderRange.start.round(),
+          'max': shoulderRange.end.round(),
+        },
+        'inseam': {
+          'min': inseamRange.start.round(),
+          'max': inseamRange.end.round(),
+        },
+      });
+    }
 
     showModalBottomSheet(
       context: context,
@@ -739,8 +789,7 @@ class _PostGigPageState extends State<PostGigPage> {
           skinComplexion: selectedSkin,
 
           timeline: timeline,
-          durationHours:
-              int.tryParse(hoursController.text) ?? 0,
+          durationHours: int.tryParse(hoursController.text) ?? 0,
           budgetType: budgetType,
           budgetAmount: budgetController.text,
 

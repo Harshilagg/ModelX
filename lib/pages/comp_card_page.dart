@@ -36,13 +36,17 @@ class _CompCardPageState extends State<CompCardPage> {
   /// One portfolio document id per named slot, so "this one is the
   /// headshot" is a decision rather than a consequence of tap order.
   /// Index matches [compCardSlots]; null means the slot is still empty.
-  final List<String?> _assigned = List<String?>.filled(compCardSlots.length, null);
+  final List<String?> _assigned = List<String?>.filled(
+    compCardSlots.length,
+    null,
+  );
 
   /// The slot the next photograph tapped will fill.
   int _activeSlot = 0;
 
-  late final PageController _templatePages =
-      PageController(viewportFraction: 0.92);
+  late final PageController _templatePages = PageController(
+    viewportFraction: 0.92,
+  );
 
   Map<String, dynamic>? _user;
   List<QueryDocumentSnapshot> _portfolio = [];
@@ -55,8 +59,9 @@ class _CompCardPageState extends State<CompCardPage> {
   /// grows or shrinks this without losing what's already assigned.
   int get _slotCount => _template.totalShots;
 
-  List<String?> get _shots =>
-      [for (var i = 0; i < _slotCount; i++) _urlFor(_assigned[i])];
+  List<String?> get _shots => [
+    for (var i = 0; i < _slotCount; i++) _urlFor(_assigned[i]),
+  ];
 
   int get _filledSlots => _assigned.take(_slotCount).whereType<String>().length;
 
@@ -76,7 +81,10 @@ class _CompCardPageState extends State<CompCardPage> {
     try {
       final results = await Future.wait([
         FirebaseFirestore.instance.collection('users').doc(_uid).get(),
-        FirebaseFirestore.instance.collection('portfolio').where('uid', isEqualTo: _uid).get(),
+        FirebaseFirestore.instance
+            .collection('portfolio')
+            .where('uid', isEqualTo: _uid)
+            .get(),
       ]);
 
       if (!mounted) return;
@@ -113,7 +121,8 @@ class _CompCardPageState extends State<CompCardPage> {
   /// the two to go and fix.
   int get _statsPercent => CompCardReadiness.statsPercent(_user ?? const {});
 
-  List<String> get _missingStats => CompCardReadiness.missing(_user ?? const {});
+  List<String> get _missingStats =>
+      CompCardReadiness.missing(_user ?? const {});
 
   /// Resolved once per build so the chooser's previews and the export
   /// preview are all drawing the same values.
@@ -124,7 +133,8 @@ class _CompCardPageState extends State<CompCardPage> {
     if (docId == null) return null;
     for (final d in _portfolio) {
       if (d.id == docId) {
-        return ((d.data() as Map<String, dynamic>)['mediaUrl'] ?? '').toString();
+        return ((d.data() as Map<String, dynamic>)['mediaUrl'] ?? '')
+            .toString();
       }
     }
     return null;
@@ -178,8 +188,8 @@ class _CompCardPageState extends State<CompCardPage> {
               child: _loading
                   ? const LoadingState()
                   : _error != null
-                      ? ErrorStateView(message: _error!, onRetry: _load)
-                      : _body(),
+                  ? ErrorStateView(message: _error!, onRetry: _load)
+                  : _body(),
             ),
             if (!_loading && _error == null) _footer(),
           ],
@@ -201,21 +211,33 @@ class _CompCardPageState extends State<CompCardPage> {
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => Navigator.of(context).maybePop(),
-                child: const Icon(Icons.arrow_back, size: 18, color: BoardColors.onInk),
+                child: const Icon(
+                  Icons.arrow_back,
+                  size: 18,
+                  color: BoardColors.onInk,
+                ),
               ),
               const Spacer(),
               Text(
-                'FREE · NO WATERMARK',
-                style: BoardType.mono(fontSize: 9.5, color: BoardColors.brass, letterSpacing: 1.35),
+                'Free · no watermark',
+                style: BoardType.mono(
+                  fontSize: 9.5,
+                  color: BoardColors.brass,
+                  letterSpacing: 1.35,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
-            'COMP CARD',
+            'Comp card',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: BoardType.display(fontSize: 38, color: BoardColors.onInk, height: 0.9),
+            style: BoardType.display(
+              fontSize: 38,
+              color: BoardColors.onInk,
+              height: 0.9,
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -224,7 +246,9 @@ class _CompCardPageState extends State<CompCardPage> {
                 child: Container(
                   margin: EdgeInsets.only(right: i == 2 ? 0 : 5),
                   height: 4,
-                  color: i <= _step ? BoardColors.brass : BoardColors.onInk.withValues(alpha: 0.2),
+                  color: i <= _step
+                      ? BoardColors.brass
+                      : BoardColors.onInk.withValues(alpha: 0.2),
                 ),
               );
             }),
@@ -259,8 +283,10 @@ class _CompCardPageState extends State<CompCardPage> {
       return ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _stepIntro('STEP 02 · ASSIGN YOUR SHOTS',
-              'A comp card is one headshot and a set of looks.'),
+          _stepIntro(
+            'STEP 02 · ASSIGN YOUR SHOTS',
+            'A comp card is one headshot and a set of looks.',
+          ),
           const SizedBox(height: 20),
           const EmptyState(
             icon: Icons.photo_library_outlined,
@@ -277,7 +303,7 @@ class _CompCardPageState extends State<CompCardPage> {
         _stepIntro(
           'STEP 02 · ASSIGN YOUR SHOTS',
           'Pick a slot, then tap the photograph that belongs in it. '
-          '${_template.label} prints $_slotCount.',
+              '${_template.label} prints $_slotCount.',
         ),
         const SizedBox(height: 14),
         _slotStrip(),
@@ -296,7 +322,8 @@ class _CompCardPageState extends State<CompCardPage> {
           ),
           itemBuilder: (context, i) {
             final doc = _portfolio[i];
-            final url = ((doc.data() as Map<String, dynamic>)['mediaUrl'] ?? '').toString();
+            final url = ((doc.data() as Map<String, dynamic>)['mediaUrl'] ?? '')
+                .toString();
             final slot = _slotOf(doc.id);
             final assigned = slot != null;
 
@@ -305,7 +332,9 @@ class _CompCardPageState extends State<CompCardPage> {
               onTap: () => assigned ? _clearSlot(slot) : _assign(doc.id),
               child: Container(
                 foregroundDecoration: assigned
-                    ? BoxDecoration(border: Border.all(color: BoardColors.ink, width: 3))
+                    ? BoxDecoration(
+                        border: Border.all(color: BoardColors.ink, width: 3),
+                      )
                     : null,
                 child: Stack(
                   fit: StackFit.expand,
@@ -316,13 +345,19 @@ class _CompCardPageState extends State<CompCardPage> {
                         alignment: Alignment.bottomLeft,
                         child: Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 5,
+                          ),
                           color: BoardColors.ink,
                           child: Text(
                             compCardSlots[slot],
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: BoardType.mono(fontSize: 8.5, color: BoardColors.brass),
+                            style: BoardType.mono(
+                              fontSize: 8.5,
+                              color: BoardColors.brass,
+                            ),
                           ),
                         ),
                       ),
@@ -383,7 +418,9 @@ class _CompCardPageState extends State<CompCardPage> {
                               child: Text(
                                 '${i + 1}',
                                 style: BoardType.mono(
-                                    fontSize: 13, color: BoardColors.inkSoft),
+                                  fontSize: 13,
+                                  color: BoardColors.inkSoft,
+                                ),
                               ),
                             )
                           : BoardMedia(url: url),
@@ -419,7 +456,7 @@ class _CompCardPageState extends State<CompCardPage> {
           child: _stepIntro(
             'STEP 01 · CHOOSE YOUR CARD',
             'Swipe to compare. Each is its own piece of design, and each '
-            'prints a different number of shots.',
+                'prints a different number of shots.',
           ),
         ),
         const SizedBox(height: 14),
@@ -454,11 +491,19 @@ class _CompCardPageState extends State<CompCardPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: _faceWithCaption(template, 'Front', back: false),
+                            child: _faceWithCaption(
+                              template,
+                              'Front',
+                              back: false,
+                            ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: _faceWithCaption(template, 'Back', back: true),
+                            child: _faceWithCaption(
+                              template,
+                              'Back',
+                              back: true,
+                            ),
                           ),
                         ],
                       ),
@@ -468,14 +513,18 @@ class _CompCardPageState extends State<CompCardPage> {
                       children: [
                         Expanded(
                           child: Text(
-                            template.label.toUpperCase(),
+                            template.label,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: BoardType.display(fontSize: 24, height: 1),
                           ),
                         ),
                         if (selected)
-                          const MonoChip('SELECTED', filled: true, accent: BoardColors.ink),
+                          const MonoChip(
+                            'SELECTED',
+                            filled: true,
+                            accent: BoardColors.ink,
+                          ),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -483,12 +532,18 @@ class _CompCardPageState extends State<CompCardPage> {
                       template.blurb,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: BoardType.body(fontSize: 12, color: BoardColors.inkSoft),
+                      style: BoardType.body(
+                        fontSize: 12,
+                        color: BoardColors.inkSoft,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        MonoChip('PRINTS ${template.totalShots} SHOTS', neutral: true),
+                        MonoChip(
+                          'PRINTS ${template.totalShots} SHOTS',
+                          neutral: true,
+                        ),
                         const SizedBox(width: 6),
                         MonoChip(
                           '${template.backShots} ON THE BACK',
@@ -523,7 +578,11 @@ class _CompCardPageState extends State<CompCardPage> {
     );
   }
 
-  Widget _faceWithCaption(CompCardTemplate template, String caption, {required bool back}) {
+  Widget _faceWithCaption(
+    CompCardTemplate template,
+    String caption, {
+    required bool back,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -531,7 +590,7 @@ class _CompCardPageState extends State<CompCardPage> {
         CompCardFace(template: template, data: _cardData, back: back),
         const SizedBox(height: 6),
         Text(
-          caption.toUpperCase(),
+          caption,
           style: BoardType.mono(fontSize: 9, color: BoardColors.inkSoft),
         ),
       ],
@@ -547,7 +606,7 @@ class _CompCardPageState extends State<CompCardPage> {
         _stepIntro(
           'STEP 03 · YOUR CARD',
           '${_template.label}, at true trim — 5.5 × 8.5 in, the size every '
-          'agency prints.',
+              'agency prints.',
         ),
         const SizedBox(height: 14),
         _readinessPanel(),
@@ -592,11 +651,14 @@ class _CompCardPageState extends State<CompCardPage> {
                     border: Border.all(color: BoardColors.ink, width: 3),
                   ),
                   child: Text(
-                    'DOWNLOAD PDF',
+                    'Download PDF',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: BoardType.title(
-                        fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 1.35),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.35,
+                    ),
                   ),
                 ),
               ),
@@ -606,10 +668,13 @@ class _CompCardPageState extends State<CompCardPage> {
               behavior: HitTestBehavior.opaque,
               onTap: _copyLink,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 color: BoardColors.ink,
                 child: Text(
-                  'LINK',
+                  'Link',
                   style: BoardType.title(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -630,9 +695,12 @@ class _CompCardPageState extends State<CompCardPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'WHY THE LINK MATTERS',
+                'Why the link matters',
                 style: BoardType.mono(
-                    fontSize: 9.5, color: BoardColors.onInkSoft, letterSpacing: 1.15),
+                  fontSize: 9.5,
+                  color: BoardColors.onInkSoft,
+                  letterSpacing: 1.15,
+                ),
               ),
               const SizedBox(height: 7),
               Text(
@@ -715,7 +783,10 @@ class _CompCardPageState extends State<CompCardPage> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: BoardType.mono(
-              fontSize: 9.5, color: BoardColors.onInkSoft, letterSpacing: 0.95),
+            fontSize: 9.5,
+            color: BoardColors.onInkSoft,
+            letterSpacing: 0.95,
+          ),
         ),
         const SizedBox(height: 5),
         Row(
@@ -768,8 +839,10 @@ class _CompCardPageState extends State<CompCardPage> {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => Navigator.of(dialogContext).pop(),
-              child: Text('CLOSE',
-                  style: BoardType.mono(fontSize: 11, color: BoardColors.brass)),
+              child: Text(
+                'Close',
+                style: BoardType.mono(fontSize: 11, color: BoardColors.brass),
+              ),
             ),
           ),
         ],
@@ -780,9 +853,9 @@ class _CompCardPageState extends State<CompCardPage> {
   void _copyLink() {
     Clipboard.setData(ClipboardData(text: 'modelx://profile/$_uid'));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile link copied')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Profile link copied')));
   }
 
   void _explainPdf() {
@@ -791,7 +864,9 @@ class _CompCardPageState extends State<CompCardPage> {
     // quietly does nothing.
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('PDF export needs the pdf + printing packages added to pubspec.'),
+        content: Text(
+          'PDF export needs the pdf + printing packages added to pubspec.',
+        ),
       ),
     );
   }
@@ -821,11 +896,18 @@ class _CompCardPageState extends State<CompCardPage> {
                 behavior: HitTestBehavior.opaque,
                 onTap: () => setState(() => _step--),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 14,
+                  ),
                   color: BoardColors.shell,
                   child: Text(
-                    'BACK',
-                    style: BoardType.title(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 1.35),
+                    'Back',
+                    style: BoardType.title(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.35,
+                    ),
                   ),
                 ),
               ),
@@ -842,7 +924,7 @@ class _CompCardPageState extends State<CompCardPage> {
                   alignment: Alignment.center,
                   color: _step < 2 ? BoardColors.ink : BoardColors.shell,
                   child: Text(
-                    _step < 2 ? 'CONTINUE' : 'DONE',
+                    _step < 2 ? 'Continue' : 'Done',
                     style: BoardType.title(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,

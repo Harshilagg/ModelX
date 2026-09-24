@@ -19,6 +19,13 @@ import 'package:flutter_application_modelx/widgets/portfolio_masonry.dart';
 /// of every redesigned screen at the smallest width the app realistically
 /// sees (320dp) and again at 1.5x text, and fail on any RenderFlex
 /// overflow, which Flutter surfaces as an exception in debug.
+/// The height one line of [style] occupies at a given text scale.
+///
+/// Tests that hardcode this drift the moment a type token changes,
+/// which is how the discovery rail came to clip by a few pixels.
+double lineHeight(TextStyle style, TextScaler scaler) =>
+    scaler.scale(style.fontSize!) * (style.height ?? 1.0);
+
 void main() {
   /// Pumps [child] at [width] and [textScale] and returns any layout
   /// exception Flutter raised while laying it out.
@@ -82,7 +89,9 @@ void main() {
         expect(error, isNull);
       });
 
-      testWidgets('BoardTabRail fits three tabs at ${scale}x text', (tester) async {
+      testWidgets('BoardTabRail fits three tabs at ${scale}x text', (
+        tester,
+      ) async {
         final error = await layout(
           tester,
           BoardTabRail(
@@ -95,10 +104,15 @@ void main() {
         expect(error, isNull);
       });
 
-      testWidgets('BoardScreenTitle fits a long title at ${scale}x text', (tester) async {
+      testWidgets('BoardScreenTitle fits a long title at ${scale}x text', (
+        tester,
+      ) async {
         final error = await layout(
           tester,
-          const BoardScreenTitle(title: 'Board Updates', meta: '12 CONNECTIONS · DELHI NCR'),
+          const BoardScreenTitle(
+            title: 'Board Updates',
+            meta: '12 CONNECTIONS · DELHI NCR',
+          ),
           textScale: scale,
         );
         expect(error, isNull);
@@ -113,8 +127,9 @@ void main() {
     // the declared height ever drifts from the laid-out height, the
     // copilot silently lands back on top of the bar — so pin it.
     for (final scale in [1.0, 1.5]) {
-      testWidgets('declared height matches laid-out height at ${scale}x text',
-          (tester) async {
+      testWidgets('declared height matches laid-out height at ${scale}x text', (
+        tester,
+      ) async {
         final error = await layout(
           tester,
           Align(
@@ -273,14 +288,21 @@ void main() {
     Widget feedCard({required bool note}) {
       final author = Row(
         children: [
-          SizedBox(width: note ? 18 : 20, height: note ? 18 : 20, child: const BoardHatch()),
+          SizedBox(
+            width: note ? 18 : 20,
+            height: note ? 18 : 20,
+            child: const BoardHatch(),
+          ),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
               'EMILIANA JASPER-CHANDRAN',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: BoardType.title(fontSize: note ? 11.5 : 12, letterSpacing: 0.35),
+              style: BoardType.title(
+                fontSize: note ? 11.5 : 12,
+                letterSpacing: 0.35,
+              ),
             ),
           ),
           const SizedBox(width: 4),
@@ -374,28 +396,28 @@ void main() {
     /// The real masonry: two columns of cards side by side in a scroll
     /// view, which is what actually constrains each card's width.
     Widget masonry() => ListView(
-          padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [feedCard(note: false), feedCard(note: true)],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [feedCard(note: true), feedCard(note: false)],
-                  ),
-                ),
-              ],
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [feedCard(note: false), feedCard(note: true)],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [feedCard(note: true), feedCard(note: false)],
+              ),
             ),
           ],
-        );
+        ),
+      ],
+    );
 
     for (final scale in [1.0, 1.5]) {
       testWidgets('the masonry lays out at ${scale}x text', (tester) async {
@@ -414,19 +436,28 @@ void main() {
   });
 
   group('avatars and chips', () {
-    testWidgets('BoardAvatar falls back to an initial when there is no photo',
-        (tester) async {
+    testWidgets('BoardAvatar falls back to an initial when there is no photo', (
+      tester,
+    ) async {
       final error = await layout(
         tester,
-        const Center(child: BoardAvatar(name: 'Emiliana', size: 96, onDark: true, ring: true)),
+        const Center(
+          child: BoardAvatar(
+            name: 'Emiliana',
+            size: 96,
+            onDark: true,
+            ring: true,
+          ),
+        ),
       );
       expect(error, isNull);
       expect(find.text('E'), findsOneWidget);
       expect(tester.getSize(find.byType(BoardAvatar)), const Size(96, 96));
     });
 
-    testWidgets('a filled chip never renders its label against its own fill',
-        (tester) async {
+    testWidgets('a filled chip never renders its label against its own fill', (
+      tester,
+    ) async {
       // MonoChip is called with brass, ink and status fills depending on
       // the site. Whatever the fill, the label has to be the other end of
       // the palette.
@@ -436,7 +467,10 @@ void main() {
         BoardColors.booked,
         BoardColors.rejected,
       ]) {
-        await layout(tester, Center(child: MonoChip('FOLLOW', filled: true, accent: fill)));
+        await layout(
+          tester,
+          Center(child: MonoChip('FOLLOW', filled: true, accent: fill)),
+        );
         final label = tester.widget<Text>(find.text('FOLLOW'));
         expect(label.style!.color, isNot(fill));
 
@@ -454,36 +488,47 @@ void main() {
     // The rail replaced a ~500px grid. Its card is a fixed crop plus a
     // caption, and the caption is the part that grows with the system
     // font — so the row height has to grow with it or the city clips off.
+    // Derived from the styles themselves rather than from copied
+    // numbers. The previous version hardcoded the condensed face's
+    // line heights, so retiring that face silently made this formula
+    // wrong and the rail clipped by a few pixels.
     double captionHeight(TextScaler scaler) =>
-        8 + scaler.scale(17) * 1.05 + 3 + scaler.scale(9.5) * 1.1 + 4;
+        8 +
+        lineHeight(
+          BoardType.title(fontSize: 17, fontWeight: FontWeight.w700),
+          scaler,
+        ) +
+        3 +
+        lineHeight(
+          BoardType.mono(fontSize: 9.5, fontWeight: FontWeight.w400),
+          scaler,
+        ) +
+        4;
 
     Widget railCard({required double cropHeight}) => SizedBox(
-          width: 132,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                height: cropHeight,
-                child: const BoardHatch(),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'EMILIANA JASPER-CHANDRAN',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: BoardType.title(fontSize: 17, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                'PHOTOGRAPHER · BENGALURU',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: BoardType.mono(fontSize: 9.5, fontWeight: FontWeight.w400),
-              ),
-            ],
+      width: 132,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(height: cropHeight, child: const BoardHatch()),
+          const SizedBox(height: 8),
+          Text(
+            'EMILIANA JASPER-CHANDRAN',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: BoardType.title(fontSize: 17, fontWeight: FontWeight.w700),
           ),
-        );
+          const SizedBox(height: 3),
+          Text(
+            'PHOTOGRAPHER · BENGALURU',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: BoardType.mono(fontSize: 9.5, fontWeight: FontWeight.w400),
+          ),
+        ],
+      ),
+    );
 
     for (final scale in [1.0, 1.5]) {
       testWidgets('the rail fits its cards at ${scale}x text', (tester) async {
@@ -511,9 +556,12 @@ void main() {
       });
     }
 
-    testWidgets('the whole section stays near its 250dp budget', (tester) async {
+    testWidgets('the whole section stays near its 250dp budget', (
+      tester,
+    ) async {
       const crop = 168.0;
-      final total = crop + captionHeight(TextScaler.noScaling) + 18 + 8 + 10 + 3 + 14;
+      final total =
+          crop + captionHeight(TextScaler.noScaling) + 18 + 8 + 10 + 3 + 14;
       expect(total, lessThan(300));
     });
   });
@@ -522,9 +570,16 @@ void main() {
     // The nearby rail is the compact, identity-led band that breaks up
     // two card rails. Its caption budget is tighter than the crop rail's,
     // so it's the one most likely to clip when the font scales.
-    testWidgets('the nearby rail fits circular cards at 1.5x text', (tester) async {
+    testWidgets('the nearby rail fits circular cards at 1.5x text', (
+      tester,
+    ) async {
       final scaler = TextScaler.linear(1.5);
-      final caption = 8 + scaler.scale(12) * 1.05 + 2 + scaler.scale(9) * 1.1 + 4;
+      final caption =
+          8 +
+          lineHeight(BoardType.title(fontSize: 12), scaler) +
+          2 +
+          lineHeight(BoardType.mono(fontSize: 9), scaler) +
+          4;
 
       final error = await layout(
         tester,
@@ -557,7 +612,10 @@ void main() {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
-                      style: BoardType.mono(fontSize: 9, fontWeight: FontWeight.w400),
+                      style: BoardType.mono(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w400,
+                      ),
                     ),
                   ],
                 ),
@@ -571,15 +629,23 @@ void main() {
     });
 
     for (final scale in [1.0, 1.5]) {
-      testWidgets('a hiring card fits a long brand name at ${scale}x text',
-          (tester) async {
+      testWidgets('a hiring card fits a long brand name at ${scale}x text', (
+        tester,
+      ) async {
         final scaler = TextScaler.linear(scale);
         final error = await layout(
           tester,
           Align(
             alignment: Alignment.topCenter,
             child: SizedBox(
-              height: 13 * 2 + 26 + 10 + scaler.scale(20) * 0.95 * 2 + 8 + scaler.scale(10) * 1.1 + 2,
+              height:
+                  13 * 2 +
+                  26 +
+                  10 +
+                  scaler.scale(20) * 0.95 * 2 +
+                  8 +
+                  scaler.scale(10) * 1.1 +
+                  2,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -595,32 +661,45 @@ void main() {
                         children: [
                           Row(
                             children: [
-                              Container(width: 26, height: 26, color: BoardColors.brass),
+                              Container(
+                                width: 26,
+                                height: 26,
+                                color: BoardColors.brass,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
-                                child: Text('AGENCY',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: BoardType.mono(fontSize: 9)),
+                                child: Text(
+                                  'AGENCY',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: BoardType.mono(fontSize: 9),
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 10),
                           Flexible(
                             child: Text(
-                            'RAW MANGO RESORT COLLECTIVE',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: BoardType.display(
-                                fontSize: 20, color: BoardColors.onInk, height: 0.95),
-                          ),
+                              'RAW MANGO RESORT COLLECTIVE',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: BoardType.display(
+                                fontSize: 20,
+                                color: BoardColors.onInk,
+                                height: 0.95,
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 8),
-                          Text('12 OPEN CALLS',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: BoardType.mono(
-                                  fontSize: 10, color: BoardColors.brassText)),
+                          Text(
+                            '12 OPEN CALLS',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: BoardType.mono(
+                              fontSize: 10,
+                              color: BoardColors.brassText,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -635,7 +714,9 @@ void main() {
       });
     }
 
-    testWidgets('a poster card lays out inside a horizontal rail', (tester) async {
+    testWidgets('a poster card lays out inside a horizontal rail', (
+      tester,
+    ) async {
       // The regression: PosterCard's width is optional, which is right in
       // the directory's vertical list and fatal in a rail, where the
       // parent offers unbounded width and the card cannot size itself.
@@ -661,15 +742,21 @@ void main() {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('RAW MANGO',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: BoardType.display(
-                                fontSize: 20, color: BoardColors.onInk)),
-                        Text('2 OPEN CALLS',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: BoardType.mono(fontSize: 10)),
+                        Text(
+                          'RAW MANGO',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: BoardType.display(
+                            fontSize: 20,
+                            color: BoardColors.onInk,
+                          ),
+                        ),
+                        Text(
+                          '2 OPEN CALLS',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: BoardType.mono(fontSize: 10),
+                        ),
                       ],
                     ),
                   ),
@@ -705,16 +792,22 @@ void main() {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: BoardType.display(
-                              fontSize: 24, color: BoardColors.onInk, height: 1),
+                            fontSize: 24,
+                            color: BoardColors.onInk,
+                            height: 1,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Text('38%',
-                          style: BoardType.display(
-                              fontSize: 30,
-                              color: BoardColors.brass,
-                              fontWeight: FontWeight.w400,
-                              height: 1)),
+                      Text(
+                        '38%',
+                        style: BoardType.display(
+                          fontSize: 30,
+                          color: BoardColors.brass,
+                          fontWeight: FontWeight.w400,
+                          height: 1,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -770,7 +863,10 @@ void main() {
                       'EMILIANA JASPER-CHANDRAN',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: BoardType.title(fontSize: 17, fontWeight: FontWeight.w700),
+                      style: BoardType.title(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -778,7 +874,10 @@ void main() {
                     'BENGALURU · 171 CM',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: BoardType.mono(fontSize: 9.5, fontWeight: FontWeight.w400),
+                    style: BoardType.mono(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
                 ],
               ),
@@ -809,7 +908,8 @@ void main() {
                 crossAxisCount: 2,
                 crossAxisSpacing: 9,
                 mainAxisSpacing: 16,
-                mainAxisExtent: cropHeight + PersonCropCard.captionHeight(context),
+                mainAxisExtent:
+                    cropHeight + PersonCropCard.captionHeight(context),
               ),
               itemBuilder: (context, i) => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -818,16 +918,26 @@ void main() {
                   SizedBox(height: cropHeight, child: const BoardHatch()),
                   const SizedBox(height: 8),
                   Flexible(
-                    child: Text('DEVIKA MENON',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: BoardType.title(fontSize: 17, fontWeight: FontWeight.w700)),
-                  ),
-                  const SizedBox(height: 3),
-                  Text('BENGALURU · 171 CM',
+                    child: Text(
+                      'DEVIKA MENON',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: BoardType.mono(fontSize: 9.5, fontWeight: FontWeight.w400)),
+                      style: BoardType.title(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'BENGALURU · 171 CM',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: BoardType.mono(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
                 ],
               ),
             );
@@ -844,7 +954,10 @@ void main() {
     // throws away the face. Everything that renders a person crops from
     // the top, or just above centre for circles.
     testWidgets('BoardMedia crops from the top by default', (tester) async {
-      await layout(tester, const SizedBox(width: 100, height: 100, child: BoardMedia()));
+      await layout(
+        tester,
+        const SizedBox(width: 100, height: 100, child: BoardMedia()),
+      );
       const media = BoardMedia();
       expect(media.alignment, Alignment.topCenter);
     });
@@ -856,8 +969,9 @@ void main() {
   });
 
   group('portfolio masonry', () {
-    testWidgets('staggers two columns and never goes below the floor',
-        (tester) async {
+    testWidgets('staggers two columns and never goes below the floor', (
+      tester,
+    ) async {
       final heights = <double>[];
 
       final error = await layout(
@@ -890,7 +1004,10 @@ void main() {
     testWidgets('no items renders nothing', (tester) async {
       final error = await layout(
         tester,
-        PortfolioMasonry(itemCount: 0, itemBuilder: (_, __, ___) => const SizedBox()),
+        PortfolioMasonry(
+          itemCount: 0,
+          itemBuilder: (_, __, ___) => const SizedBox(),
+        ),
       );
       expect(error, isNull);
     });
@@ -916,43 +1033,49 @@ void main() {
     // bottomNavigationBar slot, where constraints are loose with
     // maxHeight set to the whole screen. Anything that fills the biggest
     // offered height there eats the entire body.
-    testWidgets('shrink-wraps in a bottomNavigationBar instead of eating the body',
-        (tester) async {
-      tester.view.physicalSize = const Size(360, 720);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
+    testWidgets(
+      'shrink-wraps in a bottomNavigationBar instead of eating the body',
+      (tester) async {
+        tester.view.physicalSize = const Size(360, 720);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Column(
-              children: [
-                Container(key: const Key('body'), height: 100, color: BoardColors.ink),
-                const Expanded(child: SizedBox.shrink()),
-              ],
-            ),
-            bottomNavigationBar: Container(
-              color: BoardColors.paper,
-              padding: const EdgeInsets.all(16),
-              child: BoardButton(label: 'Message', onTap: () {}),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Column(
+                children: [
+                  Container(
+                    key: const Key('body'),
+                    height: 100,
+                    color: BoardColors.ink,
+                  ),
+                  const Expanded(child: SizedBox.shrink()),
+                ],
+              ),
+              bottomNavigationBar: Container(
+                color: BoardColors.paper,
+                padding: const EdgeInsets.all(16),
+                child: BoardButton(label: 'Message', onTap: () {}),
+              ),
             ),
           ),
-        ),
-      );
-      await tester.pump();
+        );
+        await tester.pump();
 
-      expect(tester.takeException(), isNull);
+        expect(tester.takeException(), isNull);
 
-      final button = tester.getSize(find.byType(BoardButton));
-      expect(
-        button.height,
-        lessThan(100),
-        reason: 'the action bar must wrap its label, not fill the screen',
-      );
-      // The body still has room to render, which is the symptom that
-      // made the public profile look like nothing but a button.
-      expect(tester.getSize(find.byKey(const Key('body'))).height, 100);
-    });
+        final button = tester.getSize(find.byType(BoardButton));
+        expect(
+          button.height,
+          lessThan(100),
+          reason: 'the action bar must wrap its label, not fill the screen',
+        );
+        // The body still has room to render, which is the symptom that
+        // made the public profile look like nothing but a button.
+        expect(tester.getSize(find.byKey(const Key('body'))).height, 100);
+      },
+    );
 
     testWidgets('still fills the available width', (tester) async {
       final error = await layout(
@@ -969,7 +1092,9 @@ void main() {
   });
 
   group('board row primitives', () {
-    testWidgets('a departure row fits in its fixed time/status columns', (tester) async {
+    testWidgets('a departure row fits in its fixed time/status columns', (
+      tester,
+    ) async {
       // 52dp time + 76dp status are fixed by the design; the middle
       // column has to absorb everything else at 320dp.
       final error = await layout(
@@ -979,7 +1104,10 @@ void main() {
           padding: const EdgeInsets.all(13),
           child: Row(
             children: [
-              const SizedBox(width: 52, child: FlapTile(text: '09:30', fontSize: 12)),
+              const SizedBox(
+                width: 52,
+                child: FlapTile(text: '09:30', fontSize: 12),
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
@@ -990,13 +1118,19 @@ void main() {
                       longTitle.toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: BoardType.title(fontSize: 15, color: BoardColors.onInk),
+                      style: BoardType.title(
+                        fontSize: 15,
+                        color: BoardColors.onInk,
+                      ),
                     ),
                     Text(
                       'MUMBAI · BANDRA WEST · MAHARASHTRA',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: BoardType.mono(fontSize: 9.5, color: BoardColors.onInkFaint),
+                      style: BoardType.mono(
+                        fontSize: 9.5,
+                        color: BoardColors.onInkFaint,
+                      ),
                     ),
                   ],
                 ),
@@ -1017,7 +1151,10 @@ void main() {
           padding: EdgeInsets.all(16),
           child: Column(
             children: [
-              SpecRow(label: 'Agency associations', value: 'MODELX MANAGEMENT INDIA'),
+              SpecRow(
+                label: 'Agency associations',
+                value: 'MODELX MANAGEMENT INDIA',
+              ),
               SpecRow(label: 'Shooting starts', value: '09 MAR 2026 · 12:00'),
             ],
           ),
@@ -1038,7 +1175,11 @@ void main() {
               ('Age', '21'),
             ])
               Expanded(
-                child: BoardStatWell(label: cell.$1, value: cell.$2, onDark: false),
+                child: BoardStatWell(
+                  label: cell.$1,
+                  value: cell.$2,
+                  onDark: false,
+                ),
               ),
           ],
         ),
@@ -1046,7 +1187,9 @@ void main() {
       expect(error, isNull);
     });
 
-    testWidgets('the four-up strip survives being stretched in a scroll view', (tester) async {
+    testWidgets('the four-up strip survives being stretched in a scroll view', (
+      tester,
+    ) async {
       // The profile stat strips stretch their cells so the hairline
       // dividers run full height. Inside a scroll view that Row has no
       // bounded height, so this is the shape that previously handed the
@@ -1070,7 +1213,10 @@ void main() {
                       Expanded(
                         child: Container(
                           color: BoardColors.card,
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 10,
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
@@ -1143,9 +1289,18 @@ void main() {
       // Slate and brass share a lightness band, so full-strength brass
       // text sinks into a slate panel.
       expect(BoardColors.textOnSlate(BoardColors.brass), BoardColors.brassText);
-      expect(BoardColors.textOnSlate(BoardColors.booked), BoardColors.bookedText);
-      expect(BoardColors.textOnSlate(BoardColors.negotiating), BoardColors.negotiatingText);
-      expect(BoardColors.textOnSlate(BoardColors.rejected), BoardColors.rejectedText);
+      expect(
+        BoardColors.textOnSlate(BoardColors.booked),
+        BoardColors.bookedText,
+      );
+      expect(
+        BoardColors.textOnSlate(BoardColors.negotiating),
+        BoardColors.negotiatingText,
+      );
+      expect(
+        BoardColors.textOnSlate(BoardColors.rejected),
+        BoardColors.rejectedText,
+      );
       // Anything without a tint passes through untouched.
       expect(BoardColors.textOnSlate(BoardColors.onInk), BoardColors.onInk);
     });
@@ -1174,36 +1329,36 @@ void main() {
 
   group('full screens', () {
     Widget jobDetail() => const BoardJobDetail(
-          title: longTitle,
-          posterLine: 'MODELX AGENCY · MUMBAI, MAHARASHTRA',
-          description:
-              'Two-day shoot in Bandra. Wardrobe fitting the evening before, '
-              'board call at 9 AM sharp. Travel and stay covered.',
-          status: 'open',
-          details: [
-            ('Location', 'MUMBAI'),
-            ('Compensation', '₹10,000 – ₹20,000'),
-            ('Shooting starts', '09 MAR 2026 · 12:00'),
-            ('Shooting ends', '09 MAR 2026 · 18:00'),
-            ('Outfit', 'TRADITIONAL'),
-          ],
-          highlights: [('Gender', 'ANY'), ('Age range', '21 – 30')],
-          chipGroups: [
-            ('Eye color', ['BLACK', 'BROWN']),
-            ('Hair color', ['BLACK', 'BROWN', 'BLONDE']),
-            ('Required skills', ['PHOTOSHOOT', 'RAMP WALK']),
-          ],
-          measurements: [
-            'Height 160–189 cm',
-            'Chest 32–46 in',
-            'Waist 26–35 in',
-            'Shoulder 34–43 in',
-            'Inseam 34–43 in',
-          ],
-          applicationsLine: '3 applications · posted 203D AGO',
-          depValue: '09 MAR 2026 · 12:00',
-          hasApplied: false,
-        );
+      title: longTitle,
+      posterLine: 'MODELX AGENCY · MUMBAI, MAHARASHTRA',
+      description:
+          'Two-day shoot in Bandra. Wardrobe fitting the evening before, '
+          'board call at 9 AM sharp. Travel and stay covered.',
+      status: 'open',
+      details: [
+        ('Location', 'MUMBAI'),
+        ('Compensation', '₹10,000 – ₹20,000'),
+        ('Shooting starts', '09 MAR 2026 · 12:00'),
+        ('Shooting ends', '09 MAR 2026 · 18:00'),
+        ('Outfit', 'TRADITIONAL'),
+      ],
+      highlights: [('Gender', 'ANY'), ('Age range', '21 – 30')],
+      chipGroups: [
+        ('Eye color', ['BLACK', 'BROWN']),
+        ('Hair color', ['BLACK', 'BROWN', 'BLONDE']),
+        ('Required skills', ['PHOTOSHOOT', 'RAMP WALK']),
+      ],
+      measurements: [
+        'Height 160–189 cm',
+        'Chest 32–46 in',
+        'Waist 26–35 in',
+        'Shoulder 34–43 in',
+        'Inseam 34–43 in',
+      ],
+      applicationsLine: '3 applications · posted 203D AGO',
+      depValue: '09 MAR 2026 · 12:00',
+      hasApplied: false,
+    );
 
     for (final scale in [1.0, 1.5]) {
       testWidgets('job detail lays out at ${scale}x text', (tester) async {

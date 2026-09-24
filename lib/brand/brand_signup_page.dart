@@ -2,12 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'brand_dashboard_page.dart';
+import '../agency/team_access/invite_acceptance_page.dart';
 import '../ui/app_theme.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_text_field.dart';
 
 class BrandSignupPage extends StatefulWidget {
-  const BrandSignupPage({super.key});
+  /// Carried through from an invite deep link.
+  ///
+  /// The role picker used to pass this to model signup only, so a brand
+  /// invited by an agency arrived as an ordinary signup and the
+  /// invitation was silently lost.
+  final String? inviteToken;
+
+  const BrandSignupPage({super.key, this.inviteToken});
 
   @override
   State<BrandSignupPage> createState() => _BrandSignupPageState();
@@ -39,28 +47,45 @@ class _BrandSignupPageState extends State<BrandSignupPage> {
         password: passwordController.text.trim(),
       );
 
-      // Save brand profile to Firestore
-      await FirebaseFirestore.instance
-          .collection('brands')
-          .doc(userCredential.user!.uid)
-          .set({
-        'uid': userCredential.user!.uid,
-        'brandName': brandNameController.text.trim(),
-        'industry': industryController.text.trim(),
-        'location': locationController.text.trim(),
-        'email': emailController.text.trim().toLowerCase(),
-        'about': aboutController.text.trim(),
-        'profileCompleted': true,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
+      // Save brand profile to Firestore.
+      //
+      // Wrapped so that a failure here does not strand the account: the
+      // auth user would exist with no brand document, which AuthGate
+      // cannot classify -- it checks users, then brands, then agency,
+      // and signs out if none match. The person would be left unable to
+      // sign in or to register the same address again. Model signup
+      // already rolled back; this did not.
+      try {
+        await FirebaseFirestore.instance
+            .collection('brands')
+            .doc(userCredential.user!.uid)
+            .set({
+              'uid': userCredential.user!.uid,
+              'brandName': brandNameController.text.trim(),
+              'industry': industryController.text.trim(),
+              'location': locationController.text.trim(),
+              'email': emailController.text.trim().toLowerCase(),
+              'about': aboutController.text.trim(),
+              'profileCompleted': true,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+      } catch (e) {
+        await userCredential.user?.delete();
+        rethrow;
+      }
 
       if (!mounted) return;
 
-      // Redirect to BrandDashboardPage
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const BrandDashboardPage()),
+        MaterialPageRoute(
+          builder: (_) => widget.inviteToken != null
+              ? InviteAcceptancePage(
+                  token: widget.inviteToken!,
+                  autoAcceptOnLoad: true,
+                )
+              : const BrandDashboardPage(),
+        ),
         (_) => false,
       );
     } on FirebaseAuthException catch (e) {
@@ -71,9 +96,9 @@ class _BrandSignupPageState extends State<BrandSignupPage> {
   }
 
   void _showError(String? msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg ?? 'Something went wrong')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg ?? 'Something went wrong')));
   }
 
   // ------------------ UI ------------------
@@ -130,7 +155,12 @@ class _BrandSignupPageState extends State<BrandSignupPage> {
     return Container(
       width: double.infinity,
       color: AppColors.backstage,
-      padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 20, 24, 36),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        MediaQuery.of(context).padding.top + 20,
+        24,
+        36,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -140,29 +170,47 @@ class _BrandSignupPageState extends State<BrandSignupPage> {
               padding: const EdgeInsets.only(bottom: 18),
               child: GestureDetector(
                 onTap: () => Navigator.of(context).pop(),
-                child: const Icon(Icons.arrow_back, color: AppColors.onBackstage, size: AppIconSize.md),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: AppColors.onBackstage,
+                  size: AppIconSize.md,
+                ),
               ),
             ),
           Text.rich(
-            TextSpan(children: [
-              TextSpan(
-                text: 'Join ',
-                style: AppTypography.display.copyWith(color: AppColors.onBackstage, fontSize: 32),
-              ),
-              TextSpan(
-                text: 'ModelX',
-                style: AppTypography.displayAccent(color: AppColors.goldOnBackstage, fontSize: 34),
-              ),
-              TextSpan(
-                text: '.',
-                style: AppTypography.display.copyWith(color: AppColors.onBackstage, fontSize: 32),
-              ),
-            ]),
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: 'Join ',
+                  style: AppTypography.display.copyWith(
+                    color: AppColors.onBackstage,
+                    fontSize: 32,
+                  ),
+                ),
+                TextSpan(
+                  text: 'ModelX',
+                  style: AppTypography.displayAccent(
+                    color: AppColors.goldOnBackstage,
+                    fontSize: 34,
+                  ),
+                ),
+                TextSpan(
+                  text: '.',
+                  style: AppTypography.display.copyWith(
+                    color: AppColors.onBackstage,
+                    fontSize: 32,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 10),
           Text(
             'Set up your brand to discover and book talent.',
-            style: AppTypography.body.copyWith(color: AppColors.onBackstageSoft, fontSize: 15),
+            style: AppTypography.body.copyWith(
+              color: AppColors.onBackstageSoft,
+              fontSize: 15,
+            ),
           ),
         ],
       ),

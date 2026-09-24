@@ -45,15 +45,22 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
   Future<void> _load() async {
     final user = _auth.currentUser;
     if (user == null) return;
-    final doc = await FirebaseFirestore.instance.collection('agency').doc(user.uid).get();
+    final doc = await FirebaseFirestore.instance
+        .collection('agency')
+        .doc(user.uid)
+        .get();
     final d = doc.data() ?? {};
     agencyNameController.text = d['agencyName'] ?? '';
     phoneController.text = d['phone'] ?? '';
     addressController.text = d['address'] ?? '';
     websiteController.text = d['website'] ?? '';
     bioController.text = d['bio'] ?? '';
-    specialtiesController.text = (d['specialties'] is List) ? (d['specialties'] as List).join(', ') : (d['specialties'] ?? '');
-    servicesController.text = (d['services'] is List) ? (d['services'] as List).join(', ') : (d['services'] ?? '');
+    specialtiesController.text = (d['specialties'] is List)
+        ? (d['specialties'] as List).join(', ')
+        : (d['specialties'] ?? '');
+    servicesController.text = (d['services'] is List)
+        ? (d['services'] as List).join(', ')
+        : (d['services'] ?? '');
     instagramController.text = (d['socialLinks']?['instagram']) ?? '';
     linkedinController.text = (d['socialLinks']?['linkedin']) ?? '';
     logoUrl = d['logoUrl'];
@@ -64,11 +71,17 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
 
   Future<void> _pickAndUpload(bool isLogo) async {
     final picker = ImagePicker();
-    final p = await picker.pickImage(source: ImageSource.gallery, imageQuality: 75);
+    final p = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 75,
+    );
     if (p == null) return;
     final file = File(p.path);
     final uid = _auth.currentUser!.uid;
-    final uploaded = await CloudinaryService.uploadProfileImage(file, 'agency_$uid');
+    final uploaded = await CloudinaryService.uploadProfileImage(
+      file,
+      'agency_$uid',
+    );
     if (uploaded == null) return;
     setState(() {
       if (isLogo) {
@@ -89,8 +102,20 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
       'address': addressController.text.trim(),
       'website': websiteController.text.trim(),
       'bio': bioController.text.trim(),
-      'specialties': specialtiesController.text.trim().isEmpty ? null : specialtiesController.text.trim().split(',').map((s) => s.trim()).toList(),
-      'services': servicesController.text.trim().isEmpty ? null : servicesController.text.trim().split(',').map((s) => s.trim()).toList(),
+      'specialties': specialtiesController.text.trim().isEmpty
+          ? null
+          : specialtiesController.text
+                .trim()
+                .split(',')
+                .map((s) => s.trim())
+                .toList(),
+      'services': servicesController.text.trim().isEmpty
+          ? null
+          : servicesController.text
+                .trim()
+                .split(',')
+                .map((s) => s.trim())
+                .toList(),
       'logoUrl': logoUrl,
       'coverImageUrl': coverUrl,
       'socialLinks': {
@@ -101,7 +126,9 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
 
     if (!mounted) return;
     setState(() => _saving = false);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved')));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Saved')));
     Navigator.pop(context);
   }
 
@@ -123,13 +150,27 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
             ),
             clipBehavior: Clip.antiAlias,
             child: (coverUrl ?? '').isNotEmpty
-                ? Image.network(coverUrl!, fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox())
-                : const Center(child: Icon(Icons.photo_library_outlined, size: 32, color: AppColors.onBackstageSoft)),
+                ? Image.network(
+                    coverUrl!,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    errorBuilder: (_, __, ___) => const SizedBox(),
+                  )
+                : const Center(
+                    child: Icon(
+                      Icons.photo_library_outlined,
+                      size: 32,
+                      color: AppColors.onBackstageSoft,
+                    ),
+                  ),
           ),
           Positioned(
             right: 12,
             top: 12,
-            child: _previewEditButton(Icons.photo_library_outlined, () => _pickAndUpload(false)),
+            child: _previewEditButton(
+              Icons.photo_library_outlined,
+              () => _pickAndUpload(false),
+            ),
           ),
           Positioned(
             bottom: -30,
@@ -141,7 +182,10 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
                   width: 76,
                   height: 76,
                   padding: const EdgeInsets.all(3),
-                  decoration: const BoxDecoration(color: AppColors.paper, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(
+                    color: AppColors.paper,
+                    shape: BoxShape.circle,
+                  ),
                   child: ProfileAvatar(
                     imageUrl: (logoUrl ?? '').isNotEmpty ? logoUrl : null,
                     name: agencyNameController.text,
@@ -151,7 +195,10 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
                 Positioned(
                   bottom: 0,
                   right: 0,
-                  child: _previewEditButton(Icons.photo_outlined, () => _pickAndUpload(true)),
+                  child: _previewEditButton(
+                    Icons.photo_outlined,
+                    () => _pickAndUpload(true),
+                  ),
                 ),
               ],
             ),
@@ -166,7 +213,10 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(7),
-        decoration: const BoxDecoration(color: AppColors.goldOnBackstage, shape: BoxShape.circle),
+        decoration: const BoxDecoration(
+          color: AppColors.goldOnBackstage,
+          shape: BoxShape.circle,
+        ),
         child: Icon(icon, size: 15, color: AppColors.backstage),
       ),
     );
@@ -192,16 +242,28 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
                 validator: (v) => v == null || v.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 12),
-              TextFormField(controller: phoneController, decoration: const InputDecoration(labelText: 'Phone')),
+              TextFormField(
+                controller: phoneController,
+                decoration: const InputDecoration(labelText: 'Phone'),
+              ),
               const SizedBox(height: 12),
-              TextFormField(controller: addressController, decoration: const InputDecoration(labelText: 'Address')),
+              TextFormField(
+                controller: addressController,
+                decoration: const InputDecoration(labelText: 'Address'),
+              ),
               const SizedBox(height: 12),
-              TextFormField(controller: websiteController, decoration: const InputDecoration(labelText: 'Website')),
+              TextFormField(
+                controller: websiteController,
+                decoration: const InputDecoration(labelText: 'Website'),
+              ),
               if (_email != null && _email!.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.paperRaised,
                     borderRadius: BorderRadius.circular(AppRadius.md),
@@ -209,30 +271,63 @@ class _AgencyEditProfilePageState extends State<AgencyEditProfilePage> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.email_outlined, size: 18, color: AppColors.inkFaint),
+                      const Icon(
+                        Icons.email_outlined,
+                        size: 18,
+                        color: AppColors.inkFaint,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           _email!,
-                          style: const TextStyle(color: AppColors.inkFaint, fontSize: 14),
+                          style: const TextStyle(
+                            color: AppColors.inkFaint,
+                            fontSize: 14,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const Text('Not editable', style: TextStyle(color: AppColors.inkFaint, fontSize: 11)),
+                      const Text(
+                        'Not editable',
+                        style: TextStyle(
+                          color: AppColors.inkFaint,
+                          fontSize: 11,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ],
               const SizedBox(height: 8),
-              TextFormField(controller: bioController, decoration: const InputDecoration(labelText: 'Bio'), maxLines: 4),
+              TextFormField(
+                controller: bioController,
+                decoration: const InputDecoration(labelText: 'Bio'),
+                maxLines: 4,
+              ),
               const SizedBox(height: 12),
-              TextFormField(controller: specialtiesController, decoration: const InputDecoration(labelText: 'Specialties (comma separated)')),
+              TextFormField(
+                controller: specialtiesController,
+                decoration: const InputDecoration(
+                  labelText: 'Specialties (comma separated)',
+                ),
+              ),
               const SizedBox(height: 12),
-              TextFormField(controller: servicesController, decoration: const InputDecoration(labelText: 'Services (comma separated)')),
+              TextFormField(
+                controller: servicesController,
+                decoration: const InputDecoration(
+                  labelText: 'Services (comma separated)',
+                ),
+              ),
               const SizedBox(height: 12),
-              TextFormField(controller: instagramController, decoration: const InputDecoration(labelText: 'Instagram')),
+              TextFormField(
+                controller: instagramController,
+                decoration: const InputDecoration(labelText: 'Instagram'),
+              ),
               const SizedBox(height: 12),
-              TextFormField(controller: linkedinController, decoration: const InputDecoration(labelText: 'LinkedIn')),
+              TextFormField(
+                controller: linkedinController,
+                decoration: const InputDecoration(labelText: 'LinkedIn'),
+              ),
               const SizedBox(height: 24),
               AppButton(
                 label: 'Save',

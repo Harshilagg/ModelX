@@ -39,7 +39,9 @@ class _ModelDetailPageState extends State<ModelDetailPage> {
       return const Scaffold(body: LoadingState());
     }
     final d = _data ?? {};
-    final portfolio = d['portfolio'] is List ? (d['portfolio'] as List) : const [];
+    final portfolio = d['portfolio'] is List
+        ? (d['portfolio'] as List)
+        : const [];
     return Scaffold(
       backgroundColor: AppColors.paperRaised,
       appBar: AppBar(title: Text(d['displayName'] ?? 'Model')),
@@ -51,24 +53,40 @@ class _ModelDetailPageState extends State<ModelDetailPage> {
             if (d['coverUrl'] != null)
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppRadius.lg),
-                child: Image.network(d['coverUrl'], height: 180, width: double.infinity, fit: BoxFit.cover),
+                child: Image.network(
+                  d['coverUrl'],
+                  height: 180,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
               ),
             const SizedBox(height: 16),
             AppCard(
               child: Row(
                 children: [
-                  ProfileAvatar(imageUrl: d['avatarUrl'], name: d['displayName'], size: 64),
+                  ProfileAvatar(
+                    imageUrl: d['avatarUrl'],
+                    name: d['displayName'],
+                    size: 64,
+                  ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(d['displayName'] ?? '', style: AppTypography.subheading),
+                        Text(
+                          d['displayName'] ?? '',
+                          style: AppTypography.subheading,
+                        ),
                         if ((d['location'] ?? '').toString().isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              const Icon(Icons.place_outlined, size: AppIconSize.xs, color: AppColors.inkFaint),
+                              const Icon(
+                                Icons.place_outlined,
+                                size: AppIconSize.xs,
+                                color: AppColors.inkFaint,
+                              ),
                               const SizedBox(width: 4),
                               Text(d['location'], style: AppTypography.caption),
                             ],
@@ -88,7 +106,10 @@ class _ModelDetailPageState extends State<ModelDetailPage> {
                   children: [
                     Text('About', style: AppTypography.label),
                     const SizedBox(height: 8),
-                    Text(d['bio'], style: AppTypography.body.copyWith(height: 1.5)),
+                    Text(
+                      d['bio'],
+                      style: AppTypography.body.copyWith(height: 1.5),
+                    ),
                   ],
                 ),
               ),
@@ -97,7 +118,10 @@ class _ModelDetailPageState extends State<ModelDetailPage> {
             Text('Portfolio', style: AppTypography.label),
             const SizedBox(height: 10),
             if (portfolio.isEmpty)
-              const EmptyState(icon: Icons.photo_library_outlined, title: 'No portfolio images yet')
+              const EmptyState(
+                icon: Icons.photo_library_outlined,
+                title: 'No portfolio images yet',
+              )
             else
               Column(
                 children: portfolio
@@ -106,8 +130,15 @@ class _ModelDetailPageState extends State<ModelDetailPage> {
                         padding: const EdgeInsets.only(bottom: 10),
                         child: p.toString().contains('http')
                             ? ClipRRect(
-                                borderRadius: BorderRadius.circular(AppRadius.md),
-                                child: Image.network(p, height: 120, width: double.infinity, fit: BoxFit.cover),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.md,
+                                ),
+                                child: Image.network(
+                                  p,
+                                  height: 120,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
                               )
                             : const SizedBox(),
                       ),

@@ -2,13 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum AgencyRole {
-  owner,
-  admin,
-  booker,
-  scout,
-  member
-}
+enum AgencyRole { owner, admin, booker, scout, member }
 
 class AgencyMember {
   final String uid;

@@ -12,13 +12,19 @@ class ConnectedUsersPage extends StatelessWidget {
 
   Future<List<Map<String, dynamic>>> _fetchConnections() async {
     final currentUser = FirebaseAuth.instance.currentUser!;
-    final doc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .get();
     final data = doc.data() ?? {};
     final connections = data['connections'] ?? [];
 
     List<Map<String, dynamic>> connectedUsers = [];
     for (var uid in connections) {
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
       final userData = userDoc.data() ?? {};
       userData['uid'] = uid; // include uid for chat
       connectedUsers.add(userData);
@@ -34,14 +40,20 @@ class ConnectedUsersPage extends StatelessWidget {
         future: _fetchConnections(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return const ErrorStateView(message: 'Could not load your connections.');
+            return const ErrorStateView(
+              message: 'Could not load your connections.',
+            );
           }
 
           if (!snapshot.hasData) {
             return ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm, horizontal: AppSpacing.md),
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.sm,
+                horizontal: AppSpacing.md,
+              ),
               itemCount: 6,
-              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.xs),
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: AppSpacing.xs),
               itemBuilder: (_, __) => AppSkeleton.listTile(),
             );
           }
@@ -67,17 +79,25 @@ class ConnectedUsersPage extends StatelessWidget {
             ),
             itemBuilder: (context, index) {
               final user = connections[index];
-              final name = user['fullName'] ?? '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'.trim();
+              final name =
+                  user['fullName'] ??
+                  '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'.trim();
 
               return ListTile(
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md,
                   vertical: AppSpacing.xs,
                 ),
-                leading: ProfileAvatar(imageUrl: user['profileImage'], name: name, size: 52),
+                leading: ProfileAvatar(
+                  imageUrl: user['profileImage'],
+                  name: name,
+                  size: 52,
+                ),
                 title: Text(
                   name.isNotEmpty ? name : 'User',
-                  style: AppTypography.bodyEmphasized.copyWith(fontWeight: FontWeight.w700),
+                  style: AppTypography.bodyEmphasized.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 subtitle: (user['bio'] ?? '').toString().isNotEmpty
                     ? Padding(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../ui/app_theme.dart';
+import 'kit/kit.dart';
 
 enum AppButtonVariant { primary, secondary, ghost, destructive }
 
@@ -31,50 +31,34 @@ class AppButton extends StatelessWidget {
     this.loading = false,
     this.expand = false,
     this.icon,
-  }) : variant = primary ? AppButtonVariant.primary : AppButtonVariant.secondary;
+  }) : variant = primary
+           ? AppButtonVariant.primary
+           : AppButtonVariant.secondary;
 
   @override
   Widget build(BuildContext context) {
-    final disabled = onPressed == null || loading;
-    final child = loading
-        ? SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.2,
-              color: variant == AppButtonVariant.primary || variant == AppButtonVariant.destructive
-                  ? AppColors.paper
-                  : AppColors.ink,
-            ),
-          )
-        : Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[Icon(icon, size: 18), const SizedBox(width: 8)],
-              Text(label),
-            ],
-          );
-
-    Widget button;
-    switch (variant) {
-      case AppButtonVariant.primary:
-        button = ElevatedButton(onPressed: disabled ? null : onPressed, child: child);
-        break;
-      case AppButtonVariant.destructive:
-        button = ElevatedButton(
-          onPressed: disabled ? null : onPressed,
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.select),
-          child: child,
-        );
-        break;
-      case AppButtonVariant.secondary:
-        button = OutlinedButton(onPressed: disabled ? null : onPressed, child: child);
-        break;
-      case AppButtonVariant.ghost:
-        button = TextButton(onPressed: disabled ? null : onPressed, child: child);
-        break;
-    }
-
-    return expand ? SizedBox(width: double.infinity, child: button) : button;
+    // Forwards to the shared pill rather than drawing its own button.
+    //
+    // Every brand and agency screen is built from this one, so routing
+    // it here moves all of them onto the new shape without editing each
+    // in turn -- the same approach the type roles take.
+    //
+    // The destructive variant collapses into the outlined one. The
+    // palette has a rejected hue but it is a fill for status, and a red
+    // button in a design with a single accent reads as an error state
+    // rather than an action. The wording carries the warning instead.
+    return AppPillButton(
+      label: label,
+      onPressed: onPressed,
+      busy: loading,
+      expand: expand,
+      leading: icon == null ? null : Icon(icon, size: 18),
+      kind: switch (variant) {
+        AppButtonVariant.primary => AppButtonKind.filled,
+        AppButtonVariant.secondary ||
+        AppButtonVariant.destructive => AppButtonKind.outlined,
+        AppButtonVariant.ghost => AppButtonKind.ghost,
+      },
+    );
   }
 }

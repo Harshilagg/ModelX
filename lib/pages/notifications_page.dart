@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'user_profile_page.dart';
-import '../services/board_departures.dart';
+import '../services/application_feed.dart';
 import '../ui/board_theme.dart';
 import '../widgets/board_widgets.dart';
 import '../widgets/state_views.dart';
@@ -45,7 +45,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
-  Future<void> _respondToRequest(String docId, String senderId, bool accepted) async {
+  Future<void> _respondToRequest(
+    String docId,
+    String senderId,
+    bool accepted,
+  ) async {
     final user = currentUser;
     if (user == null) return;
 
@@ -57,9 +61,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     final senderRef = firestore.collection('users').doc(senderId);
 
     // Update request status
-    batch.update(requestRef, {
-      'status': accepted ? 'accepted' : 'rejected',
-    });
+    batch.update(requestRef, {'status': accepted ? 'accepted' : 'rejected'});
 
     if (accepted) {
       // ADD CONNECTIONS (both sides)
@@ -96,9 +98,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
           return const ErrorStateView(message: 'Could not load notifications.');
         }
 
-        final requests = requestSnap.data?.docs ?? const <QueryDocumentSnapshot>[];
+        final requests =
+            requestSnap.data?.docs ?? const <QueryDocumentSnapshot>[];
 
-        return BoardDepartures(
+        return ApplicationFeed(
           uid: user.uid,
           builder: (departures, loading) {
             final updates = departures.where((d) => d.hasMoved).toList();
@@ -119,7 +122,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   key: const ValueKey('title'),
                   child: BoardScreenTitle(
                     title: 'Board Updates',
-                    meta: total == 0 ? 'ALL CLEAR' : '$total NEW',
+                    meta: total == 0 ? 'All clear' : '$total NEW',
                   ),
                 ),
                 if (total == 0)
@@ -129,7 +132,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     child: EmptyState(
                       icon: Icons.notifications_none_rounded,
                       title: 'Nothing new on the board',
-                      message: 'Status changes on jobs you applied to, and\nconnection requests, arrive here.',
+                      message:
+                          'Status changes on jobs you applied to, and\nconnection requests, arrive here.',
                     ),
                   )
                 else
@@ -151,11 +155,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
   /// The ink table. Rows share one three-column rhythm — time, what
   /// happened, and the thing you can act on — whether the row is a job
   /// moving or a person knocking.
-  Widget _panel(List<Departure> updates, List<QueryDocumentSnapshot> requests) {
+  Widget _panel(
+    List<Application> updates,
+    List<QueryDocumentSnapshot> requests,
+  ) {
     final rows = <Widget>[];
 
     for (var i = 0; i < updates.length; i++) {
-      rows.add(_updateRow(updates[i], last: i == updates.length - 1 && requests.isEmpty));
+      rows.add(
+        _updateRow(
+          updates[i],
+          last: i == updates.length - 1 && requests.isEmpty,
+        ),
+      );
     }
     for (var i = 0; i < requests.length; i++) {
       rows.add(_requestRow(requests[i], last: i == requests.length - 1));
@@ -193,17 +205,21 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Widget _head(String text) => Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: BoardType.mono(
-          fontSize: 9.5,
-          color: BoardColors.onInkFaint,
-          letterSpacing: 1.15,
-        ),
-      );
+    text,
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
+    style: BoardType.mono(
+      fontSize: 9.5,
+      color: BoardColors.onInkFaint,
+      letterSpacing: 1.15,
+    ),
+  );
 
-  Widget _rowShell({required List<Widget> children, required bool last, VoidCallback? onTap}) {
+  Widget _rowShell({
+    required List<Widget> children,
+    required bool last,
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -212,16 +228,21 @@ class _NotificationsPageState extends State<NotificationsPage> {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: last ? Colors.transparent : BoardColors.onInk.withValues(alpha: 0.1),
+              color: last
+                  ? Colors.transparent
+                  : BoardColors.onInk.withValues(alpha: 0.1),
             ),
           ),
         ),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: children),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: children,
+        ),
       ),
     );
   }
 
-  Widget _updateRow(Departure d, {required bool last}) {
+  Widget _updateRow(Application d, {required bool last}) {
     return _rowShell(
       last: last,
       onTap: () => d.open(context),
@@ -229,7 +250,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         SizedBox(
           width: 56,
           child: FlapTile(
-            text: boardAgo(d.start),
+            text: relativeTime(d.start),
             fontSize: 11,
             background: BoardColors.slate,
           ),
@@ -241,14 +262,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                [d.posterName, d.title].where((s) => s.isNotEmpty).join(' · ').toUpperCase(),
+                [d.posterName, d.title].where((s) => s.isNotEmpty).join(' · '),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: BoardType.title(fontSize: 15, color: BoardColors.onInk, letterSpacing: 0.3),
+                style: BoardType.title(
+                  fontSize: 15,
+                  color: BoardColors.onInk,
+                  letterSpacing: 0.3,
+                ),
               ),
               const SizedBox(height: 3),
               Text(
-                'MOVED TO ${d.status.toUpperCase()}',
+                'MOVED TO ${d.status}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: BoardType.mono(
@@ -271,28 +296,35 @@ class _NotificationsPageState extends State<NotificationsPage> {
     final senderId = (data['senderId'] ?? '').toString();
 
     return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance.collection('users').doc(senderId).get(),
+      future: FirebaseFirestore.instance
+          .collection('users')
+          .doc(senderId)
+          .get(),
       builder: (context, senderSnap) {
-        final senderData = senderSnap.data?.data() as Map<String, dynamic>? ?? {};
-        final name = (senderData['fullName'] ??
-                senderData['username'] ??
-                data['senderUsername'] ??
-                'User')
-            .toString();
+        final senderData =
+            senderSnap.data?.data() as Map<String, dynamic>? ?? {};
+        final name =
+            (senderData['fullName'] ??
+                    senderData['username'] ??
+                    data['senderUsername'] ??
+                    'User')
+                .toString();
 
         return _rowShell(
           last: last,
           onTap: senderId.isEmpty
               ? null
               : () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => UserProfilePage(uid: senderId)),
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => UserProfilePage(uid: senderId),
                   ),
+                ),
           children: [
             SizedBox(
               width: 56,
               child: FlapTile(
-                text: boardAgo(BoardDepartures.asDate(data['timestamp'])),
+                text: relativeTime(ApplicationFeed.asDate(data['timestamp'])),
                 fontSize: 11,
               ),
             ),
@@ -303,14 +335,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    name.toUpperCase(),
+                    name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: BoardType.title(fontSize: 15, color: BoardColors.onInk, letterSpacing: 0.3),
+                    style: BoardType.title(
+                      fontSize: 15,
+                      color: BoardColors.onInk,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    'SENT A CONNECTION REQUEST',
+                    'Sent a connection request',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: BoardType.mono(

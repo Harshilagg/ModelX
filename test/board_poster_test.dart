@@ -25,11 +25,23 @@ void main() {
     test('folds gigs and castings into one list', () {
       final posters = BoardPoster.collect(
         gigs: [
-          _FakeDoc('g1', {'brandName': 'Raw Mango', 'brandId': 'b1', 'status': 'open'}),
-          _FakeDoc('g2', {'brandName': 'raw mango', 'brandId': 'b1', 'status': 'open'}),
+          _FakeDoc('g1', {
+            'brandName': 'Raw Mango',
+            'brandId': 'b1',
+            'status': 'open',
+          }),
+          _FakeDoc('g2', {
+            'brandName': 'raw mango',
+            'brandId': 'b1',
+            'status': 'open',
+          }),
         ],
         castings: [
-          _FakeDoc('c1', {'agencyName': 'ModelX', 'agencyId': 'a1', 'status': 'open'}),
+          _FakeDoc('c1', {
+            'agencyName': 'ModelX',
+            'agencyId': 'a1',
+            'status': 'open',
+          }),
         ],
       );
 
@@ -47,8 +59,16 @@ void main() {
       // posting is the only way a brand is visible at all.
       final posters = BoardPoster.collect(
         gigs: [
-          _FakeDoc('g1', {'brandName': 'Bhane', 'brandId': 'b1', 'status': 'draft'}),
-          _FakeDoc('g2', {'brandName': 'Bhane', 'brandId': 'b1', 'status': 'closed'}),
+          _FakeDoc('g1', {
+            'brandName': 'Bhane',
+            'brandId': 'b1',
+            'status': 'draft',
+          }),
+          _FakeDoc('g2', {
+            'brandName': 'Bhane',
+            'brandId': 'b1',
+            'status': 'closed',
+          }),
         ],
         castings: const [],
       );
@@ -61,8 +81,16 @@ void main() {
     test('brands hiring now sort above brands that are not', () {
       final posters = BoardPoster.collect(
         gigs: [
-          _FakeDoc('g1', {'brandName': 'Quiet', 'brandId': 'b1', 'status': 'draft'}),
-          _FakeDoc('g2', {'brandName': 'Hiring', 'brandId': 'b2', 'status': 'open'}),
+          _FakeDoc('g1', {
+            'brandName': 'Quiet',
+            'brandId': 'b1',
+            'status': 'draft',
+          }),
+          _FakeDoc('g2', {
+            'brandName': 'Hiring',
+            'brandId': 'b2',
+            'status': 'open',
+          }),
         ],
         castings: const [],
       );
@@ -73,8 +101,16 @@ void main() {
     test('tapping a poster lands on an open call when they have one', () {
       final posters = BoardPoster.collect(
         gigs: [
-          _FakeDoc('g1', {'brandName': 'Bhane', 'brandId': 'b1', 'status': 'closed'}),
-          _FakeDoc('g2', {'brandName': 'Bhane', 'brandId': 'b1', 'status': 'open'}),
+          _FakeDoc('g1', {
+            'brandName': 'Bhane',
+            'brandId': 'b1',
+            'status': 'closed',
+          }),
+          _FakeDoc('g2', {
+            'brandName': 'Bhane',
+            'brandId': 'b1',
+            'status': 'open',
+          }),
         ],
         castings: const [],
       );
@@ -87,10 +123,7 @@ void main() {
       // empty name was dropped from the board entirely.
       final posters = BoardPoster.collect(
         gigs: [
-          _FakeDoc('g1', {
-            'brandId': 'b1',
-            'projectTitle': 'Spring Campaign',
-          }),
+          _FakeDoc('g1', {'brandId': 'b1', 'projectTitle': 'Spring Campaign'}),
         ],
         castings: const [],
       );
@@ -129,7 +162,9 @@ void main() {
       for (final key in ['agencyName', 'agency', 'posterName']) {
         final posters = BoardPoster.collect(
           gigs: const [],
-          castings: [_FakeDoc('c1', {key: 'ModelX'})],
+          castings: [
+            _FakeDoc('c1', {key: 'ModelX'}),
+          ],
         );
         expect(posters.single.name, 'ModelX', reason: 'via $key');
       }
@@ -137,7 +172,9 @@ void main() {
 
     test('a posting with nothing to show is skipped, not rendered blank', () {
       final posters = BoardPoster.collect(
-        gigs: [_FakeDoc('g1', {'brandId': 'b1'})],
+        gigs: [
+          _FakeDoc('g1', {'brandId': 'b1'}),
+        ],
         castings: const [],
       );
       expect(posters, isEmpty);

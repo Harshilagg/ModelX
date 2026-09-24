@@ -36,9 +36,14 @@ class _CastingListPageState extends State<CastingListPage> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       final agencyId = user?.uid ?? '';
-      final snap = await _service.fetchCastingsForAgencyPage(agencyId, limit: _pageSize);
+      final snap = await _service.fetchCastingsForAgencyPage(
+        agencyId,
+        limit: _pageSize,
+      );
       setState(() {
-        _castings = snap.docs.map((d) => {...d.data() as Map<String, dynamic>, 'id': d.id}).toList();
+        _castings = snap.docs
+            .map((d) => {...d.data() as Map<String, dynamic>, 'id': d.id})
+            .toList();
         _lastDoc = snap.docs.isNotEmpty ? snap.docs.last : null;
         _hasMore = snap.docs.length == _pageSize;
       });
@@ -52,8 +57,14 @@ class _CastingListPageState extends State<CastingListPage> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       final agencyId = user?.uid ?? '';
-      final snap = await _service.fetchCastingsForAgencyPage(agencyId, startAfter: _lastDoc, limit: _pageSize);
-      final items = snap.docs.map((d) => {...d.data() as Map<String, dynamic>, 'id': d.id}).toList();
+      final snap = await _service.fetchCastingsForAgencyPage(
+        agencyId,
+        startAfter: _lastDoc,
+        limit: _pageSize,
+      );
+      final items = snap.docs
+          .map((d) => {...d.data() as Map<String, dynamic>, 'id': d.id})
+          .toList();
       setState(() {
         _castings.addAll(items);
         _lastDoc = snap.docs.isNotEmpty ? snap.docs.last : _lastDoc;
@@ -68,7 +79,10 @@ class _CastingListPageState extends State<CastingListPage> {
     return Scaffold(
       backgroundColor: AppColors.paper,
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateCastingPage())).then((_) => _load()),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CreateCastingPage()),
+        ).then((_) => _load()),
         label: const Text('Create casting'),
         icon: const Icon(Icons.add_rounded),
         backgroundColor: AppColors.ink,
@@ -78,74 +92,115 @@ class _CastingListPageState extends State<CastingListPage> {
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Castings', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.ink)),
-          const SizedBox(height: AppSpacing.sm + 4),
-          _loading
-              ? const Expanded(child: LoadingState())
-              : _castings.isEmpty
-                  ? const Expanded(
-                      child: EmptyState(
-                        icon: Icons.campaign_outlined,
-                        title: 'No castings yet',
-                        message: 'Create your first casting call to start receiving applications.',
-                      ),
-                    )
-                  : Expanded(
-                  child: Column(children: [
-                    Expanded(
-                      child: ListView.separated(
-                        itemCount: _castings.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm + 4),
-                        itemBuilder: (context, index) {
-                          final c = _castings[index] as Map<String, dynamic>;
-                          DateTime createdAt;
-                          try {
-                            createdAt = (c['createdAt'] as Timestamp).toDate();
-                          } catch (_) {
-                            createdAt = DateTime.now();
-                          }
-
-                          return InkWell(
-                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CastingDetailPage(castingId: c['id']))).then((_) => _load()),
-                            child: CastingCard(
-                              id: c['id'],
-                              title: c['title'] ?? '',
-                              description: c['description'] ?? '',
-                              posterName: c['agencyName'] ?? '',
-                              location: c['location'] ?? '',
-                              timeline: c['timeline'] ?? '',
-                              budgetType: c['budgetType'] ?? '',
-                              budgetAmount: c['budgetAmount']?.toString() ?? '',
-                              compensationMin: c['compensationMin']?.toString(),
-                              compensationMax: c['compensationMax']?.toString(),
-                              shootingStart: (c['shootingStart'] is Timestamp) ? (c['shootingStart'] as Timestamp).toDate() : null,
-                              shootingEnd: (c['shootingEnd'] is Timestamp) ? (c['shootingEnd'] as Timestamp).toDate() : null,
-                              talentRequirements: (c['talentRequirements'] is Map) ? Map<String, dynamic>.from(c['talentRequirements'] as Map) : null,
-                              media: List<String>.from(c['media'] ?? []),
-                              applicants: c['applicationsCount'] ?? c['applicantsCount'] ?? 0,
-                              status: c['status'] ?? 'open',
-                              showApply: false,
-                              createdAt: createdAt,
-                              actionWidget: null,
-                            ),
-                          );
-                        },
-                      ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Castings',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: AppColors.ink,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm + 4),
+            _loading
+                ? const Expanded(child: LoadingState())
+                : _castings.isEmpty
+                ? const Expanded(
+                    child: EmptyState(
+                      icon: Icons.campaign_outlined,
+                      title: 'No castings yet',
+                      message:
+                          'Create your first casting call to start receiving applications.',
                     ),
-                    if (_hasMore)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                        child: AppButton(
-                          label: 'Load more',
-                          variant: AppButtonVariant.secondary,
-                          loading: _loadingMore,
-                          onPressed: _loadingMore ? null : _loadMore,
+                  )
+                : Expanded(
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: ListView.separated(
+                            itemCount: _castings.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: AppSpacing.sm + 4),
+                            itemBuilder: (context, index) {
+                              final c =
+                                  _castings[index] as Map<String, dynamic>;
+                              DateTime createdAt;
+                              try {
+                                createdAt = (c['createdAt'] as Timestamp)
+                                    .toDate();
+                              } catch (_) {
+                                createdAt = DateTime.now();
+                              }
+
+                              return InkWell(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        CastingDetailPage(castingId: c['id']),
+                                  ),
+                                ).then((_) => _load()),
+                                child: CastingCard(
+                                  id: c['id'],
+                                  title: c['title'] ?? '',
+                                  description: c['description'] ?? '',
+                                  posterName: c['agencyName'] ?? '',
+                                  location: c['location'] ?? '',
+                                  timeline: c['timeline'] ?? '',
+                                  budgetType: c['budgetType'] ?? '',
+                                  budgetAmount:
+                                      c['budgetAmount']?.toString() ?? '',
+                                  compensationMin: c['compensationMin']
+                                      ?.toString(),
+                                  compensationMax: c['compensationMax']
+                                      ?.toString(),
+                                  shootingStart:
+                                      (c['shootingStart'] is Timestamp)
+                                      ? (c['shootingStart'] as Timestamp)
+                                            .toDate()
+                                      : null,
+                                  shootingEnd: (c['shootingEnd'] is Timestamp)
+                                      ? (c['shootingEnd'] as Timestamp).toDate()
+                                      : null,
+                                  talentRequirements:
+                                      (c['talentRequirements'] is Map)
+                                      ? Map<String, dynamic>.from(
+                                          c['talentRequirements'] as Map,
+                                        )
+                                      : null,
+                                  media: List<String>.from(c['media'] ?? []),
+                                  applicants:
+                                      c['applicationsCount'] ??
+                                      c['applicantsCount'] ??
+                                      0,
+                                  status: c['status'] ?? 'open',
+                                  showApply: false,
+                                  createdAt: createdAt,
+                                  actionWidget: null,
+                                ),
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                  ]),
-                ),
-        ]),
+                        if (_hasMore)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.sm,
+                            ),
+                            child: AppButton(
+                              label: 'Load more',
+                              variant: AppButtonVariant.secondary,
+                              loading: _loadingMore,
+                              onPressed: _loadingMore ? null : _loadMore,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+          ],
+        ),
       ),
     );
   }

@@ -32,11 +32,16 @@ enum CompCardTemplate {
   ),
   signal(
     label: 'Signal',
-    blurb: 'Syne + JetBrains Mono · carbon and chartreuse · made to be forwarded',
+    blurb:
+        'Syne + JetBrains Mono · carbon and chartreuse · made to be forwarded',
     backShots: 4,
   );
 
-  const CompCardTemplate({required this.label, required this.blurb, required this.backShots});
+  const CompCardTemplate({
+    required this.label,
+    required this.blurb,
+    required this.backShots,
+  });
 
   final String label;
   final String blurb;
@@ -109,9 +114,9 @@ class CompCardReadiness {
   /// The human-readable names of what's still missing, so a nudge can say
   /// what to do rather than only how far along you are.
   static List<String> missing(Map<String, dynamic> user) => [
-        for (final entry in printed.entries)
-          if (!_has(user, entry.key)) entry.value,
-      ];
+    for (final entry in printed.entries)
+      if (!_has(user, entry.key)) entry.value,
+  ];
 }
 
 /// Everything the five cards print, resolved once from the profile.
@@ -164,11 +169,16 @@ class CompCardData {
   /// touch the backend — so this reads what models already type rather
   /// than asking them to type it twice.
   static List<String> _triple(String measurements) {
-    final numbers = RegExp(r'\d+').allMatches(measurements).map((m) => m.group(0)!).toList();
+    final numbers = RegExp(
+      r'\d+',
+    ).allMatches(measurements).map((m) => m.group(0)!).toList();
     return numbers.length >= 3 ? numbers.take(3).toList() : const [];
   }
 
-  factory CompCardData.fromUser(Map<String, dynamic> user, {required List<String?> images}) {
+  factory CompCardData.fromUser(
+    Map<String, dynamic> user, {
+    required List<String?> images,
+  }) {
     final measurements = _clean(user['measurements']);
     final triple = _triple(measurements);
 
@@ -200,22 +210,29 @@ class CompCardData {
       name: name.isEmpty ? 'Your Name' : name,
       city: or(_clean(user['location'])),
       agency: agency.isEmpty ? 'The Board' : agency,
-      handle: _clean(user['username']).isEmpty ? dash : '@${_clean(user['username'])}',
+      handle: _clean(user['username']).isEmpty
+          ? dash
+          : '@${_clean(user['username'])}',
       phone: or(_clean(user['contact'])),
       height: height.isEmpty
           ? dash
-          : (heightUnit.isEmpty ? height : '$height ${heightUnit.toUpperCase()}'),
+          : (heightUnit.isEmpty
+                ? height
+                : '$height ${heightUnit.toUpperCase()}'),
       bust: or(bust),
       waist: or(waist),
       hips: or(hips),
-      shoe: shoe.isEmpty ? dash : (shoeUnit.isEmpty ? shoe : '$shoe ${shoeUnit.toUpperCase()}'),
+      shoe: shoe.isEmpty
+          ? dash
+          : (shoeUnit.isEmpty ? shoe : '$shoe ${shoeUnit.toUpperCase()}'),
       hair: or(_clean(user['hairColor'])).toUpperCase(),
       eyes: or(_clean(user['eyeColor'])).toUpperCase(),
       images: images,
     );
   }
 
-  String? shot(int index) => (index >= 0 && index < images.length) ? images[index] : null;
+  String? shot(int index) =>
+      (index >= 0 && index < images.length) ? images[index] : null;
 
   /// Height without its unit — the stat grids label the row already, and
   /// "175 CM" in a four-up cell wraps where "175" does not.
@@ -273,14 +290,17 @@ class CompCardFaceView extends StatelessWidget {
   static const _ivory = Color(0xFFFBF9F4);
   static const _ink = Color(0xFF141513);
 
-  TextStyle _bodoni({double size = 40, Color color = _ink, bool italic = false}) =>
-      GoogleFonts.bodoniModa(
-        fontSize: size,
-        fontWeight: FontWeight.w400,
-        color: color,
-        height: 1,
-        fontStyle: italic ? FontStyle.italic : FontStyle.normal,
-      );
+  TextStyle _bodoni({
+    double size = 40,
+    Color color = _ink,
+    bool italic = false,
+  }) => GoogleFonts.bodoniModa(
+    fontSize: size,
+    fontWeight: FontWeight.w400,
+    color: color,
+    height: 1,
+    fontStyle: italic ? FontStyle.italic : FontStyle.normal,
+  );
 
   TextStyle _jost({
     double size = 10,
@@ -303,9 +323,18 @@ class CompCardFaceView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('THE BOARD', textAlign: TextAlign.center, style: _jost(size: 10, tracking: 0.42)),
+          Text(
+            'THE BOARD',
+            textAlign: TextAlign.center,
+            style: _jost(size: 10, tracking: 0.42),
+          ),
           const SizedBox(height: 18),
-          Expanded(child: _photo(data.shot(0), const [Color(0xFFD8D4C9), Color(0xFFCDC9BE)])),
+          Expanded(
+            child: _photo(data.shot(0), const [
+              Color(0xFFD8D4C9),
+              Color(0xFFCDC9BE),
+            ]),
+          ),
           const SizedBox(height: 18),
           Column(
             mainAxisSize: MainAxisSize.min,
@@ -321,7 +350,11 @@ class CompCardFaceView extends StatelessWidget {
                 data.city.toUpperCase(),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: _jost(size: 9.5, tracking: 0.3, color: _ink.withValues(alpha: 0.75)),
+                style: _jost(
+                  size: 9.5,
+                  tracking: 0.3,
+                  color: _ink.withValues(alpha: 0.75),
+                ),
               ),
             ],
           ),
@@ -374,7 +407,11 @@ class CompCardFaceView extends StatelessWidget {
                       Text(
                         stat.$1.toUpperCase(),
                         maxLines: 1,
-                        style: _jost(size: 8, tracking: 0.2, color: _ink.withValues(alpha: 0.7)),
+                        style: _jost(
+                          size: 8,
+                          tracking: 0.2,
+                          color: _ink.withValues(alpha: 0.7),
+                        ),
                       ),
                       const SizedBox(height: 5),
                       Text(stat.$2, maxLines: 1, style: _bodoni(size: 15)),
@@ -394,7 +431,12 @@ class CompCardFaceView extends StatelessWidget {
                   '${data.shoe} · ${data.hair} · ${data.eyes}\n${data.handle} · ${data.phone}',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: _jost(size: 10, tracking: 0.12, weight: FontWeight.w300, height: 1.6),
+                  style: _jost(
+                    size: 10,
+                    tracking: 0.12,
+                    weight: FontWeight.w300,
+                    height: 1.6,
+                  ),
                 ),
               ),
               const SizedBox(width: 14),
@@ -412,17 +454,25 @@ class CompCardFaceView extends StatelessWidget {
 
   static const _red = Color(0xFFD23B22);
 
-  TextStyle _grotesk({double size = 15, Color color = _ink, FontWeight weight = FontWeight.w700}) =>
-      GoogleFonts.spaceGrotesk(
-        fontSize: size,
-        fontWeight: weight,
-        color: color,
-        letterSpacing: -size * 0.025,
-        height: 0.95,
-      );
+  TextStyle _grotesk({
+    double size = 15,
+    Color color = _ink,
+    FontWeight weight = FontWeight.w700,
+  }) => GoogleFonts.spaceGrotesk(
+    fontSize: size,
+    fontWeight: weight,
+    color: color,
+    letterSpacing: -size * 0.025,
+    height: 0.95,
+  );
 
   TextStyle _spaceMono({double size = 9.5, Color color = _ink}) =>
-      GoogleFonts.spaceMono(fontSize: size, fontWeight: FontWeight.w400, color: color, height: 1);
+      GoogleFonts.spaceMono(
+        fontSize: size,
+        fontWeight: FontWeight.w400,
+        color: color,
+        height: 1,
+      );
 
   Widget _gridFront() {
     return Container(
@@ -439,7 +489,13 @@ class CompCardFaceView extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Expanded(child: Text('THE BOARD', maxLines: 1, style: _grotesk(size: 15))),
+                Expanded(
+                  child: Text(
+                    'THE BOARD',
+                    maxLines: 1,
+                    style: _grotesk(size: 15),
+                  ),
+                ),
                 Text(
                   '№ ${data.handle.replaceAll('@', '').toUpperCase()}',
                   maxLines: 1,
@@ -449,12 +505,20 @@ class CompCardFaceView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Expanded(child: _photo(data.shot(0), const [Color(0xFFDEDAD0), Color(0xFFD3CFC5)])),
+          Expanded(
+            child: _photo(data.shot(0), const [
+              Color(0xFFDEDAD0),
+              Color(0xFFD3CFC5),
+            ]),
+          ),
           const SizedBox(height: 16),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(data.name.replaceFirst(' ', '\n'), style: _grotesk(size: 42)),
+            child: Text(
+              data.name.replaceFirst(' ', '\n'),
+              style: _grotesk(size: 42),
+            ),
           ),
           const SizedBox(height: 12),
           _cellRow(
@@ -482,7 +546,10 @@ class CompCardFaceView extends StatelessWidget {
               Expanded(
                 child: Container(
                   color: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 9),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 9,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -490,7 +557,10 @@ class CompCardFaceView extends StatelessWidget {
                       Text(
                         labels[i],
                         maxLines: 1,
-                        style: _spaceMono(size: 8, color: _ink.withValues(alpha: 0.7)),
+                        style: _spaceMono(
+                          size: 8,
+                          color: _ink.withValues(alpha: 0.7),
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -530,7 +600,11 @@ class CompCardFaceView extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Text('${data.city.toUpperCase()} · IN', maxLines: 1, style: _spaceMono(size: 9)),
+              Text(
+                '${data.city.toUpperCase()} · IN',
+                maxLines: 1,
+                style: _spaceMono(size: 9),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -541,15 +615,24 @@ class CompCardFaceView extends StatelessWidget {
                   child: Row(
                     children: [
                       Expanded(
-                        child: _photo(data.shot(1), const [Color(0xFF2A2B27), Color(0xFF1D1E1A)]),
+                        child: _photo(data.shot(1), const [
+                          Color(0xFF2A2B27),
+                          Color(0xFF1D1E1A),
+                        ]),
                       ),
                       const SizedBox(width: 5),
                       Expanded(
-                        child: _photo(data.shot(2), const [Color(0xFFDEDAD0), Color(0xFFD3CFC5)]),
+                        child: _photo(data.shot(2), const [
+                          Color(0xFFDEDAD0),
+                          Color(0xFFD3CFC5),
+                        ]),
                       ),
                       const SizedBox(width: 5),
                       Expanded(
-                        child: _photo(data.shot(3), const [Color(0xFFDEDAD0), Color(0xFFD3CFC5)]),
+                        child: _photo(data.shot(3), const [
+                          Color(0xFFDEDAD0),
+                          Color(0xFFD3CFC5),
+                        ]),
                       ),
                     ],
                   ),
@@ -560,11 +643,17 @@ class CompCardFaceView extends StatelessWidget {
                     children: [
                       Expanded(
                         flex: 2,
-                        child: _photo(data.shot(4), const [Color(0xFFDEDAD0), Color(0xFFD3CFC5)]),
+                        child: _photo(data.shot(4), const [
+                          Color(0xFFDEDAD0),
+                          Color(0xFFD3CFC5),
+                        ]),
                       ),
                       const SizedBox(width: 5),
                       Expanded(
-                        child: _photo(data.shot(5), const [Color(0xFF2A2B27), Color(0xFF1D1E1A)]),
+                        child: _photo(data.shot(5), const [
+                          Color(0xFF2A2B27),
+                          Color(0xFF1D1E1A),
+                        ]),
                       ),
                     ],
                   ),
@@ -600,7 +689,10 @@ class CompCardFaceView extends StatelessWidget {
           child: Text(
             label,
             maxLines: 1,
-            style: _spaceMono(size: 10, color: color == _red ? _red : _ink.withValues(alpha: 0.7)),
+            style: _spaceMono(
+              size: 10,
+              color: color == _red ? _red : _ink.withValues(alpha: 0.7),
+            ),
           ),
         ),
         const SizedBox(width: 14),
@@ -624,14 +716,17 @@ class CompCardFaceView extends StatelessWidget {
   static const _stone = Color(0xFFEFE9DF);
   static const _gold = Color(0xFFC9A227);
 
-  TextStyle _instrument({double size = 28, Color color = _ink, bool italic = false}) =>
-      GoogleFonts.instrumentSerif(
-        fontSize: size,
-        fontWeight: FontWeight.w400,
-        color: color,
-        height: italic ? 0.86 : 1,
-        fontStyle: italic ? FontStyle.italic : FontStyle.normal,
-      );
+  TextStyle _instrument({
+    double size = 28,
+    Color color = _ink,
+    bool italic = false,
+  }) => GoogleFonts.instrumentSerif(
+    fontSize: size,
+    fontWeight: FontWeight.w400,
+    color: color,
+    height: italic ? 0.86 : 1,
+    fontStyle: italic ? FontStyle.italic : FontStyle.normal,
+  );
 
   Widget _runwayFront() {
     return Stack(
@@ -646,7 +741,11 @@ class CompCardFaceView extends StatelessWidget {
             children: [
               Text(
                 'THE BOARD',
-                style: _jost(size: 9.5, tracking: 0.36, color: _ivory.withValues(alpha: 0.9)),
+                style: _jost(
+                  size: 9.5,
+                  tracking: 0.36,
+                  color: _ivory.withValues(alpha: 0.9),
+                ),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -670,7 +769,11 @@ class CompCardFaceView extends StatelessWidget {
                           '${data.heightNumber} · ${data.bust} · ${data.waist} · ${data.hips}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: _jost(size: 9.5, tracking: 0.24, color: _ivory),
+                          style: _jost(
+                            size: 9.5,
+                            tracking: 0.24,
+                            color: _ivory,
+                          ),
                         ),
                       ),
                     ],
@@ -694,7 +797,9 @@ class CompCardFaceView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.only(bottom: 11),
             decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: _ink.withValues(alpha: 0.3))),
+              border: Border(
+                bottom: BorderSide(color: _ink.withValues(alpha: 0.3)),
+              ),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -711,7 +816,11 @@ class CompCardFaceView extends StatelessWidget {
                 Text(
                   data.city.toUpperCase(),
                   maxLines: 1,
-                  style: _jost(size: 9, tracking: 0.2, color: _ink.withValues(alpha: 0.72)),
+                  style: _jost(
+                    size: 9,
+                    tracking: 0.2,
+                    color: _ink.withValues(alpha: 0.72),
+                  ),
                 ),
               ],
             ),
@@ -724,17 +833,28 @@ class CompCardFaceView extends StatelessWidget {
                   child: Row(
                     children: [
                       Expanded(
-                        child: _photo(data.shot(1), const [Color(0xFFD9D2C6), Color(0xFFCEC7BB)]),
+                        child: _photo(data.shot(1), const [
+                          Color(0xFFD9D2C6),
+                          Color(0xFFCEC7BB),
+                        ]),
                       ),
                       const SizedBox(width: 9),
                       Expanded(
-                        child: _photo(data.shot(2), const [Color(0xFF2A2B27), Color(0xFF1D1E1A)]),
+                        child: _photo(data.shot(2), const [
+                          Color(0xFF2A2B27),
+                          Color(0xFF1D1E1A),
+                        ]),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 9),
-                Expanded(child: _photo(data.shot(3), const [Color(0xFFD9D2C6), Color(0xFFCEC7BB)])),
+                Expanded(
+                  child: _photo(data.shot(3), const [
+                    Color(0xFFD9D2C6),
+                    Color(0xFFCEC7BB),
+                  ]),
+                ),
               ],
             ),
           ),
@@ -744,7 +864,11 @@ class CompCardFaceView extends StatelessWidget {
             '${data.heightNumber} · ${data.bust} · ${data.waist} · ${data.hips}',
           ),
           _runwayRow('Shoe', data.shoe),
-          _runwayRow('Hair · Eyes', '${data.hair} · ${data.eyes}', bottom: true),
+          _runwayRow(
+            'Hair · Eyes',
+            '${data.hair} · ${data.eyes}',
+            bottom: true,
+          ),
           const SizedBox(height: 10),
           Text(
             '${data.handle} · ${data.phone}',
@@ -770,7 +894,11 @@ class CompCardFaceView extends StatelessWidget {
             child: Text(
               label.toUpperCase(),
               maxLines: 1,
-              style: _jost(size: 10.5, tracking: 0.14, color: _ink.withValues(alpha: 0.72)),
+              style: _jost(
+                size: 10.5,
+                tracking: 0.14,
+                color: _ink.withValues(alpha: 0.72),
+              ),
             ),
           ),
           const SizedBox(width: 14),
@@ -796,23 +924,29 @@ class CompCardFaceView extends StatelessWidget {
   static const _creamRaised = Color(0xFFEFE5D3);
   static const _terracotta = Color(0xFFB4532F);
 
-  TextStyle _dmSans({double size = 18, Color color = _ink, FontWeight weight = FontWeight.w700}) =>
-      GoogleFonts.dmSans(
-        fontSize: size,
-        fontWeight: weight,
-        color: color,
-        letterSpacing: -size * 0.025,
-        height: 0.98,
-      );
+  TextStyle _dmSans({
+    double size = 18,
+    Color color = _ink,
+    FontWeight weight = FontWeight.w700,
+  }) => GoogleFonts.dmSans(
+    fontSize: size,
+    fontWeight: weight,
+    color: color,
+    letterSpacing: -size * 0.025,
+    height: 0.98,
+  );
 
-  TextStyle _dmMono({double size = 9, Color color = _ink, double tracking = 0.08}) =>
-      GoogleFonts.dmMono(
-        fontSize: size,
-        fontWeight: FontWeight.w500,
-        color: color,
-        letterSpacing: size * tracking,
-        height: 1.1,
-      );
+  TextStyle _dmMono({
+    double size = 9,
+    Color color = _ink,
+    double tracking = 0.08,
+  }) => GoogleFonts.dmMono(
+    fontSize: size,
+    fontWeight: FontWeight.w500,
+    color: color,
+    letterSpacing: size * tracking,
+    height: 1.1,
+  );
 
   Widget _rangeFront() {
     return Container(
@@ -838,7 +972,11 @@ class CompCardFaceView extends StatelessWidget {
                   color: _terracotta,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text('THE BOARD', maxLines: 1, style: _dmMono(color: _ivory)),
+                child: Text(
+                  'THE BOARD',
+                  maxLines: 1,
+                  style: _dmMono(color: _ivory),
+                ),
               ),
             ],
           ),
@@ -846,7 +984,10 @@ class CompCardFaceView extends StatelessWidget {
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14),
-              child: _photo(data.shot(0), const [Color(0xFFE2D9C8), Color(0xFFD7CEBD)]),
+              child: _photo(data.shot(0), const [
+                Color(0xFFE2D9C8),
+                Color(0xFFD7CEBD),
+              ]),
             ),
           ),
           const SizedBox(height: 14),
@@ -860,7 +1001,10 @@ class CompCardFaceView extends StatelessWidget {
               ]) ...[
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: _creamRaised,
                       borderRadius: BorderRadius.circular(10),
@@ -872,7 +1016,10 @@ class CompCardFaceView extends StatelessWidget {
                         Text(
                           stat.$1,
                           maxLines: 1,
-                          style: _dmMono(size: 8, color: _ink.withValues(alpha: 0.72)),
+                          style: _dmMono(
+                            size: 8,
+                            color: _ink.withValues(alpha: 0.72),
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -895,7 +1042,14 @@ class CompCardFaceView extends StatelessWidget {
   }
 
   Widget _rangeBack() {
-    const labels = ['SMILE', 'PROFILE', 'BEAUTY', 'FULL BODY', 'LIFESTYLE', 'EDITORIAL'];
+    const labels = [
+      'SMILE',
+      'PROFILE',
+      'BEAUTY',
+      'FULL BODY',
+      'LIFESTYLE',
+      'EDITORIAL',
+    ];
 
     return Container(
       color: _cream,
@@ -903,7 +1057,10 @@ class CompCardFaceView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('SIX LOOKS', style: _dmMono(size: 9, color: _terracotta, tracking: 0.14)),
+          Text(
+            'SIX LOOKS',
+            style: _dmMono(size: 9, color: _terracotta, tracking: 0.14),
+          ),
           const SizedBox(height: 12),
           Expanded(
             child: GridView.count(
@@ -945,7 +1102,10 @@ class CompCardFaceView extends StatelessWidget {
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(color: _creamRaised, borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(
+              color: _creamRaised,
+              borderRadius: BorderRadius.circular(14),
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -964,7 +1124,10 @@ class CompCardFaceView extends StatelessWidget {
                         '${data.shoe} · ${data.hair} · ${data.eyes}\n${data.phone} · ${data.handle}',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: _dmMono(size: 9.5, tracking: 0.02).copyWith(height: 1.55),
+                        style: _dmMono(
+                          size: 9.5,
+                          tracking: 0.02,
+                        ).copyWith(height: 1.55),
                       ),
                     ],
                   ),
@@ -987,23 +1150,29 @@ class CompCardFaceView extends StatelessWidget {
   static const _bone = Color(0xFFF2F0E9);
   static const _chartreuse = Color(0xFFC6E43B);
 
-  TextStyle _syne({double size = 34, Color color = _bone, FontWeight weight = FontWeight.w800}) =>
-      GoogleFonts.syne(
-        fontSize: size,
-        fontWeight: weight,
-        color: color,
-        letterSpacing: -size * 0.02,
-        height: 0.9,
-      );
+  TextStyle _syne({
+    double size = 34,
+    Color color = _bone,
+    FontWeight weight = FontWeight.w800,
+  }) => GoogleFonts.syne(
+    fontSize: size,
+    fontWeight: weight,
+    color: color,
+    letterSpacing: -size * 0.02,
+    height: 0.9,
+  );
 
-  TextStyle _jet({double size = 9.5, Color color = _bone, double tracking = 0.1}) =>
-      GoogleFonts.jetBrainsMono(
-        fontSize: size,
-        fontWeight: FontWeight.w400,
-        color: color,
-        letterSpacing: size * tracking,
-        height: 1,
-      );
+  TextStyle _jet({
+    double size = 9.5,
+    Color color = _bone,
+    double tracking = 0.1,
+  }) => GoogleFonts.jetBrainsMono(
+    fontSize: size,
+    fontWeight: FontWeight.w400,
+    color: color,
+    letterSpacing: size * tracking,
+    height: 1,
+  );
 
   Widget _signalFront() {
     return Container(
@@ -1033,7 +1202,11 @@ class CompCardFaceView extends StatelessWidget {
                       'THE BOARD · ${data.city.toUpperCase()}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: _jet(size: 9.5, color: _chartreuse, tracking: 0.14),
+                      style: _jet(
+                        size: 9.5,
+                        color: _chartreuse,
+                        tracking: 0.14,
+                      ),
                     ),
                   ],
                 ),
@@ -1043,7 +1216,12 @@ class CompCardFaceView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Expanded(child: _photo(data.shot(0), const [Color(0xFF25281F), Color(0xFF1B1E18)])),
+          Expanded(
+            child: _photo(data.shot(0), const [
+              Color(0xFF25281F),
+              Color(0xFF1B1E18),
+            ]),
+          ),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -1061,7 +1239,10 @@ class CompCardFaceView extends StatelessWidget {
                       Text(
                         stat.$1,
                         maxLines: 1,
-                        style: _jet(size: 8.5, color: _bone.withValues(alpha: 0.7)),
+                        style: _jet(
+                          size: 8.5,
+                          color: _bone.withValues(alpha: 0.7),
+                        ),
                       ),
                       const SizedBox(height: 5),
                       Text(
@@ -1090,9 +1271,15 @@ class CompCardFaceView extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('SELECTED WORK', style: _syne(size: 18, weight: FontWeight.w700)),
+              Text(
+                'SELECTED WORK',
+                style: _syne(size: 18, weight: FontWeight.w700),
+              ),
               const Spacer(),
-              Text('${DateTime.now().year}', style: _jet(size: 9, color: _chartreuse)),
+              Text(
+                '${DateTime.now().year}',
+                style: _jet(size: 9, color: _chartreuse),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -1104,7 +1291,10 @@ class CompCardFaceView extends StatelessWidget {
               crossAxisSpacing: 8,
               children: [
                 for (var i = 0; i < 4; i++)
-                  _photo(data.shot(i + 1), const [Color(0xFF25281F), Color(0xFF1B1E18)]),
+                  _photo(data.shot(i + 1), const [
+                    Color(0xFF25281F),
+                    Color(0xFF1B1E18),
+                  ]),
               ],
             ),
           ),
@@ -1190,13 +1380,24 @@ class CompCardFaceView extends StatelessWidget {
     );
   }
 
-  Widget _qr(Color background, Color foreground, double size, {double radius = 0}) {
+  Widget _qr(
+    Color background,
+    Color foreground,
+    double size, {
+    double radius = 0,
+  }) {
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(radius)),
-      child: Text('QR', style: GoogleFonts.spaceMono(fontSize: 8, color: foreground, height: 1)),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(radius),
+      ),
+      child: Text(
+        'QR',
+        style: GoogleFonts.spaceMono(fontSize: 8, color: foreground, height: 1),
+      ),
     );
   }
 }
@@ -1212,10 +1413,8 @@ class _Hatch extends StatelessWidget {
   const _Hatch({required this.tones});
 
   @override
-  Widget build(BuildContext context) => ColoredBox(
-        color: tones[1],
-        child: const SizedBox.expand(),
-      );
+  Widget build(BuildContext context) =>
+      ColoredBox(color: tones[1], child: const SizedBox.expand());
 }
 
 /// A card face scaled to whatever space it is given, keeping true trim
@@ -1226,7 +1425,12 @@ class CompCardFace extends StatelessWidget {
   final CompCardData data;
   final bool back;
 
-  const CompCardFace({super.key, required this.template, required this.data, this.back = false});
+  const CompCardFace({
+    super.key,
+    required this.template,
+    required this.data,
+    this.back = false,
+  });
 
   @override
   Widget build(BuildContext context) {

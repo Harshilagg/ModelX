@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'signup_page.dart';
-import 'login_page.dart';
+import '../onboarding/model_signup_page.dart';
+import '../onboarding/login_page.dart';
 
 class AuthOptionsPage extends StatelessWidget {
   const AuthOptionsPage({super.key});
@@ -21,18 +21,12 @@ class AuthOptionsPage extends StatelessWidget {
           children: [
             const Text(
               'Create your account',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
               'Choose how you want to get started',
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: 15, color: Colors.grey),
             ),
 
             const SizedBox(height: 40),
@@ -75,7 +69,9 @@ class AuthOptionsPage extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const SignupPage(userType: 'model',)),
+                  MaterialPageRoute(
+                    builder: (_) => const ModelSignupPage(userType: 'model'),
+                  ),
                 );
               },
             ),
@@ -93,7 +89,9 @@ class AuthOptionsPage extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                      MaterialPageRoute(
+                        builder: (_) => const OnboardingLoginPage(),
+                      ),
                     );
                   },
                   child: const Text(
@@ -123,10 +121,7 @@ class AuthOptionsPage extends StatelessWidget {
       height: 52,
       child: OutlinedButton.icon(
         icon: Icon(icon, size: 22),
-        label: Text(
-          label,
-          style: const TextStyle(fontSize: 16),
-        ),
+        label: Text(label, style: const TextStyle(fontSize: 16)),
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
           shape: RoundedRectangleBorder(

@@ -51,7 +51,11 @@ class EmptyState extends StatelessWidget {
               Text(
                 message!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13.5, color: AppColors.inkFaint, height: 1.4),
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  color: AppColors.inkFaint,
+                  height: 1.4,
+                ),
               ),
             ],
             if (actionLabel != null && onAction != null) ...[
@@ -79,7 +83,10 @@ class LoadingState extends StatelessWidget {
       child: SizedBox(
         width: 22,
         height: 22,
-        child: CircularProgressIndicator(strokeWidth: 2.4, color: AppColors.ink),
+        child: CircularProgressIndicator(
+          strokeWidth: 2.4,
+          color: AppColors.ink,
+        ),
       ),
     );
   }
@@ -92,7 +99,11 @@ class ErrorStateView extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
 
-  const ErrorStateView({super.key, this.message = "Something went wrong.", this.onRetry});
+  const ErrorStateView({
+    super.key,
+    this.message = "Something went wrong.",
+    this.onRetry,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +113,11 @@ class ErrorStateView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded, size: 30, color: AppColors.select),
+            const Icon(
+              Icons.error_outline_rounded,
+              size: 30,
+              color: AppColors.select,
+            ),
             const SizedBox(height: 12),
             Text(
               message,

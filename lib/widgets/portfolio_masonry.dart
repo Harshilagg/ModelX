@@ -18,7 +18,8 @@ class PortfolioMasonry extends StatelessWidget {
 
   /// Builds one tile. The height is supplied so the tile can size its
   /// own media; it is already at least [minHeight].
-  final Widget Function(BuildContext context, int index, double height) itemBuilder;
+  final Widget Function(BuildContext context, int index, double height)
+  itemBuilder;
 
   final double gap;
   final double minHeight;
@@ -76,11 +77,17 @@ class PortfolioMasonry extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Column(mainAxisSize: MainAxisSize.min, children: columns[0]),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: columns[0],
+              ),
             ),
             SizedBox(width: gap),
             Expanded(
-              child: Column(mainAxisSize: MainAxisSize.min, children: columns[1]),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: columns[1],
+              ),
             ),
           ],
         );

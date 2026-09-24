@@ -18,9 +18,7 @@ class BrandGigApplicationsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(gigTitle),
-      ),
+      appBar: AppBar(title: Text(gigTitle)),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('gigs')

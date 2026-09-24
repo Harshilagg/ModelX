@@ -24,12 +24,22 @@ class AgencyHeader extends StatelessWidget implements PreferredSizeWidget {
         child: Row(
           children: [
             GestureDetector(
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AgencyProfilePage())),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AgencyProfilePage()),
+              ),
               child: Row(
                 children: const [
                   CircleAvatar(radius: 20, backgroundColor: AppColors.line),
                   SizedBox(width: 8),
-                  Text('Agency', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.ink)),
+                  Text(
+                    'Agency',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: AppColors.ink,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -47,7 +57,10 @@ class AgencyHeader extends StatelessWidget implements PreferredSizeWidget {
             ),
             const SizedBox(width: 12),
             IconButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ConversationListPage())),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ConversationListPage()),
+              ),
               icon: const Icon(Icons.mark_chat_unread, color: AppColors.ink),
               iconSize: AppIconSize.md,
             ),

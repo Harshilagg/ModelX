@@ -30,13 +30,19 @@ class ConversationListPage extends StatelessWidget {
         stream: inboxRef.snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return const ErrorStateView(message: 'Failed to load conversations');
+            return const ErrorStateView(
+              message: 'Failed to load conversations',
+            );
           }
           if (!snapshot.hasData) {
             return ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm, horizontal: AppSpacing.md),
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.sm,
+                horizontal: AppSpacing.md,
+              ),
               itemCount: 6,
-              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.xs),
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: AppSpacing.xs),
               itemBuilder: (_, __) => AppSkeleton.listTile(),
             );
           }
@@ -75,15 +81,25 @@ class ConversationListPage extends StatelessWidget {
                   horizontal: AppSpacing.md,
                   vertical: AppSpacing.xs,
                 ),
-                leading: ProfileAvatar(imageUrl: peerImage, name: peerName, size: 52),
+                leading: ProfileAvatar(
+                  imageUrl: peerImage,
+                  name: peerName,
+                  size: 52,
+                ),
                 title: Text(
-                  peerUsername.toString().isNotEmpty ? '@$peerUsername' : peerName,
-                  style: AppTypography.bodyEmphasized.copyWith(fontWeight: FontWeight.w700),
+                  peerUsername.toString().isNotEmpty
+                      ? '@$peerUsername'
+                      : peerName,
+                  style: AppTypography.bodyEmphasized.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 2),
                   child: Text(
-                    lastMessage.toString().isNotEmpty ? lastMessage : 'No messages yet',
+                    lastMessage.toString().isNotEmpty
+                        ? lastMessage
+                        : 'No messages yet',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.caption,
@@ -91,7 +107,10 @@ class ConversationListPage extends StatelessWidget {
                 ),
                 trailing: unreadCount > 0
                     ? Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.select,
                           borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -100,7 +119,9 @@ class ConversationListPage extends StatelessWidget {
                         child: Text(
                           unreadCount.toString(),
                           textAlign: TextAlign.center,
-                          style: AppTypography.label.copyWith(color: AppColors.paper),
+                          style: AppTypography.label.copyWith(
+                            color: AppColors.paper,
+                          ),
                         ),
                       )
                     : null,
@@ -110,7 +131,12 @@ class ConversationListPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => ChatPage(peerId: peerId, peerName: peerName, peerImage: peerImage, chatId: chatId),
+                      builder: (_) => ChatPage(
+                        peerId: peerId,
+                        peerName: peerName,
+                        peerImage: peerImage,
+                        chatId: chatId,
+                      ),
                     ),
                   );
                 },

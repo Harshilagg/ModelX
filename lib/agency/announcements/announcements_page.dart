@@ -26,7 +26,8 @@ class AnnouncementsPage extends StatelessWidget {
               Expanded(
                 child: ListView.separated(
                   itemCount: 8,
-                  separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(height: AppSpacing.md),
                   itemBuilder: (context, index) => const PostCard(),
                 ),
               ),

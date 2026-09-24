@@ -48,9 +48,11 @@ class AgencyService {
         .doc(agencyId)
         .collection('members')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => AgencyMember.fromFirestore(doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => AgencyMember.fromFirestore(doc.data()))
+              .toList(),
+        );
   }
 
   /// Create a new invitation (Additive - creates doc in agencyInvites)
@@ -63,7 +65,7 @@ class AgencyService {
     final token = _generateRandomToken(32);
     final normalizedEmail = email.trim().toLowerCase();
     final invite = AgencyInvite(
-      id: '', 
+      id: '',
       email: normalizedEmail,
       role: role,
       fromAgencyId: fromAgencyId,
@@ -76,17 +78,21 @@ class AgencyService {
 
     // Use the token as the document ID so invite validation can do a direct get.
     await _invitesRef.doc(token).set(invite.toFirestore());
-    
+
     // Send Email
-    final inviteLink = 'https://modelx-invite.onrender.com?token=$token'; // Hosted redirect URL
+    final inviteLink =
+        'https://modelx-invite.onrender.com?token=$token'; // Hosted redirect URL
     await _emailService.sendInvitationEmail(
       recipientEmail: normalizedEmail,
       agencyName: fromAgencyName,
       role: role.toString().split('.').last,
       inviteLink: inviteLink,
     );
-    
-    await logActivity(fromAgencyId, 'Invited $normalizedEmail as ${role.toString().split('.').last}');
+
+    await logActivity(
+      fromAgencyId,
+      'Invited $normalizedEmail as ${role.toString().split('.').last}',
+    );
   }
 
   /// Fetch pending invites for an agency
@@ -95,9 +101,11 @@ class AgencyService {
         .where('fromAgencyId', isEqualTo: agencyId)
         .where('status', isEqualTo: 'pending')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => AgencyInvite.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => AgencyInvite.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   /// Revoke an invite
@@ -109,19 +117,28 @@ class AgencyService {
   /// Remove a member
   Future<void> removeMember(String agencyId, String memberUid) async {
     // 1. Remove from agency members collection
-    await _agenciesRef.doc(agencyId).collection('members').doc(memberUid).delete();
+    await _agenciesRef
+        .doc(agencyId)
+        .collection('members')
+        .doc(memberUid)
+        .delete();
     // 2. Remove the linked agency profile for this user
     await _agenciesRef.doc(memberUid).delete();
-    
+
     await logActivity(agencyId, 'Removed member $memberUid');
   }
 
   /// Helper: Generate a secure-ish random token
   String _generateRandomToken(int length) {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const chars =
+        'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     final rnd = Random.secure();
-    return String.fromCharCodes(Iterable.generate(
-        length, (_) => chars.codeUnitAt(rnd.nextInt(chars.length))));
+    return String.fromCharCodes(
+      Iterable.generate(
+        length,
+        (_) => chars.codeUnitAt(rnd.nextInt(chars.length)),
+      ),
+    );
   }
 
   /// Validate an invitation token
@@ -187,15 +204,21 @@ class AgencyService {
       });
 
       // 3. Add to agency members list
-      transaction.set(_agenciesRef.doc(invite.fromAgencyId).collection('members').doc(userUid), {
-        'uid': userUid,
-        'fullName': userData['fullName'] ?? 'Team Member',
-        'email': currentUserEmail,
-        'role': invite.role.toString().split('.').last,
-        'joinedAt': FieldValue.serverTimestamp(),
-        'inviteToken': invite.token,
-      });
-      
+      transaction.set(
+        _agenciesRef
+            .doc(invite.fromAgencyId)
+            .collection('members')
+            .doc(userUid),
+        {
+          'uid': userUid,
+          'fullName': userData['fullName'] ?? 'Team Member',
+          'email': currentUserEmail,
+          'role': invite.role.toString().split('.').last,
+          'joinedAt': FieldValue.serverTimestamp(),
+          'inviteToken': invite.token,
+        },
+      );
+
       // 4. Update user document with agency association
       transaction.update(_db.collection('users').doc(userUid), {
         'activeAgencyId': invite.fromAgencyId,
@@ -203,7 +226,10 @@ class AgencyService {
       });
     });
 
-    await logActivity(invite.fromAgencyId, 'Member ${userData['fullName']} joined via invitation');
+    await logActivity(
+      invite.fromAgencyId,
+      'Member ${userData['fullName']} joined via invitation',
+    );
   }
 
   /// Log activity (Phase 6 requirement)

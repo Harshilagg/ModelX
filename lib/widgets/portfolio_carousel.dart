@@ -3,19 +3,13 @@ import 'package:flutter/material.dart';
 class PortfolioCarousel extends StatefulWidget {
   final List<String> images;
 
-  const PortfolioCarousel({
-    super.key,
-    required this.images,
-  });
+  const PortfolioCarousel({super.key, required this.images});
 
   @override
-  State<PortfolioCarousel> createState() =>
-      _PortfolioCarouselState();
+  State<PortfolioCarousel> createState() => _PortfolioCarouselState();
 }
 
-class _PortfolioCarouselState
-    extends State<PortfolioCarousel> {
-
+class _PortfolioCarouselState extends State<PortfolioCarousel> {
   late PageController _controller;
   int currentPage = 0;
 
@@ -42,7 +36,6 @@ class _PortfolioCarouselState
 
     return Stack(
       children: [
-
         // IMAGE VIEW
         PageView.builder(
           controller: _controller,
@@ -60,7 +53,6 @@ class _PortfolioCarouselState
                     Container(color: Colors.grey.shade300),
               ),
             );
-
           },
         ),
 
@@ -75,8 +67,7 @@ class _PortfolioCarouselState
               widget.images.length,
               (index) => AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                margin:
-                    const EdgeInsets.symmetric(horizontal: 2),
+                margin: const EdgeInsets.symmetric(horizontal: 2),
                 width: currentPage == index ? 10 : 6,
                 height: 6,
                 decoration: BoxDecoration(

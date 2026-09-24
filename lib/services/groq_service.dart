@@ -6,19 +6,20 @@ import 'package:flutter/foundation.dart';
 import 'ai_config.dart';
 
 class GroqService {
-  static const String _baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
+  static const String _baseUrl =
+      'https://api.groq.com/openai/v1/chat/completions';
 
-  Future<String> complete(String model, List<Map<String, String>> messages) async {
+  Future<String> complete(
+    String model,
+    List<Map<String, String>> messages,
+  ) async {
     final response = await http.post(
       Uri.parse(_baseUrl),
       headers: {
         'Authorization': 'Bearer ${AiConfig.groqApiKey}',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({
-        'model': model,
-        'messages': messages,
-      }),
+      body: jsonEncode({'model': model, 'messages': messages}),
     );
 
     if (response.statusCode == 200) {

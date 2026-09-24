@@ -30,16 +30,28 @@ class PostCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: AppTypography.bodyEmphasized.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            title,
+            style: AppTypography.bodyEmphasized.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: AppSpacing.sm),
-          Text(content, style: AppTypography.body.copyWith(color: AppColors.inkSoft)),
+          Text(
+            content,
+            style: AppTypography.body.copyWith(color: AppColors.inkSoft),
+          ),
           const SizedBox(height: AppSpacing.sm),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
-                  Icon(Icons.thumb_up_alt_outlined, size: AppIconSize.sm, color: AppColors.inkFaint),
+                  Icon(
+                    Icons.thumb_up_alt_outlined,
+                    size: AppIconSize.sm,
+                    color: AppColors.inkFaint,
+                  ),
                   const SizedBox(width: 8),
                   Text('$likeCount', style: AppTypography.metadata),
                 ],

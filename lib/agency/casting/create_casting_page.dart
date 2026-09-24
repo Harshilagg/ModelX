@@ -80,7 +80,10 @@ class _CreateCastingPageState extends State<CreateCastingPage> {
     if (picked == null) return;
     setState(() => _saving = true);
     final file = File(picked.path);
-    final url = await CloudinaryService.uploadPortfolioImage(file, 'casting_${DateTime.now().millisecondsSinceEpoch}');
+    final url = await CloudinaryService.uploadPortfolioImage(
+      file,
+      'casting_${DateTime.now().millisecondsSinceEpoch}',
+    );
     if (url != null) {
       setState(() => _mediaUrls.add(url));
     }
@@ -103,9 +106,14 @@ class _CreateCastingPageState extends State<CreateCastingPage> {
     if (user != null) {
       agencyId = user.uid;
       try {
-        final doc = await FirebaseFirestore.instance.collection('agency').doc(agencyId).get();
+        final doc = await FirebaseFirestore.instance
+            .collection('agency')
+            .doc(agencyId)
+            .get();
         if (doc.exists && doc.data() != null) {
-          agencyName = (doc.data()!['agencyName'] ?? doc.data()!['agency'] ?? '')?.toString();
+          agencyName =
+              (doc.data()!['agencyName'] ?? doc.data()!['agency'] ?? '')
+                  ?.toString();
         }
       } catch (_) {}
     }
@@ -124,12 +132,22 @@ class _CreateCastingPageState extends State<CreateCastingPage> {
       'title': _titleCtl.text.trim(),
       'description': _descCtl.text.trim(),
       'location': _locationCtl.text.trim(),
-      'compensationMin': _compMinCtl.text.trim().isEmpty ? null : _compMinCtl.text.trim(),
-      'compensationMax': _compMaxCtl.text.trim().isEmpty ? null : _compMaxCtl.text.trim(),
+      'compensationMin': _compMinCtl.text.trim().isEmpty
+          ? null
+          : _compMinCtl.text.trim(),
+      'compensationMax': _compMaxCtl.text.trim().isEmpty
+          ? null
+          : _compMaxCtl.text.trim(),
       'requirements': _reqCtl.text.trim(),
-      'outfitRequirements': _outfitCtl.text.trim().isEmpty ? null : _outfitCtl.text.trim(),
-      'shootingStart': _shootingStart != null ? Timestamp.fromDate(_shootingStart!) : null,
-      'shootingEnd': _shootingEnd != null ? Timestamp.fromDate(_shootingEnd!) : null,
+      'outfitRequirements': _outfitCtl.text.trim().isEmpty
+          ? null
+          : _outfitCtl.text.trim(),
+      'shootingStart': _shootingStart != null
+          ? Timestamp.fromDate(_shootingStart!)
+          : null,
+      'shootingEnd': _shootingEnd != null
+          ? Timestamp.fromDate(_shootingEnd!)
+          : null,
       'talentRequirements': talentReq,
       'status': _status,
       'media': _mediaUrls,
@@ -139,11 +157,15 @@ class _CreateCastingPageState extends State<CreateCastingPage> {
     try {
       await _service.createCasting(data);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Casting created')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Casting created')));
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to create casting: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to create casting: $e')));
     }
     if (mounted) setState(() => _saving = false);
   }
@@ -157,156 +179,250 @@ class _CreateCastingPageState extends State<CreateCastingPage> {
         key: _formKey,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xl),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            // ================= BASIC INFO =================
-            _sectionHeader('Basic information'),
-            AppCard(
-              child: Column(children: [
-                _textField(_titleCtl, 'Job title', Icons.work_outline, required: true),
-                const SizedBox(height: AppSpacing.md),
-                _textField(_descCtl, 'Description', Icons.description_outlined, maxLines: 4, required: true),
-              ]),
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // ================= GIG DETAILS =================
-            _sectionHeader('Gig details'),
-            AppCard(
-              child: Column(children: [
-                _textField(_locationCtl, 'Location / venue', Icons.location_on_outlined, required: true),
-                const SizedBox(height: AppSpacing.md),
-                Row(children: [
-                  Expanded(child: _textField(_compMinCtl, 'Min pay', Icons.payments_outlined, keyboardType: TextInputType.number)),
-                  const SizedBox(width: AppSpacing.sm + 4),
-                  Expanded(child: _textField(_compMaxCtl, 'Max pay', Icons.payments_outlined, keyboardType: TextInputType.number)),
-                ]),
-                const SizedBox(height: AppSpacing.md),
-                _textField(_outfitCtl, 'Outfit requirements', Icons.checkroom_outlined),
-              ]),
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // ================= SHOOTING DATES =================
-            _sectionHeader('Project timeline'),
-            AppCard(
-              child: Column(children: [
-                _dateTile('Shooting starts', _shootingStart, () async {
-                  final dt = await _pickDateTime(context);
-                  if (dt != null) setState(() => _shootingStart = dt);
-                }),
-                const Divider(height: AppSpacing.lg),
-                _dateTile('Shooting ends', _shootingEnd, () async {
-                  final dt = await _pickDateTime(context);
-                  if (dt != null) setState(() => _shootingEnd = dt);
-                }),
-              ]),
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // ================= TALENT REQUISITES =================
-            _sectionHeader('Talent requirements'),
-            AppCard(
-              child: Column(children: [
-                Row(children: [
-                  const Icon(Icons.wc_rounded, color: AppColors.inkFaint, size: 22),
-                  const SizedBox(width: AppSpacing.sm + 4),
-                  const Text('Gender', style: TextStyle(color: AppColors.inkSoft, fontSize: 14)),
-                  const Spacer(),
-                  DropdownButton<String>(
-                    value: _genderReq,
-                    underline: const SizedBox(),
-                    items: const [
-                      DropdownMenuItem(value: 'any', child: Text('Any')),
-                      DropdownMenuItem(value: 'male', child: Text('Male')),
-                      DropdownMenuItem(value: 'female', child: Text('Female')),
-                      DropdownMenuItem(value: 'other', child: Text('Other')),
-                    ],
-                    onChanged: (v) => setState(() => _genderReq = v!),
-                  ),
-                ]),
-                const Divider(height: AppSpacing.lg),
-                Row(children: [
-                  Expanded(
-                    child: _textField(
-                      null,
-                      'Min age',
-                      Icons.calendar_today_outlined,
-                      keyboardType: TextInputType.number,
-                      initialValue: _minAge?.toString(),
-                      onChanged: (v) => _minAge = int.tryParse(v),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.xl,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ================= BASIC INFO =================
+              _sectionHeader('Basic information'),
+              AppCard(
+                child: Column(
+                  children: [
+                    _textField(
+                      _titleCtl,
+                      'Job title',
+                      Icons.work_outline,
+                      required: true,
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm + 4),
-                  Expanded(
-                    child: _textField(
-                      null,
-                      'Max age',
-                      Icons.calendar_today_outlined,
-                      keyboardType: TextInputType.number,
-                      initialValue: _maxAge?.toString(),
-                      onChanged: (v) => _maxAge = int.tryParse(v),
+                    const SizedBox(height: AppSpacing.md),
+                    _textField(
+                      _descCtl,
+                      'Description',
+                      Icons.description_outlined,
+                      maxLines: 4,
+                      required: true,
                     ),
-                  ),
-                ]),
-                const SizedBox(height: AppSpacing.lg),
-                _chipMultiSelect('Preferred looks', _lookOptions, _selectedLooks),
-                const SizedBox(height: AppSpacing.lg),
-                _chipMultiSelect('Required skills', _skillOptions, _selectedSkills),
-              ]),
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // ================= MEDIA =================
-            _sectionHeader('Casting assets'),
-            if (_mediaUrls.isNotEmpty)
-              Container(
-                height: 100,
-                margin: const EdgeInsets.only(bottom: AppSpacing.sm + 4),
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _mediaUrls.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-                  itemBuilder: (_, i) => ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    child: Image.network(_mediaUrls[i], height: 100, width: 100, fit: BoxFit.cover),
-                  ),
+                  ],
                 ),
               ),
-            AppButton(
-              label: 'Add reference media',
-              icon: Icons.add_a_photo_outlined,
-              variant: AppButtonVariant.secondary,
-              expand: true,
-              onPressed: _saving ? null : _pickMedia,
-            ),
 
-            const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.lg),
 
-            // ================= SUBMIT =================
-            AppButton(
-              label: 'Publish casting call',
-              expand: true,
-              loading: _saving,
-              onPressed: _saving ? null : _submit,
-            ),
-          ]),
+              // ================= GIG DETAILS =================
+              _sectionHeader('Gig details'),
+              AppCard(
+                child: Column(
+                  children: [
+                    _textField(
+                      _locationCtl,
+                      'Location / venue',
+                      Icons.location_on_outlined,
+                      required: true,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _textField(
+                            _compMinCtl,
+                            'Min pay',
+                            Icons.payments_outlined,
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm + 4),
+                        Expanded(
+                          child: _textField(
+                            _compMaxCtl,
+                            'Max pay',
+                            Icons.payments_outlined,
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    _textField(
+                      _outfitCtl,
+                      'Outfit requirements',
+                      Icons.checkroom_outlined,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              // ================= SHOOTING DATES =================
+              _sectionHeader('Project timeline'),
+              AppCard(
+                child: Column(
+                  children: [
+                    _dateTile('Shooting starts', _shootingStart, () async {
+                      final dt = await _pickDateTime(context);
+                      if (dt != null) setState(() => _shootingStart = dt);
+                    }),
+                    const Divider(height: AppSpacing.lg),
+                    _dateTile('Shooting ends', _shootingEnd, () async {
+                      final dt = await _pickDateTime(context);
+                      if (dt != null) setState(() => _shootingEnd = dt);
+                    }),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              // ================= TALENT REQUISITES =================
+              _sectionHeader('Talent requirements'),
+              AppCard(
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.wc_rounded,
+                          color: AppColors.inkFaint,
+                          size: 22,
+                        ),
+                        const SizedBox(width: AppSpacing.sm + 4),
+                        const Text(
+                          'Gender',
+                          style: TextStyle(
+                            color: AppColors.inkSoft,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const Spacer(),
+                        DropdownButton<String>(
+                          value: _genderReq,
+                          underline: const SizedBox(),
+                          items: const [
+                            DropdownMenuItem(value: 'any', child: Text('Any')),
+                            DropdownMenuItem(
+                              value: 'male',
+                              child: Text('Male'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'female',
+                              child: Text('Female'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'other',
+                              child: Text('Other'),
+                            ),
+                          ],
+                          onChanged: (v) => setState(() => _genderReq = v!),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: AppSpacing.lg),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _textField(
+                            null,
+                            'Min age',
+                            Icons.calendar_today_outlined,
+                            keyboardType: TextInputType.number,
+                            initialValue: _minAge?.toString(),
+                            onChanged: (v) => _minAge = int.tryParse(v),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm + 4),
+                        Expanded(
+                          child: _textField(
+                            null,
+                            'Max age',
+                            Icons.calendar_today_outlined,
+                            keyboardType: TextInputType.number,
+                            initialValue: _maxAge?.toString(),
+                            onChanged: (v) => _maxAge = int.tryParse(v),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    _chipMultiSelect(
+                      'Preferred looks',
+                      _lookOptions,
+                      _selectedLooks,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    _chipMultiSelect(
+                      'Required skills',
+                      _skillOptions,
+                      _selectedSkills,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              // ================= MEDIA =================
+              _sectionHeader('Casting assets'),
+              if (_mediaUrls.isNotEmpty)
+                Container(
+                  height: 100,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.sm + 4),
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _mediaUrls.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(width: AppSpacing.sm),
+                    itemBuilder: (_, i) => ClipRRect(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      child: Image.network(
+                        _mediaUrls[i],
+                        height: 100,
+                        width: 100,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ),
+              AppButton(
+                label: 'Add reference media',
+                icon: Icons.add_a_photo_outlined,
+                variant: AppButtonVariant.secondary,
+                expand: true,
+                onPressed: _saving ? null : _pickMedia,
+              ),
+
+              const SizedBox(height: AppSpacing.xl),
+
+              // ================= SUBMIT =================
+              AppButton(
+                label: 'Publish casting call',
+                expand: true,
+                loading: _saving,
+                onPressed: _saving ? null : _submit,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _sectionHeader(String title) => Padding(
-        padding: const EdgeInsets.only(left: 4, bottom: AppSpacing.sm + 2),
-        child: Text(
-          title,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.inkFaint, letterSpacing: 0.3),
-        ),
-      );
+    padding: const EdgeInsets.only(left: 4, bottom: AppSpacing.sm + 2),
+    child: Text(
+      title,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: AppColors.inkFaint,
+        letterSpacing: 0.3,
+      ),
+    ),
+  );
 
   Widget _textField(
     TextEditingController? ctl,
@@ -317,27 +433,37 @@ class _CreateCastingPageState extends State<CreateCastingPage> {
     String? initialValue,
     Function(String)? onChanged,
     bool required = false,
-  }) =>
-      TextFormField(
-        controller: ctl,
-        initialValue: ctl == null ? initialValue : null,
-        onChanged: onChanged,
-        maxLines: maxLines,
-        keyboardType: keyboardType,
-        validator: required
-            ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
-            : null,
-        decoration: InputDecoration(
-          labelText: required ? '$label *' : label,
-          prefixIcon: Icon(icon, size: 20),
-        ),
-      );
+  }) => TextFormField(
+    controller: ctl,
+    initialValue: ctl == null ? initialValue : null,
+    onChanged: onChanged,
+    maxLines: maxLines,
+    keyboardType: keyboardType,
+    validator: required
+        ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+        : null,
+    decoration: InputDecoration(
+      labelText: required ? '$label *' : label,
+      prefixIcon: Icon(icon, size: 20),
+    ),
+  );
 
-  Widget _chipMultiSelect(String title, List<String> options, List<String> selected) {
+  Widget _chipMultiSelect(
+    String title,
+    List<String> options,
+    List<String> selected,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink)),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.ink,
+          ),
+        ),
         const SizedBox(height: AppSpacing.sm + 2),
         Wrap(
           spacing: AppSpacing.sm,
@@ -353,13 +479,17 @@ class _CreateCastingPageState extends State<CreateCastingPage> {
               showCheckmark: false,
               backgroundColor: AppColors.paperRaised,
               selectedColor: AppColors.goldBg,
-              side: BorderSide(color: isSelected ? Colors.transparent : AppColors.line),
+              side: BorderSide(
+                color: isSelected ? Colors.transparent : AppColors.line,
+              ),
               labelStyle: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
                 color: isSelected ? AppColors.gold : AppColors.inkSoft,
               ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
             );
           }).toList(),
         ),
@@ -367,30 +497,63 @@ class _CreateCastingPageState extends State<CreateCastingPage> {
     );
   }
 
-  Widget _dateTile(String label, DateTime? value, VoidCallback onTap) => InkWell(
+  Widget _dateTile(String label, DateTime? value, VoidCallback onTap) =>
+      InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.sm),
-        child: Row(children: [
-          const Icon(Icons.calendar_month_rounded, color: AppColors.inkFaint, size: 22),
-          const SizedBox(width: AppSpacing.sm + 4),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(label, style: const TextStyle(color: AppColors.inkFaint, fontSize: 12)),
-            const SizedBox(height: 4),
-            Text(
-              value != null ? value.toLocal().toString().split('.').first : 'Not set',
-              style: TextStyle(fontWeight: FontWeight.w600, color: value != null ? AppColors.ink : AppColors.inkFaint),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.calendar_month_rounded,
+              color: AppColors.inkFaint,
+              size: 22,
             ),
-          ]),
-          const Spacer(),
-          const Icon(Icons.edit_calendar_outlined, size: 18, color: AppColors.gold),
-        ]),
+            const SizedBox(width: AppSpacing.sm + 4),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.inkFaint,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value != null
+                      ? value.toLocal().toString().split('.').first
+                      : 'Not set',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: value != null ? AppColors.ink : AppColors.inkFaint,
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            const Icon(
+              Icons.edit_calendar_outlined,
+              size: 18,
+              color: AppColors.gold,
+            ),
+          ],
+        ),
       );
 
   Future<DateTime?> _pickDateTime(BuildContext context) async {
-    final date = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2000), lastDate: DateTime(2100));
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
     if (date == null) return null;
     if (!context.mounted) return date;
-    final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
     if (time == null) return date;
     return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }

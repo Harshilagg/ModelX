@@ -37,12 +37,15 @@ class _CastingFullDetailPageState extends State<CastingFullDetailPage> {
       String displayName = user.displayName ?? '';
       if (displayName.isEmpty) {
         try {
-          final profile =
-              await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+          final profile = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
           if (profile.exists) {
             final pd = profile.data() as Map<String, dynamic>;
             displayName =
-                (pd['displayName'] ?? pd['fullName'] ?? pd['name'] ?? '').toString();
+                (pd['displayName'] ?? pd['fullName'] ?? pd['name'] ?? '')
+                    .toString();
           }
         } catch (_) {}
       }
@@ -64,7 +67,9 @@ class _CastingFullDetailPageState extends State<CastingFullDetailPage> {
           'appliedAt': FieldValue.serverTimestamp(),
         });
         tx.update(
-          FirebaseFirestore.instance.collection('castings').doc(widget.castingId),
+          FirebaseFirestore.instance
+              .collection('castings')
+              .doc(widget.castingId),
           {'applicationsCount': FieldValue.increment(1)},
         );
       });
@@ -95,7 +100,7 @@ class _CastingFullDetailPageState extends State<CastingFullDetailPage> {
     if (budgetAmount.isNotEmpty) {
       return budgetType.isEmpty
           ? '₹$budgetAmount'
-          : '${budgetType.toUpperCase()} · ₹$budgetAmount';
+          : '${budgetType} · ₹$budgetAmount';
     }
     return '—';
   }
@@ -103,14 +108,31 @@ class _CastingFullDetailPageState extends State<CastingFullDetailPage> {
   static String _stamp(dynamic v) {
     if (v is! Timestamp) return 'NOT SET';
     final d = v.toDate().toLocal();
-    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const months = [
+      'JAN',
+      'FEB',
+      'MAR',
+      'APR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AUG',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DEC',
+    ];
     final hh = d.hour.toString().padLeft(2, '0');
     final mm = d.minute.toString().padLeft(2, '0');
     return '${d.day.toString().padLeft(2, '0')} ${months[d.month - 1]} ${d.year} · $hh:$mm';
   }
 
   List<String> _strings(dynamic v) {
-    if (v is List) return v.map((e) => e.toString()).where((s) => s.trim().isNotEmpty).toList();
+    if (v is List)
+      return v
+          .map((e) => e.toString())
+          .where((s) => s.trim().isNotEmpty)
+          .toList();
     final s = (v ?? '').toString().trim();
     return s.isEmpty ? const [] : [s];
   }
@@ -120,7 +142,8 @@ class _CastingFullDetailPageState extends State<CastingFullDetailPage> {
     final data = widget.data;
     final modelId = FirebaseAuth.instance.currentUser?.uid;
 
-    final title = (data['title'] ?? data['projectTitle'] ?? 'Casting').toString();
+    final title = (data['title'] ?? data['projectTitle'] ?? 'Casting')
+        .toString();
     final location = (data['location'] ?? '').toString().trim();
     final posterLine = [
       widget.posterName.trim(),
@@ -128,16 +151,16 @@ class _CastingFullDetailPageState extends State<CastingFullDetailPage> {
     ].where((s) => s.isNotEmpty).join(' · ');
 
     final details = <(String, String)>[
-      if (location.isNotEmpty) ('Location', location.toUpperCase()),
+      if (location.isNotEmpty) ('Location', location),
       ('Compensation', _compensation()),
       if (data['shootingStart'] is Timestamp)
         ('Shooting starts', _stamp(data['shootingStart'])),
       if (data['shootingEnd'] is Timestamp)
         ('Shooting ends', _stamp(data['shootingEnd'])),
       if ((data['timeline'] ?? '').toString().trim().isNotEmpty)
-        ('Timeline', data['timeline'].toString().toUpperCase()),
+        ('Timeline', data['timeline'].toString()),
       if ((data['outfitRequirements'] ?? '').toString().trim().isNotEmpty)
-        ('Outfit', data['outfitRequirements'].toString().toUpperCase()),
+        ('Outfit', data['outfitRequirements'].toString()),
       if ((data['requirements'] ?? '').toString().trim().isNotEmpty)
         ('Additional', data['requirements'].toString()),
     ];
@@ -150,18 +173,22 @@ class _CastingFullDetailPageState extends State<CastingFullDetailPage> {
     final minAge = talent['minAge'], maxAge = talent['maxAge'];
     final highlights = <(String, String)>[
       if (gender.isNotEmpty)
-        ('Gender', gender.toLowerCase() == 'any' ? 'ANY' : gender.toUpperCase()),
+        ('Gender', gender.toLowerCase() == 'any' ? 'ANY' : gender),
       if (minAge != null || maxAge != null)
         ('Age range', '${minAge ?? '—'} – ${maxAge ?? '—'}'),
     ];
 
-    final applicants = data['applicationsCount'] ?? data['applicantsCount'] ?? 0;
+    final applicants =
+        data['applicationsCount'] ?? data['applicantsCount'] ?? 0;
     final createdAt = data['createdAt'];
     final ago = createdAt is Timestamp
         ? '${DateTime.now().difference(createdAt.toDate()).inDays}D AGO'
         : '';
 
-    BoardJobDetail detail({required bool hasApplied, required String appliedLabel}) {
+    BoardJobDetail detail({
+      required bool hasApplied,
+      required String appliedLabel,
+    }) {
       return BoardJobDetail(
         title: title,
         posterLine: posterLine,
@@ -202,8 +229,9 @@ class _CastingFullDetailPageState extends State<CastingFullDetailPage> {
       builder: (context, snapshot) {
         final hasApplied = snapshot.data?.exists ?? false;
         final status = hasApplied
-            ? ((snapshot.data!.data() as Map<String, dynamic>?)?['status'] ?? 'applied')
-                .toString()
+            ? ((snapshot.data!.data() as Map<String, dynamic>?)?['status'] ??
+                      'applied')
+                  .toString()
             : 'Applied';
         return detail(hasApplied: hasApplied, appliedLabel: status);
       },

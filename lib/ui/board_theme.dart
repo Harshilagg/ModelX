@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import 'app_type.dart';
+import 'board_palette.dart';
 
 /// "The Board" — the departures-board design language from the style
 /// board (option 1a, "quiet colour").
@@ -83,95 +85,131 @@ class BoardColors {
   // ---- Derived ink-on-surface values ---------------------------------
 
   static const Color onInk = Color(0xFFF4F2EC);
-  static final Color onInkSoft = const Color(0xFFF4F2EC).withValues(alpha: 0.66);
-  static final Color onInkFaint = const Color(0xFFF4F2EC).withValues(alpha: 0.62);
-  static final Color onInkLine = const Color(0xFFF4F2EC).withValues(alpha: 0.16);
-  static final Color onInkWell = const Color(0xFFF4F2EC).withValues(alpha: 0.12);
+  static final Color onInkSoft = const Color(
+    0xFFF4F2EC,
+  ).withValues(alpha: 0.66);
+  static final Color onInkFaint = const Color(
+    0xFFF4F2EC,
+  ).withValues(alpha: 0.62);
+  static final Color onInkLine = const Color(
+    0xFFF4F2EC,
+  ).withValues(alpha: 0.16);
+  static final Color onInkWell = const Color(
+    0xFFF4F2EC,
+  ).withValues(alpha: 0.12);
 
   static final Color inkSoft = const Color(0xFF141513).withValues(alpha: 0.72);
   static final Color inkLine = const Color(0xFF141513).withValues(alpha: 0.14);
-  static final Color inkLineStrong = const Color(0xFF141513).withValues(alpha: 0.25);
+  static final Color inkLineStrong = const Color(
+    0xFF141513,
+  ).withValues(alpha: 0.25);
   static final Color inkWell = const Color(0xFF141513).withValues(alpha: 0.08);
 
   /// Scrim behind a spec sheet.
   static final Color scrim = const Color(0xFF141513).withValues(alpha: 0.55);
+
+  // ---- Brightness-aware access ---------------------------------------
+
+  /// The palette for the ambient theme.
+  ///
+  /// The constants above cannot answer to a brightness -- they bind once
+  /// at class-load -- so anything that has to work in both themes reads
+  /// through here instead: `BoardColors.ink` becomes
+  /// `BoardColors.of(context).onSurface`.
+  ///
+  /// Falls back to the day palette rather than throwing if the extension
+  /// is missing, so a widget pumped in a bare [MaterialApp] -- which is
+  /// most of the widget tests -- still renders what it renders today.
+  static BoardPalette of(BuildContext context) =>
+      Theme.of(context).extension<BoardPalette>() ?? BoardPalette.day();
 }
 
-/// The three type roles. Nothing in this design system uses a font
-/// outside these — a fourth voice is how a board stops reading as one.
+/// The board's three type roles, now served by [AppType].
+///
+/// The roles themselves are retired: condensed all-caps titles, Archivo
+/// prose and a tracked monospace for anything numeric were what carried
+/// the departures-board metaphor, and the metaphor is gone. Rather than
+/// edit a hundred and fifty call sites in one change, each role
+/// forwards to its replacement, so every screen picks up Albert Sans at
+/// once and the call sites can be renamed as each screen is touched.
+///
+/// Two deliberate changes happen in the forwarding.
+///
+/// Tracking is dropped. The `letterSpacing` arguments callers pass are
+/// accepted and ignored: they exist to make uppercase condensed type
+/// legible, and applied to sentence-case Albert Sans they only make it
+/// loose.
+///
+/// Small sizes are floored. The monospace label was used at 9.5 to
+/// 10px in seventy-five places, below a comfortable reading size, and
+/// lifting it is the single biggest legibility win in the redesign.
 class BoardType {
-  /// Saira Condensed 700, uppercase. Screen titles and card titles only:
-  /// never a list row, a chip, or a nav label's body.
+  /// The smallest any label may now render at.
+  static const double _minimumLabel = 12;
+
+  /// Screen titles and card titles.
   static TextStyle display({
     double fontSize = 34,
     Color color = BoardColors.ink,
     FontWeight fontWeight = FontWeight.w700,
     double letterSpacing = 0.3,
     double height = 0.92,
-  }) =>
-      GoogleFonts.sairaCondensed(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-        letterSpacing: letterSpacing,
-        height: height,
-      );
+  }) => AppType.display(
+    fontSize: fontSize,
+    color: color,
+    // The old weight was 700 because condensed faces need it to
+    // hold a line. Albert Sans at that weight reads as shouting.
+    fontWeight: fontWeight == FontWeight.w700 ? FontWeight.w400 : fontWeight,
+    height: height < 1 ? 1.08 : height,
+  );
 
-  /// Saira Condensed 600 — the smaller title voice used for row titles,
-  /// tab labels and buttons.
+  /// Row titles, tab labels and buttons.
   static TextStyle title({
     double fontSize = 16,
     Color color = BoardColors.ink,
     FontWeight fontWeight = FontWeight.w600,
     double letterSpacing = 0.6,
-  }) =>
-      GoogleFonts.sairaCondensed(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-        letterSpacing: letterSpacing,
-        height: 1.05,
-      );
+  }) => AppType.heading(
+    fontSize: fontSize < 15 ? 15 : fontSize,
+    color: color,
+    fontWeight: FontWeight.w500,
+  );
 
-  /// Archivo — prose. Descriptions, captions, bios. 12.5–15px.
+  /// Prose. Descriptions, captions, bios.
   static TextStyle body({
     double fontSize = 13,
     Color color = BoardColors.ink,
     FontWeight fontWeight = FontWeight.w400,
     double height = 1.45,
-  }) =>
-      GoogleFonts.archivo(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-        height: height,
-      );
+  }) => AppType.body(
+    fontSize: fontSize < 13 ? 13 : fontSize,
+    color: color,
+    fontWeight: fontWeight,
+    height: height,
+  );
 
-  /// IBM Plex Mono — times, measurements, money, counts, tags, and every
-  /// small uppercase label. If it is a number or a key, it is mono.
+  /// What used to be the monospace voice: times, measurements, money,
+  /// counts, tags and every small label.
+  ///
+  /// Tabular figures are kept, because holding numbers still in a
+  /// column was the real reason that voice was monospaced.
   static TextStyle mono({
     double fontSize = 10,
     Color color = BoardColors.ink,
     FontWeight fontWeight = FontWeight.w500,
     double letterSpacing = 0.8,
     double height = 1.1,
-  }) =>
-      GoogleFonts.ibmPlexMono(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-        letterSpacing: letterSpacing,
-        height: height,
-      );
+  }) => AppType.label(
+    fontSize: fontSize < _minimumLabel ? _minimumLabel : fontSize,
+    color: color,
+    fontWeight: fontWeight,
+    height: height < 1.2 ? 1.3 : height,
+    tabular: true,
+  );
 
-  /// The recurring eyebrow above a section — mono, wide-tracked, muted.
-  static TextStyle sectionLabel({Color? color}) => GoogleFonts.ibmPlexMono(
-        fontSize: 9.5,
-        fontWeight: FontWeight.w500,
-        color: color ?? BoardColors.inkSoft,
-        letterSpacing: 1.35,
-        height: 1.1,
-      );
+  /// The eyebrow above a section.
+  static TextStyle sectionLabel({Color? color}) =>
+      AppType.label(color: color ?? BoardColors.inkSoft);
 }
 
 class BoardRadius {
@@ -246,7 +284,11 @@ class _HatchPainter extends CustomPainter {
     // 135° hatch, 14px period. Start far enough left that the diagonals
     // still cover the top-right corner.
     for (double x = -size.height; x < size.width + size.height; x += 14) {
-      canvas.drawLine(Offset(x, 0), Offset(x + size.height, size.height), paint);
+      canvas.drawLine(
+        Offset(x, 0),
+        Offset(x + size.height, size.height),
+        paint,
+      );
     }
   }
 

@@ -4,13 +4,15 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
-import 'pages/login_page.dart';
+import 'onboarding/login_page.dart';
 import 'pages/dashboard_page.dart';
-import 'pages/onboarding_page.dart';
+import 'onboarding/onboarding_flow.dart';
+import 'onboarding/onboarding_theme.dart';
 import 'pages/create_profile_page.dart';
 import 'config.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'ui/app_theme.dart';
+import 'ui/theme_controller.dart';
 import 'brand/brand_dashboard_page.dart';
 import 'agency/agency_dashboard_page.dart';
 import 'package:app_links/app_links.dart';
@@ -32,14 +34,22 @@ void main() async {
     };
   }
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  runApp(const MyApp());
+  // The theme preference is read here, not in an initState or a
+  // FutureBuilder, because anything that resolves after the first frame
+  // paints the app in the wrong theme and then corrects itself. Startup
+  // is already waiting on Firebase, so this costs nothing.
+  final results = await Future.wait([
+    Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
+    ThemeController.load(),
+  ]);
+
+  runApp(MyApp(themeController: results[1] as ThemeController));
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  final ThemeController themeController;
+
+  const MyApp({super.key, required this.themeController});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -88,12 +98,22 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: _navigatorKey,
-      debugShowCheckedModeBanner: false,
-      title: 'ModelX App',
-      theme: AppTheme.light(),
-      home: const AppEntry(),
+    // Rebuilds only when the mode changes, which while
+    // kThemeSwitchingEnabled is false is never.
+    return ThemeScope(
+      controller: widget.themeController,
+      child: AnimatedBuilder(
+        animation: widget.themeController,
+        builder: (context, _) => MaterialApp(
+          navigatorKey: _navigatorKey,
+          debugShowCheckedModeBanner: false,
+          title: 'ModelX App',
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.night(),
+          themeMode: widget.themeController.mode,
+          home: const AppEntry(),
+        ),
+      ),
     );
   }
 }
@@ -117,17 +137,25 @@ class _AppEntryState extends State<AppEntry> {
 
   Future<void> _checkOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       hasSeenOnboarding = prefs.getBool('seen_onboarding') ?? false;
     });
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Decodes the splash photographs while this screen is still
+    // deciding what to show, so the masonry's first frame is a wall of
+    // images rather than a wall of empty rectangles.
+    OnboardingPhotos.precache(context);
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (hasSeenOnboarding == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     // If the user is already signed in, show the auth gate immediately.
@@ -135,21 +163,11 @@ class _AppEntryState extends State<AppEntry> {
       return const AuthGate();
     }
 
-    if (kForceShowOnboarding) {
-      return OnboardingPage(
-        onFinish: () async {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('seen_onboarding', true);
-        },
-      );
-    }
+    if (kForceShowOnboarding) return const OnboardingFlow();
 
-    return hasSeenOnboarding! ? const AuthGate() : OnboardingPage(
-      onFinish: () async {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('seen_onboarding', true);
-      },
-    );
+    // The flow records `seen_onboarding` itself, when the user leaves
+    // the splash rather than when they finish signing up.
+    return hasSeenOnboarding! ? const AuthGate() : const OnboardingFlow();
   }
 }
 
@@ -161,29 +179,39 @@ class AuthGate extends StatelessWidget {
     final uid = user.uid;
 
     // 🔍 1. Check MODEL (users)
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
     if (userDoc.exists) {
       final data = userDoc.data();
-      final profileCompleted = data != null && (data['profileCompleted'] == true);
+      final profileCompleted =
+          data != null && (data['profileCompleted'] == true);
       if (profileCompleted) return const DashboardPage();
       return const CreateProfilePage();
     }
 
     // 🔍 2. Check BRAND
-    final brandDoc = await FirebaseFirestore.instance.collection('brands').doc(uid).get();
+    final brandDoc = await FirebaseFirestore.instance
+        .collection('brands')
+        .doc(uid)
+        .get();
     if (brandDoc.exists) {
       return const BrandDashboardPage();
     }
 
     // 🔍 3. Check AGENCY
-    final agencyDoc = await FirebaseFirestore.instance.collection('agency').doc(uid).get();
+    final agencyDoc = await FirebaseFirestore.instance
+        .collection('agency')
+        .doc(uid)
+        .get();
     if (agencyDoc.exists) {
       return const AgencyDashboardPage();
     }
 
     // ❌ Edge case: logged in but no profile -> sign out to show login
     await FirebaseAuth.instance.signOut();
-    return const LoginPage();
+    return const OnboardingLoginPage();
   }
 
   @override
@@ -198,7 +226,7 @@ class AuthGate extends StatelessWidget {
         }
 
         final user = snapshot.data;
-        if (user == null) return const LoginPage();
+        if (user == null) return const OnboardingLoginPage();
 
         return FutureBuilder<Widget>(
           future: _getHome(user),

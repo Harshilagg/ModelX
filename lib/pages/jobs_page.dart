@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../ui/board_theme.dart';
+import '../widgets/kit/kit.dart';
 import '../widgets/board_widgets.dart';
 import '../widgets/state_views.dart';
 import 'gig_full_detail_page.dart';
@@ -17,16 +18,64 @@ import 'casting_full_detail_page.dart';
 /// model's own application status, read one document at a time because
 /// the rules don't grant `list` over applications.
 class JobsPage extends StatefulWidget {
-  const JobsPage({super.key});
+  /// A status to open on, as stored -- passed by the counts on Home's
+  /// Up next card so they land somewhere narrower than the whole list.
+  final String? initialStatus;
+
+  const JobsPage({super.key, this.initialStatus});
 
   @override
   State<JobsPage> createState() => _JobsPageState();
 }
 
-enum _JobFilter { all, open, applied, shortlisted }
+/// The list's filters.
+///
+/// These used to be coarser than they looked: "applied" meant *has any
+/// status at all* and "shortlisted" meant *has moved past applied*, so
+/// neither could answer "show me the three I am negotiating". They are
+/// now one filter per state, which is also what makes the counts on
+/// Home's Up next card worth tapping.
+enum _JobFilter {
+  all,
+  open,
+  applied,
+  shortlisted,
+  negotiating,
+  booked;
+
+  String get label => switch (this) {
+    _JobFilter.all => 'All',
+    _JobFilter.open => 'Open',
+    _JobFilter.applied => 'Applied',
+    _JobFilter.shortlisted => 'Shortlisted',
+    _JobFilter.negotiating => 'Negotiating',
+    _JobFilter.booked => 'Booked',
+  };
+
+  /// The state this filter selects, or null for the two that are not
+  /// about an application's state.
+  AppStatus? get state => switch (this) {
+    _JobFilter.all || _JobFilter.open => null,
+    _JobFilter.applied => AppStatus.applied,
+    _JobFilter.shortlisted => AppStatus.shortlisted,
+    _JobFilter.negotiating => AppStatus.negotiating,
+    _JobFilter.booked => AppStatus.booked,
+  };
+
+  /// Matches a status name handed in from elsewhere -- the counts on
+  /// Home pass the state they counted.
+  static _JobFilter fromStatus(String? raw) {
+    if (raw == null) return _JobFilter.all;
+    final wanted = AppStatus.parse(raw);
+    return _JobFilter.values.firstWhere(
+      (f) => f.state == wanted,
+      orElse: () => _JobFilter.all,
+    );
+  }
+}
 
 class _JobsPageState extends State<JobsPage> {
-  _JobFilter _filter = _JobFilter.all;
+  late _JobFilter _filter = _JobFilter.fromStatus(widget.initialStatus);
   String? _expandedId;
 
   // Bumping this key forces the StreamBuilders below to re-subscribe,
@@ -47,6 +96,19 @@ class _JobsPageState extends State<JobsPage> {
   void initState() {
     super.initState();
     _subscribe();
+  }
+
+  @override
+  void didUpdateWidget(JobsPage old) {
+    super.didUpdateWidget(old);
+    // The shell keeps this page alive in an IndexedStack, so initState
+    // runs once and a later request to open on a status would be
+    // ignored. Applying it here keeps the streams subscribed, where
+    // remounting the page to pick it up would drop them.
+    if (widget.initialStatus != old.initialStatus &&
+        widget.initialStatus != null) {
+      setState(() => _filter = _JobFilter.fromStatus(widget.initialStatus));
+    }
   }
 
   void _subscribe() {
@@ -74,7 +136,10 @@ class _JobsPageState extends State<JobsPage> {
   Widget build(BuildContext context) {
     final modelId = FirebaseAuth.instance.currentUser?.uid;
     if (modelId == null) {
-      return const EmptyState(icon: Icons.work_outline_rounded, title: 'Not signed in');
+      return const EmptyState(
+        icon: Icons.work_outline_rounded,
+        title: 'Not signed in',
+      );
     }
 
     return RefreshIndicator(
@@ -99,9 +164,12 @@ class _JobsPageState extends State<JobsPage> {
               // Merge both collections into one feed, newest first,
               // regardless of source.
               final items = <_FeedItem>[
-                ...gigSnap.data!.docs.map((d) => _FeedItem.gig(d, d.data() as Map<String, dynamic>)),
-                ...castingsSnap.data!.docs
-                    .map((d) => _FeedItem.casting(d, d.data() as Map<String, dynamic>)),
+                ...gigSnap.data!.docs.map(
+                  (d) => _FeedItem.gig(d, d.data() as Map<String, dynamic>),
+                ),
+                ...castingsSnap.data!.docs.map(
+                  (d) => _FeedItem.casting(d, d.data() as Map<String, dynamic>),
+                ),
               ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
               return _JobsBody(
@@ -110,7 +178,8 @@ class _JobsPageState extends State<JobsPage> {
                 filter: _filter,
                 expandedId: _expandedId,
                 onFilter: (f) => setState(() => _filter = f),
-                onExpand: (id) => setState(() => _expandedId = _expandedId == id ? null : id),
+                onExpand: (id) =>
+                    setState(() => _expandedId = _expandedId == id ? null : id),
               );
             },
           );
@@ -166,26 +235,25 @@ class _JobsBody extends StatelessWidget {
 
         final filtered = items.where((it) {
           final status = statuses[it.doc.id];
-          switch (filter) {
-            case _JobFilter.all:
-              return true;
-            case _JobFilter.open:
-              return status == null;
-            case _JobFilter.applied:
-              return status != null;
-            case _JobFilter.shortlisted:
-              final s = status?.toLowerCase() ?? '';
-              return s.isNotEmpty && s != 'applied' && s != 'pending';
-          }
+          if (filter == _JobFilter.all) return true;
+          // "Open" is the absence of an application, not a status.
+          if (filter == _JobFilter.open) return status == null;
+          if (status == null) return false;
+          return AppStatus.parse(status) == filter.state;
         }).toList();
 
         // The rail shows what shoots soonest, which is the only deadline
         // the data actually carries — there is no "applications close"
         // field on either collection.
-        final soon = items
-            .where((it) => it.shootingStart != null && it.shootingStart!.isAfter(DateTime.now()))
-            .toList()
-          ..sort((a, b) => a.shootingStart!.compareTo(b.shootingStart!));
+        final soon =
+            items
+                .where(
+                  (it) =>
+                      it.shootingStart != null &&
+                      it.shootingStart!.isAfter(DateTime.now()),
+                )
+                .toList()
+              ..sort((a, b) => a.shootingStart!.compareTo(b.shootingStart!));
 
         return CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -200,7 +268,10 @@ class _JobsBody extends StatelessWidget {
             ),
             SliverToBoxAdapter(key: const ValueKey('chips'), child: _chips()),
             if (soon.isNotEmpty)
-              SliverToBoxAdapter(key: const ValueKey('rail'), child: _rail(context, soon)),
+              SliverToBoxAdapter(
+                key: const ValueKey('rail'),
+                child: _rail(context, soon),
+              ),
             if (filtered.isEmpty)
               const SliverToBoxAdapter(
                 key: ValueKey('empty'),
@@ -209,7 +280,8 @@ class _JobsBody extends StatelessWidget {
                   child: EmptyState(
                     icon: Icons.work_outline_rounded,
                     title: 'Nothing here',
-                    message: 'New gigs and castings show up as soon as they go live.',
+                    message:
+                        'New gigs and castings show up as soon as they go live.',
                   ),
                 ),
               )
@@ -241,55 +313,36 @@ class _JobsBody extends StatelessWidget {
   /// absent documents simply mean "not applied".
   Future<Map<String, String>> _statuses() async {
     final out = <String, String>{};
-    await Future.wait(items.map((it) async {
-      try {
-        final ref = it.isGig
-            ? it.doc.reference.collection('applications').doc(modelId)
-            : it.doc.reference.collection('applicants').doc(modelId);
-        final snap = await ref.get();
-        if (snap.exists) {
-          out[it.doc.id] = (snap.data()?['status'] ?? 'applied').toString();
-        }
-      } catch (_) {}
-    }));
+    await Future.wait(
+      items.map((it) async {
+        try {
+          final ref = it.isGig
+              ? it.doc.reference.collection('applications').doc(modelId)
+              : it.doc.reference.collection('applicants').doc(modelId);
+          final snap = await ref.get();
+          if (snap.exists) {
+            out[it.doc.id] = (snap.data()?['status'] ?? 'applied').toString();
+          }
+        } catch (_) {}
+      }),
+    );
     return out;
   }
 
   Widget _chips() {
-    const labels = {
-      _JobFilter.all: 'ALL',
-      _JobFilter.open: 'OPEN',
-      _JobFilter.applied: 'APPLIED',
-      _JobFilter.shortlisted: 'SHORTLISTED',
-    };
-
     return SizedBox(
-      height: 44,
+      height: 52,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         children: [
-          for (final entry in labels.entries) ...[
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => onFilter(entry.key),
-              child: Container(
-                margin: const EdgeInsets.only(right: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
-                decoration: BoxDecoration(
-                  color: filter == entry.key ? BoardColors.brass : BoardColors.shell,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Center(
-                  child: Text(
-                    entry.value,
-                    style: BoardType.mono(
-                      fontSize: 10,
-                      color: filter == entry.key ? BoardColors.ink : BoardColors.inkSoft,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
+          for (final option in _JobFilter.values) ...[
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: AppChip(
+                label: option.label,
+                selected: filter == option,
+                onTap: () => onFilter(option),
               ),
             ),
           ],
@@ -319,7 +372,9 @@ class _JobsBody extends StatelessWidget {
               separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, i) {
                 final it = soon[i];
-                final days = it.shootingStart!.difference(DateTime.now()).inDays;
+                final days = it.shootingStart!
+                    .difference(DateTime.now())
+                    .inDays;
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () => it.open(context),
@@ -335,7 +390,7 @@ class _JobsBody extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          days <= 0 ? 'SHOOTS TODAY' : 'SHOOTS IN ${days}D',
+                          days <= 0 ? 'Shoots today' : 'SHOOTS IN ${days}D',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: BoardType.mono(
@@ -348,7 +403,7 @@ class _JobsBody extends StatelessWidget {
                         const SizedBox(height: 8),
                         Expanded(
                           child: Text(
-                            it.title.toUpperCase(),
+                            it.title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: BoardType.title(
@@ -360,7 +415,7 @@ class _JobsBody extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          it.moneyLine.isEmpty ? it.posterName.toUpperCase() : it.moneyLine,
+                          it.moneyLine.isEmpty ? it.posterName : it.moneyLine,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: BoardType.mono(
@@ -418,7 +473,9 @@ class _JobRow extends StatelessWidget {
     final meta = BoardColors.onInkSoft;
     final money = selected ? BoardColors.brass : BoardColors.brassText;
 
-    final initial = item.posterName.isNotEmpty ? item.posterName[0].toUpperCase() : '·';
+    final initial = item.posterName.isNotEmpty
+        ? item.posterName[0].toUpperCase()
+        : '·';
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -454,16 +511,23 @@ class _JobRow extends StatelessWidget {
                     ),
                     child: Text(
                       initial,
-                      style: BoardType.mono(fontSize: 10, color: BoardColors.ink),
+                      style: BoardType.mono(
+                        fontSize: 10,
+                        color: BoardColors.ink,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      item.posterName.toUpperCase(),
+                      item.posterName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: BoardType.mono(fontSize: 10.5, color: fg, letterSpacing: 0.6),
+                      style: BoardType.mono(
+                        fontSize: 10.5,
+                        color: fg,
+                        letterSpacing: 0.6,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -474,7 +538,7 @@ class _JobRow extends StatelessWidget {
 
               // ---- title ----
               Text(
-                item.title.toUpperCase(),
+                item.title,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: BoardType.display(fontSize: 26, color: fg, height: 0.93),
@@ -484,7 +548,9 @@ class _JobRow extends StatelessWidget {
               // ---- money · location ----
               Container(
                 padding: const EdgeInsets.only(top: 9),
-                decoration: BoxDecoration(border: Border(top: BorderSide(color: line))),
+                decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: line)),
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -503,7 +569,7 @@ class _JobRow extends StatelessWidget {
                       const SizedBox(width: 10),
                       Flexible(
                         child: Text(
-                          item.location.toUpperCase(),
+                          item.location,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.right,
@@ -522,7 +588,8 @@ class _JobRow extends StatelessWidget {
                   spacing: 5,
                   runSpacing: 5,
                   children: [
-                    for (final c in item.chips.take(4)) MonoChip(c, neutral: true),
+                    for (final c in item.chips.take(4))
+                      MonoChip(c, neutral: true),
                   ],
                 ),
               ],
@@ -532,7 +599,9 @@ class _JobRow extends StatelessWidget {
                 const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.only(top: 10),
-                  decoration: BoxDecoration(border: Border(top: BorderSide(color: line))),
+                  decoration: BoxDecoration(
+                    border: Border(top: BorderSide(color: line)),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisSize: MainAxisSize.min,
@@ -540,7 +609,10 @@ class _JobRow extends StatelessWidget {
                       if (item.description.isNotEmpty) ...[
                         Text(
                           item.description,
-                          style: BoardType.body(fontSize: 12.5, color: fg.withValues(alpha: 0.88)),
+                          style: BoardType.body(
+                            fontSize: 12.5,
+                            color: fg.withValues(alpha: 0.88),
+                          ),
                         ),
                         const SizedBox(height: 10),
                       ],
@@ -551,7 +623,11 @@ class _JobRow extends StatelessWidget {
                               item.applicationLine,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: BoardType.mono(fontSize: 9, color: meta, letterSpacing: 0.6),
+                              style: BoardType.mono(
+                                fontSize: 9,
+                                color: meta,
+                                letterSpacing: 0.6,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -559,13 +635,16 @@ class _JobRow extends StatelessWidget {
                             behavior: HitTestBehavior.opaque,
                             onTap: () => item.open(context),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 22,
+                                vertical: 11,
+                              ),
                               decoration: BoxDecoration(
                                 color: BoardColors.brass,
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                status == null ? 'APPLY' : 'VIEW',
+                                status == null ? 'Apply' : 'View',
                                 style: BoardType.title(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
@@ -589,7 +668,11 @@ class _JobRow extends StatelessWidget {
                         item.applicationLine,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: BoardType.mono(fontSize: 9, color: meta, letterSpacing: 0.6),
+                        style: BoardType.mono(
+                          fontSize: 9,
+                          color: meta,
+                          letterSpacing: 0.6,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -632,18 +715,26 @@ class _FeedItem {
   factory _FeedItem.gig(QueryDocumentSnapshot doc, Map<String, dynamic> data) =>
       _FeedItem._(true, doc, data, _date(data['createdAt']) ?? DateTime.now());
 
-  factory _FeedItem.casting(QueryDocumentSnapshot doc, Map<String, dynamic> data) =>
+  factory _FeedItem.casting(
+    QueryDocumentSnapshot doc,
+    Map<String, dynamic> data,
+  ) =>
       _FeedItem._(false, doc, data, _date(data['createdAt']) ?? DateTime.now());
 
   static DateTime? _date(dynamic v) => v is Timestamp ? v.toDate() : null;
 
   String get title =>
-      (isGig ? data['projectTitle'] : (data['title'] ?? data['projectTitle']) ?? '').toString();
+      (isGig
+              ? data['projectTitle']
+              : (data['title'] ?? data['projectTitle']) ?? '')
+          .toString();
 
-  String get posterName => (isGig
-          ? data['brandName']
-          : (data['agencyName'] ?? data['agency'] ?? data['posterName']) ?? '')
-      .toString();
+  String get posterName =>
+      (isGig
+              ? data['brandName']
+              : (data['agencyName'] ?? data['agency'] ?? data['posterName']) ??
+                    '')
+          .toString();
 
   String get description => (data['description'] ?? '').toString();
 
@@ -675,7 +766,7 @@ class _FeedItem {
     final type = (data['budgetType'] ?? '').toString();
     final amount = (data['budgetAmount'] ?? '').toString();
     if (amount.isNotEmpty) {
-      return type.isEmpty ? '₹$amount' : '${type.toUpperCase()} · ₹$amount';
+      return type.isEmpty ? '₹$amount' : '${type} · ₹$amount';
     }
     final hours = (data['durationHours'] ?? '').toString();
     if (hours.isNotEmpty) return '$hours HRS';
@@ -689,7 +780,8 @@ class _FeedItem {
 
     if (isGig) {
       final role = data['roleRequirements'] as Map<String, dynamic>? ?? {};
-      final physical = role['physicalAttributes'] as Map<String, dynamic>? ?? {};
+      final physical =
+          role['physicalAttributes'] as Map<String, dynamic>? ?? {};
       for (final key in ['eyeColor', 'hairColor', 'skinComplexion']) {
         final v = physical[key];
         if (v is List && v.isNotEmpty) out.add(v.first.toString());
@@ -701,12 +793,14 @@ class _FeedItem {
       if (talent is Map) {
         final t = Map<String, dynamic>.from(talent);
         final minAge = t['minAge'], maxAge = t['maxAge'];
-        if (minAge != null || maxAge != null) out.add('${minAge ?? '—'}–${maxAge ?? '—'}');
+        if (minAge != null || maxAge != null)
+          out.add('${minAge ?? '—'}–${maxAge ?? '—'}');
         final looks = t['looks'];
         if (looks is List && looks.isNotEmpty) out.add(looks.first.toString());
         if (looks is String && looks.isNotEmpty) out.add(looks);
         final skills = t['skills'];
-        if (skills is List && skills.isNotEmpty) out.add(skills.first.toString());
+        if (skills is List && skills.isNotEmpty)
+          out.add(skills.first.toString());
       }
       final outfit = (data['outfitRequirements'] ?? '').toString();
       if (outfit.isNotEmpty) out.add(outfit);
@@ -718,7 +812,9 @@ class _FeedItem {
   String get applicationLine {
     final count = data['applicationsCount'] ?? data['applicantsCount'] ?? 0;
     final diff = DateTime.now().difference(createdAt);
-    final ago = diff.inDays > 0 ? '${diff.inDays}D AGO' : '${diff.inHours}H AGO';
+    final ago = diff.inDays > 0
+        ? '${diff.inDays}D AGO'
+        : '${diff.inHours}H AGO';
     return '$count APPLICATION${count == 1 ? '' : 'S'} · $ago';
   }
 
@@ -727,8 +823,16 @@ class _FeedItem {
       context,
       MaterialPageRoute(
         builder: (_) => isGig
-            ? GigFullDetailPage(gigId: doc.id, data: data, brandName: posterName)
-            : CastingFullDetailPage(castingId: doc.id, data: data, posterName: posterName),
+            ? GigFullDetailPage(
+                gigId: doc.id,
+                data: data,
+                brandName: posterName,
+              )
+            : CastingFullDetailPage(
+                castingId: doc.id,
+                data: data,
+                posterName: posterName,
+              ),
       ),
     );
   }

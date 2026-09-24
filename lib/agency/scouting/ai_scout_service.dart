@@ -12,7 +12,11 @@ class AiScoutResult {
   final String explanation;
   final double score;
 
-  AiScoutResult({required this.profile, required this.explanation, required this.score});
+  AiScoutResult({
+    required this.profile,
+    required this.explanation,
+    required this.score,
+  });
 }
 
 class AiScoutService {
@@ -43,18 +47,19 @@ class AiScoutService {
     }
 
     if (candidateProfiles.isEmpty) return [];
-  
+
     // 4. Semantic Re-ranking & Explanation (GROQ - Ultra Fast & High Free Quota)
     final prompt = _buildRerankingPrompt(query, candidateProfiles);
-    
-    final response = await _groqService.complete(
-      AiConfig.modelChatAssistant,
-      [
-        {'role': 'system', 'content': 'You are an expert talent scout for ModelX. Your goal is to find the MOST relevant models for a specific query. Be very picky. If a model doesn\'t match a specific criteria (like location or gender), either exclude them or mark them as a non-match. Return a ranked list of only the candidates that realistically fit.'},
-        {'role': 'user', 'content': prompt},
-      ],
-    );
-  
+
+    final response = await _groqService.complete(AiConfig.modelChatAssistant, [
+      {
+        'role': 'system',
+        'content':
+            'You are an expert talent scout for ModelX. Your goal is to find the MOST relevant models for a specific query. Be very picky. If a model doesn\'t match a specific criteria (like location or gender), either exclude them or mark them as a non-match. Return a ranked list of only the candidates that realistically fit.',
+      },
+      {'role': 'user', 'content': prompt},
+    ]);
+
     // 5. Parse LLM response and merge with profile data
     return _parseLlmResponse(response, candidateProfiles);
   }
@@ -110,9 +115,13 @@ class AiScoutService {
     ].join(' | ');
   }
 
-  String _buildRerankingPrompt(String query, List<Map<String, dynamic>> profiles) {
-    String profileList = profiles.map((p) {
-      return """
+  String _buildRerankingPrompt(
+    String query,
+    List<Map<String, dynamic>> profiles,
+  ) {
+    String profileList = profiles
+        .map((p) {
+          return """
 ID: ${p['id']}
 Name: ${p['fullName']}
 Location: ${p['location']}
@@ -133,8 +142,9 @@ Preferred Work: ${p['preferredWork']}
 Skills: ${p['skills']}
 Bio: ${p['bio']}
 """;
-    }).join("\n---\n");
-    
+        })
+        .join("\n---\n");
+
     return """
 User Search Goal: "$query"
 
@@ -158,9 +168,12 @@ If NONE of the candidates match, simply reply with "NO_MATCHES".
 """;
   }
 
-  List<AiScoutResult> _parseLlmResponse(String response, List<Map<String, dynamic>> profiles) {
+  List<AiScoutResult> _parseLlmResponse(
+    String response,
+    List<Map<String, dynamic>> profiles,
+  ) {
     if (response.contains('NO_MATCHES')) return [];
-    
+
     final List<AiScoutResult> results = [];
     final sections = response.split('---');
 
@@ -175,7 +188,11 @@ If NONE of the candidates match, simply reply with "NO_MATCHES".
         if (lowerLine.startsWith('id:')) {
           id = cleanLine.substring(3).trim();
           // Remove potential quotes or brackets
-          id = id.replaceAll('"', '').replaceAll("'", '').replaceAll('[', '').replaceAll(']', '');
+          id = id
+              .replaceAll('"', '')
+              .replaceAll("'", '')
+              .replaceAll('[', '')
+              .replaceAll(']', '');
         }
         if (lowerLine.startsWith('match:')) {
           matchText = cleanLine.substring(6).trim();
@@ -183,29 +200,33 @@ If NONE of the candidates match, simply reply with "NO_MATCHES".
       }
 
       if (id != null && matchText != null) {
-        final profile = profiles.firstWhere((p) => p['id'] == id, orElse: () => {});
+        final profile = profiles.firstWhere(
+          (p) => p['id'] == id,
+          orElse: () => {},
+        );
         if (profile.isNotEmpty) {
-          results.add(AiScoutResult(
-            profile: profile,
-            explanation: matchText,
-            score: 1.0 - (results.length * 0.05),
-          ));
+          results.add(
+            AiScoutResult(
+              profile: profile,
+              explanation: matchText,
+              score: 1.0 - (results.length * 0.05),
+            ),
+          );
         }
       }
     }
-    
+
     return results;
   }
 
   /// Get general concierge guidance using Groq (Llama)
   Future<String> getGuidance(String query, String userType) async {
     try {
-      final response = await _groqService.complete(
-        AiConfig.modelChatAssistant,
-        [
-          {
-            'role': 'system',
-            'content': '''You are the ModelX AI Concierge, a sophisticated assistant for a premium talent platform.
+      final response = await _groqService.complete(AiConfig.modelChatAssistant, [
+        {
+          'role': 'system',
+          'content':
+              '''You are the ModelX AI Concierge, a sophisticated assistant for a premium talent platform.
 User Type: $userType
 
 Instructions:
@@ -213,11 +234,10 @@ Instructions:
 2. If they are a Model, help with portfolio, jobs, or profile tips.
 3. If they are an Agency/Brand, help with scouting, gigs, or hiring.
 4. Tone: Elegant, professional, and prestigious.
-5. If asked about app features, give general professional advice matching the industry.'''
-          },
-          {'role': 'user', 'content': query},
-        ],
-      );
+5. If asked about app features, give general professional advice matching the industry.''',
+        },
+        {'role': 'user', 'content': query},
+      ]);
       return response;
     } catch (e) {
       debugPrint('Concierge Error: $e');

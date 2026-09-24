@@ -33,13 +33,15 @@ class AppFeaturedGrid extends StatelessWidget {
 
     var i = 0;
     while (i + 3 <= tiles.length) {
-      blocks.add(_MosaicBlock(
-        tall: tiles[i],
-        smallTop: tiles[i + 1],
-        smallBottom: tiles[i + 2],
-        gap: gap,
-        height: mosaicHeight,
-      ));
+      blocks.add(
+        _MosaicBlock(
+          tall: tiles[i],
+          smallTop: tiles[i + 1],
+          smallBottom: tiles[i + 2],
+          gap: gap,
+          height: mosaicHeight,
+        ),
+      );
       i += 3;
     }
 

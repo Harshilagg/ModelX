@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../ui/board_theme.dart';
 import '../widgets/board_widgets.dart';
+import '../services/comp_card_pdf.dart';
 import '../widgets/comp_card_templates.dart';
 import '../widgets/state_views.dart';
 
@@ -642,7 +643,7 @@ class _CompCardPageState extends State<CompCardPage> {
             Expanded(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: _explainPdf,
+                onTap: _downloadPdf,
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   alignment: Alignment.center,
@@ -651,7 +652,7 @@ class _CompCardPageState extends State<CompCardPage> {
                     border: Border.all(color: BoardColors.ink, width: 3),
                   ),
                   child: Text(
-                    'Download PDF',
+                    _exporting ? 'Preparing...' : 'Download PDF',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: BoardType.title(
@@ -858,17 +859,35 @@ class _CompCardPageState extends State<CompCardPage> {
     ).showSnackBar(const SnackBar(content: Text('Profile link copied')));
   }
 
-  void _explainPdf() {
-    // Rendering a real PDF needs the `pdf` + `printing` packages, which
-    // this project doesn't depend on yet. Saying so beats a button that
-    // quietly does nothing.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'PDF export needs the pdf + printing packages added to pubspec.',
-        ),
-      ),
-    );
+  /// Renders the card and hands it to the system to save or send.
+  ///
+  /// Guarded against a second tap: the capture holds two uncompressed
+  /// bitmaps in memory at once, and running two at a time is how a
+  /// mid-range phone runs out.
+  bool _exporting = false;
+
+  Future<void> _downloadPdf() async {
+    if (_exporting) return;
+    setState(() => _exporting = true);
+
+    try {
+      final bytes = await CompCardPdf.build(
+        context: context,
+        template: _template,
+        data: _cardData,
+      );
+      await CompCardPdf.share(
+        bytes: bytes,
+        modelName: (_user?['fullName'] ?? '').toString(),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not make the PDF. $e')));
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
   }
 
   Widget _stepIntro(String label, String body) {

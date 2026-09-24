@@ -1148,7 +1148,7 @@ class CompCardFaceView extends StatelessWidget {
 
   static const _carbon = Color(0xFF101210);
   static const _bone = Color(0xFFF2F0E9);
-  static const _chartreuse = Color(0xFFC6E43B);
+  static const _chartreuse = Color(0xFF556B2F);
 
   TextStyle _syne({
     double size = 34,

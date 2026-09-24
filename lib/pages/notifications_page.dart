@@ -121,7 +121,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 SliverToBoxAdapter(
                   key: const ValueKey('title'),
                   child: BoardScreenTitle(
-                    title: 'Board Updates',
+                    title: 'Updates',
                     meta: total == 0 ? 'All clear' : '$total NEW',
                   ),
                 ),

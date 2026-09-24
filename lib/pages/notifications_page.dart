@@ -3,8 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'user_profile_page.dart';
 import '../services/application_feed.dart';
+import '../ui/app_type.dart';
 import '../ui/board_theme.dart';
 import '../widgets/board_widgets.dart';
+import '../widgets/kit/kit.dart';
 import '../widgets/state_views.dart';
 import '../widgets/app_skeleton.dart';
 
@@ -17,7 +19,16 @@ import '../widgets/app_skeleton.dart';
 /// nothing here is fabricated to fill the layout — the panel simply
 /// shows whichever of the two exist.
 class NotificationsPage extends StatefulWidget {
-  const NotificationsPage({super.key});
+  /// True when the page is a body inside another screen's Scaffold.
+  ///
+  /// It was only ever that -- a destination in the bottom bar -- so it
+  /// returned a bare scroll view with no Scaffold of its own. Pushed as
+  /// a route that left it with no Material, which paints the debug
+  /// underline beneath every line of text, and no background, which
+  /// leaves the page black.
+  final bool embedded;
+
+  const NotificationsPage({super.key, this.embedded = false});
 
   @override
   State<NotificationsPage> createState() => _NotificationsPageState();
@@ -83,6 +94,50 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final body = _body(context);
+    if (widget.embedded) return body;
+
+    return Scaffold(
+      backgroundColor: BoardColors.paper,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+              child: Row(
+                children: [
+                  AppIconButton(
+                    icon: Icons.chevron_left,
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    semanticLabel: 'Go back',
+                    bordered: false,
+                  ),
+                  Expanded(
+                    child: Text(
+                      'Notifications',
+                      style: AppType.heading(color: BoardColors.ink),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(child: body),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Clearance under the last row.
+  ///
+  /// Embedded, the floating bar sits over the bottom of the page and
+  /// the list has to clear it. Pushed as its own route there is no bar,
+  /// and reserving for one leaves a hand's width of empty page.
+  double get _footClearance => widget.embedded ? 110 : 24;
+
+  Widget _body(BuildContext context) {
     final user = currentUser;
     if (user == null) {
       return const EmptyState(
@@ -109,7 +164,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
             if (!requestSnap.hasData && loading) {
               return ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
+                padding: EdgeInsets.fromLTRB(16, 8, 16, _footClearance),
                 itemCount: 5,
                 separatorBuilder: (_, __) => const SizedBox(height: 8),
                 itemBuilder: (_, __) => AppSkeleton.listTile(),
@@ -139,7 +194,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 else
                   SliverPadding(
                     key: const ValueKey('panel'),
-                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 110),
+                    padding: EdgeInsets.fromLTRB(12, 0, 12, _footClearance),
                     sliver: SliverToBoxAdapter(
                       child: _panel(updates, requests),
                     ),

@@ -206,10 +206,9 @@ void main() {
   });
 
   group('input sizing', () {
-    testWidgets('every single-line input is the same height', (tester) async {
-      // They share one constant so a form never renders a mix of
-      // heights. The password only reads taller because its Show button
-      // gives it weight on the right.
+    testWidgets('each single-line input takes its own height', (tester) async {
+      // Sized separately on purpose: a password box carries a Show
+      // toggle and reads taller than an empty box at the same number.
       await pump(
         tester,
         const Padding(
@@ -225,7 +224,7 @@ void main() {
 
       final fields = find.byType(TextField);
       expect(tester.getSize(fields.at(0)).height, AppMetrics.field);
-      expect(tester.getSize(fields.at(1)).height, AppMetrics.field);
+      expect(tester.getSize(fields.at(1)).height, AppMetrics.passwordField);
     });
 
     testWidgets('a multiline field grows instead', (tester) async {
@@ -242,13 +241,13 @@ void main() {
       );
     });
 
-    testWidgets('an email box and a password box are the same control', (
+    testWidgets('an email box and a password box share one decoration', (
       tester,
     ) async {
-      // Not just the same height. They declared their own decorations
-      // before and had drifted -- different suffix constraints, missing
-      // borders -- so two fields stacked on one form did not read as
-      // the same thing.
+      // Heights are tuned separately on purpose. Everything that makes
+      // them look like the same control -- fill, radius, borders -- is
+      // not, and had drifted before the password field was built on the
+      // text field.
       await pump(
         tester,
         const Padding(
@@ -271,13 +270,12 @@ void main() {
           .decoration;
 
       expect(
-        tester.getSize(decorators.at(0)),
-        tester.getSize(decorators.at(1)),
+        tester.getSize(decorators.at(0)).width,
+        tester.getSize(decorators.at(1)).width,
       );
       expect(email.filled, password.filled);
       expect(email.fillColor, password.fillColor);
       expect(email.contentPadding, password.contentPadding);
-      expect(email.constraints, password.constraints);
       expect(email.isDense, password.isDense);
       // This is where they had actually drifted: one pinned its suffix
       // to the field height, the other to 36.

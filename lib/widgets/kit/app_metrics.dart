@@ -14,7 +14,7 @@ class AppMetrics {
   static const double gutter = 24;
 
   /// Between one form field and the next.
-  static const double fieldGap = 20;
+  static const double fieldGap = 15;
 
   /// Between a step title (and its hint) and the first field under it.
   static const double titleGap = 28;
@@ -22,28 +22,19 @@ class AppMetrics {
   /// Pill buttons, and anything that has to line up with them.
   static const double control = 56;
 
-  /// The height of a single-line input.
+  /// Height of a normal input: email, phone, name, city, height.
   ///
-  /// ---- CHANGE THIS to resize every input in the app ----
+  /// ---- CHANGE THIS to resize the email and phone style boxes ----
+  static const double field = 68;
+
+  /// Height of a password input.
   ///
-  /// Every text field, password field and date field in onboarding and
-  /// the forms reads this one number, so raising it here resizes all of
-  /// them together and nothing drifts out of alignment.
+  /// ---- CHANGE THIS to resize the password boxes ----
   ///
-  /// The reference design puts this at 52, the same as a button. That
-  /// is tight for a field that is mostly empty space: a button is
-  /// filled and reads as substantial at 52, while an empty input at the
-  /// same height reads as a thin bar. Kept separate from [control] for
-  /// exactly that reason -- inputs and buttons do not have to match.
-  ///
-  /// Both a text field and a password field are locked to this one
-  /// number, deliberately: they sit one above the other on every form,
-  /// and two inputs that disagree about their height is what makes a
-  /// form look unconsidered. Raising it moves both together.
-  ///
-  /// Sensible range is roughly 52 to 68. Past that the form starts
-  /// scrolling on a short phone.
-  static const double field = 64;
+  /// Separate from [field] because a password box carries a Show
+  /// toggle and reads taller than an empty one at the same height.
+  /// Matching the two numbers does not make them look matched.
+  static const double passwordField = 60;
 
   /// Chips, and the segmented control's inner buttons.
   static const double chip = 40;

@@ -116,6 +116,9 @@ class AppTextField extends StatelessWidget {
   /// directly, so the Show toggle comes with it.
   final bool obscureText;
 
+  /// Overrides [AppMetrics.field]. Only [AppPasswordField] passes this.
+  final double? height;
+
   /// Off for anything secret, or the keyboard learns it.
   final bool enableSuggestions;
 
@@ -143,6 +146,7 @@ class AppTextField extends StatelessWidget {
     this.textAlign = TextAlign.start,
     this.obscureText = false,
     this.enableSuggestions = true,
+    this.height,
   });
 
   @override
@@ -192,9 +196,9 @@ class AppTextField extends StatelessWidget {
         // grow, so the constraint is applied per case.
         constraints: multiline
             ? null
-            : const BoxConstraints(
-                minHeight: AppMetrics.field,
-                maxHeight: AppMetrics.field,
+            : BoxConstraints(
+                minHeight: height ?? AppMetrics.field,
+                maxHeight: height ?? AppMetrics.field,
               ),
         suffixIcon: suffix,
         // Zero minimums so a suffix sizes to its own content and sits
@@ -264,6 +268,7 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
     // not read as the same control. There is now one definition of what
     // an input looks like and this adds only the toggle.
     return AppTextField(
+      height: AppMetrics.passwordField,
       controller: widget.controller,
       hintText: widget.hintText,
       hasError: widget.hasError,

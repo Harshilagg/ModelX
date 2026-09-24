@@ -530,39 +530,48 @@ class _UserProfilePageState extends State<UserProfilePage> {
       barrierColor: Colors.black.withValues(alpha: 0.92),
       builder: (dialogContext) {
         final controller = PageController(initialPage: index);
-        return Stack(
-          children: [
-            PageView.builder(
-              controller: controller,
-              itemCount: urls.length,
-              itemBuilder: (_, i) => Center(
-                child: InteractiveViewer(
-                  maxScale: 4,
-                  child: Image.network(
-                    urls[i],
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Icon(
-                      Icons.broken_image_outlined,
-                      color: BoardColors.onInkFaint,
-                      size: 40,
+        // showDialog gives no Material, so the Close label was drawn
+        // with the yellow debug underline under it. Transparent because
+        // the barrier is already the background.
+        return Material(
+          type: MaterialType.transparency,
+          child: Stack(
+            children: [
+              PageView.builder(
+                controller: controller,
+                itemCount: urls.length,
+                itemBuilder: (_, i) => Center(
+                  child: InteractiveViewer(
+                    maxScale: 4,
+                    child: Image.network(
+                      urls[i],
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Icon(
+                        Icons.broken_image_outlined,
+                        color: BoardColors.onInkFaint,
+                        size: 40,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Positioned(
-              top: MediaQuery.of(dialogContext).padding.top + 12,
-              right: 16,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => Navigator.of(dialogContext).pop(),
-                child: Text(
-                  'Close',
-                  style: BoardType.mono(fontSize: 11, color: BoardColors.brass),
+              Positioned(
+                top: MediaQuery.of(dialogContext).padding.top + 12,
+                right: 16,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.of(dialogContext).pop(),
+                  child: Text(
+                    'Close',
+                    style: BoardType.mono(
+                      fontSize: 11,
+                      color: BoardColors.brass,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );

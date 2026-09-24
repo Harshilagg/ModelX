@@ -134,6 +134,62 @@ void main() {
   });
 
   group('the face that gets captured', () {
+    // Every template, both faces, rendered with no Material or Scaffold
+    // above them -- which is exactly how the capture renders them.
+    for (final template in CompCardTemplate.values) {
+      for (final back in [false, true]) {
+        testWidgets('${template.name} ${back ? 'back' : 'front'} has no '
+            'debug underline outside a Scaffold', (tester) async {
+          // Inside a MaterialApp but outside any Material or Scaffold,
+          // which is exactly what the capture route is. That is the
+          // only place the debug underline appears -- bare, with no
+          // MaterialApp at all, it does not.
+          await tester.pumpWidget(
+            MaterialApp(
+              home: OverflowBox(
+                alignment: Alignment.topLeft,
+                minWidth: CompCardFaceView.trimWidth,
+                maxWidth: CompCardFaceView.trimWidth,
+                minHeight: CompCardFaceView.trimHeight,
+                maxHeight: CompCardFaceView.trimHeight,
+                child: CompCardFaceView(
+                  template: template,
+                  data: CompCardData.fromUser(
+                    const {
+                      'fullName': 'Harshil',
+                      'location': 'Delhi',
+                      'height': '190',
+                      'waist': '34',
+                      'hips': '36',
+                      'username': 'harshil12',
+                    },
+                    images: const [null, null, null, null],
+                  ),
+                  back: back,
+                ),
+              ),
+            ),
+          );
+          await tester.pump();
+
+          // RichText carries the fully merged style -- what actually
+          // gets painted, and therefore what lands in the PDF.
+          final painted = tester.widgetList<RichText>(find.byType(RichText));
+          expect(painted, isNotEmpty);
+          for (final r in painted) {
+            final style = (r.text as TextSpan).style;
+            expect(
+              style?.decoration ?? TextDecoration.none,
+              TextDecoration.none,
+              reason:
+                  'a yellow debug underline would be baked into '
+                  'the exported PDF',
+            );
+          }
+        });
+      }
+    }
+
     testWidgets('renders at exact trim, ignoring the system font scale', (
       tester,
     ) async {

@@ -7,8 +7,8 @@ import '../ui/app_type.dart';
 import '../ui/board_palette.dart';
 import '../widgets/kit/kit.dart';
 import 'auth_router.dart';
+import 'onboarding_routes.dart';
 import 'onboarding_theme.dart';
-import 'role_select_page.dart';
 import 'splash_page.dart' show kWordmark;
 
 enum _View { login, forgot, sent }
@@ -267,11 +267,25 @@ class _OnboardingLoginPageState extends State<OnboardingLoginPage> {
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
                 child: Row(
                   children: [
-                    AppIconButton(
-                      icon: Icons.chevron_left,
-                      onPressed: _back,
-                      semanticLabel: 'Go back',
-                    ),
+                    // The forgot and sent views always have somewhere
+                    // to go -- back to the one before. The login view
+                    // may not: it is the root when a returning visitor
+                    // is sent straight here rather than to the splash,
+                    // and a chevron that does nothing is worse than no
+                    // chevron.
+                    if (_view != _View.login ||
+                        widget.onBack != null ||
+                        Navigator.of(context).canPop())
+                      AppIconButton(
+                        icon: Icons.chevron_left,
+                        onPressed: _back,
+                        semanticLabel: 'Go back',
+                      )
+                    else
+                      const SizedBox(
+                        width: AppMetrics.tapTarget,
+                        height: AppMetrics.tapTarget,
+                      ),
                     Expanded(
                       child: Text(
                         kWordmark.toUpperCase(),
@@ -438,13 +452,10 @@ class _OnboardingLoginPageState extends State<OnboardingLoginPage> {
               GestureDetector(
                 onTap:
                     widget.onSignUp ??
-                    () => Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (_) => RoleSelectPage(
-                          onBack: () => Navigator.of(context).pop(),
-                          onSelected: (_) {},
-                        ),
-                      ),
+                    () => OnboardingRoutes.roleSelect(
+                      context,
+                      inviteToken: widget.inviteToken,
+                      cameFromLogin: true,
                     ),
                 child: Text(
                   'Create an account',

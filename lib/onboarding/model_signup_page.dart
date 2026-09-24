@@ -703,7 +703,7 @@ class _Measure extends StatelessWidget {
           tabularFigures: true,
           onChanged: (v) => wrap(() => onChanged(v)),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 10),
         Center(
           child: Text(caption, style: AppType.caption(color: p.onSurfaceFaint)),
         ),

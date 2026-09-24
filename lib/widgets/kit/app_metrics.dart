@@ -19,8 +19,26 @@ class AppMetrics {
   /// Between a step title (and its hint) and the first field under it.
   static const double titleGap = 28;
 
-  /// Pills, inputs and anything that has to line up with them.
+  /// Pill buttons, and anything that has to line up with them.
   static const double control = 52;
+
+  /// The height of a single-line input.
+  ///
+  /// ---- CHANGE THIS to resize every input in the app ----
+  ///
+  /// Every text field, password field and date field in onboarding and
+  /// the forms reads this one number, so raising it here resizes all of
+  /// them together and nothing drifts out of alignment.
+  ///
+  /// The reference design puts this at 52, the same as a button. That
+  /// is tight for a field that is mostly empty space: a button is
+  /// filled and reads as substantial at 52, while an empty input at the
+  /// same height reads as a thin bar. Kept separate from [control] for
+  /// exactly that reason -- inputs and buttons do not have to match.
+  ///
+  /// Sensible range is roughly 52 to 64. Past that the form starts
+  /// scrolling on a short phone.
+  static const double field = 58;
 
   /// Chips, and the segmented control's inner buttons.
   static const double chip = 40;

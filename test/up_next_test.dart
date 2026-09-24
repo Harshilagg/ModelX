@@ -22,25 +22,35 @@ Application app({
 
 void main() {
   group('relativeTime', () {
-    final now = DateTime.now();
+    // Read per test, not once for the group. A group body runs during
+    // collection, so a captured `now` can be seconds stale by the time
+    // a test uses it -- long enough for "three days from then" to be
+    // under three days from the moment it is measured.
+    DateTime now() => DateTime.now();
 
     test('reads as English, not as a board stamp', () {
       expect(
-        relativeTime(now.subtract(const Duration(seconds: 20))),
+        relativeTime(now().subtract(const Duration(seconds: 20))),
         'just now',
       );
       expect(
-        relativeTime(now.subtract(const Duration(minutes: 6))),
+        relativeTime(now().subtract(const Duration(minutes: 6))),
         '6 minutes ago',
       );
       expect(
-        relativeTime(now.subtract(const Duration(hours: 4))),
+        relativeTime(now().subtract(const Duration(hours: 4))),
         '4 hours ago',
       );
-      expect(relativeTime(now.subtract(const Duration(days: 1))), 'yesterday');
-      expect(relativeTime(now.subtract(const Duration(days: 3))), '3 days ago');
       expect(
-        relativeTime(now.subtract(const Duration(days: 21))),
+        relativeTime(now().subtract(const Duration(days: 1))),
+        'yesterday',
+      );
+      expect(
+        relativeTime(now().subtract(const Duration(days: 3))),
+        '3 days ago',
+      );
+      expect(
+        relativeTime(now().subtract(const Duration(days: 21))),
         '3 weeks ago',
       );
     });
@@ -48,27 +58,27 @@ void main() {
     test('turns the old meaningless 193D into something readable', () {
       // The board printed "193D". Nobody reads that as half a year.
       expect(
-        relativeTime(now.subtract(const Duration(days: 193))),
+        relativeTime(now().subtract(const Duration(days: 193))),
         '6 months ago',
       );
       expect(
-        relativeTime(now.subtract(const Duration(days: 800))),
+        relativeTime(now().subtract(const Duration(days: 800))),
         '2 years ago',
       );
     });
 
     test('future dates read forwards, because shoot dates usually are', () {
-      expect(relativeTime(now.add(const Duration(days: 3))), 'in 3 days');
-      expect(relativeTime(now.add(const Duration(days: 1))), 'tomorrow');
+      expect(relativeTime(now().add(const Duration(days: 3))), 'in 3 days');
+      expect(relativeTime(now().add(const Duration(days: 1))), 'tomorrow');
     });
 
     test('singular and plural agree', () {
       expect(
-        relativeTime(now.subtract(const Duration(hours: 1))),
+        relativeTime(now().subtract(const Duration(hours: 1))),
         '1 hour ago',
       );
       expect(
-        relativeTime(now.subtract(const Duration(hours: 2))),
+        relativeTime(now().subtract(const Duration(hours: 2))),
         '2 hours ago',
       );
     });

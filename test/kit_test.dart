@@ -205,6 +205,48 @@ void main() {
     });
   });
 
+  group('input sizing', () {
+    testWidgets('every single-line input is the same height', (tester) async {
+      // They share one constant so a form never renders a mix of
+      // heights. The password only reads taller because its Show button
+      // gives it weight on the right.
+      await pump(
+        tester,
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            children: [
+              AppTextField(hintText: 'you@email.com'),
+              AppPasswordField(),
+            ],
+          ),
+        ),
+      );
+
+      final fields = find.byType(TextField);
+      expect(tester.getSize(fields.at(0)).height, AppMetrics.field);
+      expect(tester.getSize(fields.at(1)).height, AppMetrics.field);
+    });
+
+    testWidgets('a multiline field grows instead', (tester) async {
+      await pump(
+        tester,
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: AppTextField(maxLines: 4),
+        ),
+      );
+      expect(
+        tester.getSize(find.byType(TextField)).height,
+        greaterThan(AppMetrics.field),
+      );
+    });
+
+    test('inputs are at least as tall as the minimum tap target', () {
+      expect(AppMetrics.field, greaterThanOrEqualTo(AppMetrics.tapTarget));
+    });
+  });
+
   group('AppField', () {
     testWidgets('an error replaces the hint rather than stacking', (
       tester,

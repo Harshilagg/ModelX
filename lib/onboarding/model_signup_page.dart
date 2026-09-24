@@ -749,7 +749,7 @@ class _DateField extends StatelessWidget {
           if (picked != null) onChanged(picked);
         },
         child: Container(
-          height: AppMetrics.control,
+          height: AppMetrics.field,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           alignment: Alignment.centerLeft,
           decoration: BoxDecoration(

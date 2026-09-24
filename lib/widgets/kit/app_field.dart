@@ -182,12 +182,12 @@ class AppTextField extends StatelessWidget {
         constraints: multiline
             ? null
             : const BoxConstraints(
-                minHeight: AppMetrics.control,
-                maxHeight: AppMetrics.control,
+                minHeight: AppMetrics.field,
+                maxHeight: AppMetrics.field,
               ),
         suffixIcon: suffix,
         suffixIconConstraints: const BoxConstraints(
-          minHeight: AppMetrics.control,
+          minHeight: AppMetrics.field,
           minWidth: 0,
         ),
         border: _border(p.line),
@@ -269,8 +269,8 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
         constraints: const BoxConstraints(
-          minHeight: AppMetrics.control,
-          maxHeight: AppMetrics.control,
+          minHeight: AppMetrics.field,
+          maxHeight: AppMetrics.field,
         ),
         suffixIcon: Padding(
           padding: const EdgeInsets.only(right: 8),

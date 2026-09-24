@@ -35,7 +35,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
   bool isRequestSent = false;
   bool isConnected = false;
   bool isOwnProfile = false;
-  int _tab = 0;
+
+  /// Portfolio first, matching the owner's own profile.
+  ///
+  /// Named rather than written as a number where it is used: the "ALL
+  /// n" link below jumped to "tab 1" meaning Portfolio, which silently
+  /// became a jump to Details the moment the order changed.
+  static const _tabPortfolio = 0;
+
+  int _tab = _tabPortfolio;
 
   /// Held in a field, not rebuilt inline. `.snapshots()` returns a new
   /// Stream each call and a StreamBuilder resubscribes when its stream
@@ -179,7 +187,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           _hero(),
           _quadStats(),
           BoardTabRail(
-            tabs: const ['Details', 'Portfolio'],
+            tabs: const ['Portfolio', 'Details'],
             index: _tab,
             onTap: (i) => setState(() => _tab = i),
             accent: BoardColors.brass,
@@ -187,7 +195,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           Expanded(
             child: IndexedStack(
               index: _tab,
-              children: [_detailsTab(), _portfolioTab()],
+              children: [_portfolioTab(), _detailsTab()],
             ),
           ),
         ],
@@ -501,7 +509,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               'Latest shots',
               trailing: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => setState(() => _tab = 1),
+                onTap: () => setState(() => _tab = _tabPortfolio),
                 child: MonoChip(
                   'ALL ${urls.length}',
                   filled: true,

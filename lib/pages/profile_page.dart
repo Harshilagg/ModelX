@@ -95,7 +95,11 @@ class _ProfilePageState extends State<ProfilePage> {
   String username = '';
   File? pickedImage;
 
-  int _tab = 0;
+  /// Portfolio, Details, Posts -- in that order. The work a model is
+  /// judged on was sitting behind a page of measurements.
+  static const _tabPortfolio = 0;
+
+  int _tab = _tabPortfolio;
 
   /// Held in a field, not rebuilt inline. `.snapshots()` returns a new
   /// Stream each call and a StreamBuilder resubscribes when its stream
@@ -533,7 +537,7 @@ class _ProfilePageState extends State<ProfilePage> {
       children: [
         _hero(),
         BoardTabRail(
-          tabs: const ['Details', 'Portfolio', 'Posts'],
+          tabs: const ['Portfolio', 'Details', 'Posts'],
           index: _tab,
           onTap: (i) => setState(() => _tab = i),
           accent: BoardColors.brass,
@@ -541,7 +545,7 @@ class _ProfilePageState extends State<ProfilePage> {
         Expanded(
           child: IndexedStack(
             index: _tab,
-            children: [_detailsTab(), _portfolioTab(), _postsTab()],
+            children: [_portfolioTab(), _detailsTab(), _postsTab()],
           ),
         ),
       ],

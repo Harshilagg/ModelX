@@ -20,7 +20,7 @@ class AppMetrics {
   static const double titleGap = 28;
 
   /// Pill buttons, and anything that has to line up with them.
-  static const double control = 52;
+  static const double control = 57;
 
   /// The height of a single-line input.
   ///

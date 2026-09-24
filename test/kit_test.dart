@@ -242,6 +242,82 @@ void main() {
       );
     });
 
+    testWidgets('an email box and a password box are the same control', (
+      tester,
+    ) async {
+      // Not just the same height. They declared their own decorations
+      // before and had drifted -- different suffix constraints, missing
+      // borders -- so two fields stacked on one form did not read as
+      // the same thing.
+      await pump(
+        tester,
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            children: [
+              AppTextField(hintText: 'you@email.com'),
+              AppPasswordField(),
+            ],
+          ),
+        ),
+      );
+
+      final decorators = find.byType(InputDecorator);
+      expect(decorators, findsNWidgets(2));
+
+      final email = tester.widget<InputDecorator>(decorators.at(0)).decoration;
+      final password = tester
+          .widget<InputDecorator>(decorators.at(1))
+          .decoration;
+
+      expect(
+        tester.getSize(decorators.at(0)),
+        tester.getSize(decorators.at(1)),
+      );
+      expect(email.filled, password.filled);
+      expect(email.fillColor, password.fillColor);
+      expect(email.contentPadding, password.contentPadding);
+      expect(email.constraints, password.constraints);
+      expect(email.isDense, password.isDense);
+      // This is where they had actually drifted: one pinned its suffix
+      // to the field height, the other to 36.
+      expect(email.suffixIconConstraints, password.suffixIconConstraints);
+      expect(email.counterText, password.counterText);
+      expect(email.disabledBorder, isNotNull);
+      expect(password.disabledBorder, isNotNull);
+
+      // The borders are what actually get painted.
+      for (final pair in [
+        (email.enabledBorder, password.enabledBorder),
+        (email.focusedBorder, password.focusedBorder),
+        (email.border, password.border),
+      ]) {
+        final a = pair.$1 as OutlineInputBorder?;
+        final b = pair.$2 as OutlineInputBorder?;
+        expect(a?.borderRadius, b?.borderRadius);
+        expect(a?.borderSide.color, b?.borderSide.color);
+        expect(a?.borderSide.width, b?.borderSide.width);
+      }
+    });
+
+    testWidgets('a suffix sizes to itself rather than the field', (
+      tester,
+    ) async {
+      // Pinning the suffix to the field height stretched it and threw
+      // its baseline off from the text beside it.
+      await pump(
+        tester,
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: AppTextField(suffix: Text('cm')),
+        ),
+      );
+      expect(
+        tester.getSize(find.text('cm')).height,
+        lessThan(AppMetrics.field),
+      );
+    });
+
     test('inputs are at least as tall as the minimum tap target', () {
       expect(AppMetrics.field, greaterThanOrEqualTo(AppMetrics.tapTarget));
     });

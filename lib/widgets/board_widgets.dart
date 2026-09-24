@@ -547,9 +547,15 @@ class BoardMedia extends StatelessWidget {
       ],
     );
 
-    if (cut != null) {
+    // Scaled by one app-wide setting -- see BoardShape.photoCornerFold.
+    // At zero the frame is left unclipped rather than clipped to a
+    // rectangle it already fills, which saves a clip layer per tile on
+    // screens that draw dozens of them.
+    final notch = (cut ?? 0) * BoardShape.photoCornerFold;
+
+    if (notch > 0) {
       content = ClipPath(
-        clipper: CompCardClipper(cut: cut!),
+        clipper: CompCardClipper(cut: notch),
         child: content,
       );
     } else if (radius != null) {

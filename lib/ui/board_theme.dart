@@ -226,6 +226,30 @@ class BoardRadius {
 ///
 /// Mirrors the design's
 /// `clip-path: polygon(0 0, calc(100% - N) 0, 100% N, 100% 100%, 0 100%)`.
+/// How photo frames are shaped.
+class BoardShape {
+  const BoardShape._();
+
+  /// How much of the folded top-right corner photo frames keep.
+  ///
+  /// ---- CHANGE THIS to bring the folded corner back ----
+  ///
+  /// 0 squares the corner off, which is what portfolio tiles, network
+  /// crops, the shot carousel and profile photos now use. 1 restores
+  /// the original fold at full size; anything between scales it.
+  ///
+  /// It is a multiplier rather than a size because each frame passes
+  /// its own notch -- 8pt on a feed tile, 20pt on a profile hero -- and
+  /// those stay proportional to each other through this one number.
+  /// Their individual values are still in place, so turning the fold
+  /// back on restores exactly the shapes that were there before.
+  ///
+  /// This does not affect the comp card glyph in the bottom bar. That
+  /// one is an icon of a comp card rather than a photo frame, and
+  /// without its fold it is a featureless rectangle.
+  static const double photoCornerFold = 0;
+}
+
 class CompCardClipper extends CustomClipper<Path> {
   final double cut;
   const CompCardClipper({this.cut = 20});

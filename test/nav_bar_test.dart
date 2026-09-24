@@ -202,6 +202,49 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('the ring thins out as the dash pair grows', (tester) async {
+      // The stitching is tuned by one pair of numbers, so they have to
+      // actually change the count rather than only its proportions.
+      int arcs(WidgetTester t) =>
+          t.widgetList<CustomPaint>(find.byType(CustomPaint)).length;
+      expect(arcs, isNotNull);
+
+      for (final pair in [(3.0, 2.0), (12.0, 10.0)]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: ApertureButton(dashLength: pair.$1, dashGap: pair.$2),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'dash ${pair.$1}/${pair.$2}',
+        );
+      }
+    });
+
+    testWidgets('the knob follows the ring unless told otherwise', (
+      tester,
+    ) async {
+      const ring = Color(0xFF141513);
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(child: ApertureButton(ringColor: ring)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final button = tester.widget<ApertureButton>(find.byType(ApertureButton));
+      expect(button.knobColor, isNull);
+      expect(button.ringColor, ring);
+    });
+
     testWidgets('reports a tap', (tester) async {
       var tapped = false;
       await tester.pumpWidget(

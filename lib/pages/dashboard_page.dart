@@ -377,7 +377,14 @@ class _DashboardPageState extends State<DashboardPage> {
   /// on a dark ground -- rather than being inverted to read against a
   /// light circle. Sized to the bar so the row lines up.
   Widget _assistant() {
-    return ApertureButton(size: AppNavBar.height, onPressed: _openAssistant);
+    return ApertureButton(
+      size: AppNavBar.height,
+      // Ink, not the reference's grey. With no disc behind it the ring
+      // sits straight on the page, where grey-on-paper barely reads --
+      // the reference drew it on near-black.
+      ringColor: BoardColors.ink,
+      onPressed: _openAssistant,
+    );
   }
 
   Widget _searchOverlay() {

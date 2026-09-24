@@ -38,11 +38,26 @@ class ApertureButton extends StatefulWidget {
   /// Behind the leaves, and the hairlines between them.
   final Color groundColor;
 
-  /// The dashed outer ring and its travelling knob.
+  /// The dashed outer ring.
   final Color ringColor;
+
+  /// The bead that rides the ring. Defaults to [ringColor], since it
+  /// belongs to the same assembly -- pass a brighter colour only where
+  /// the ring is dim enough for it to read against.
+  final Color? knobColor;
 
   /// What the bloom resolves to.
   final Color bloomColor;
+
+  /// Dash and gap on the outer ring, in the design's 88-unit box.
+  ///
+  /// ---- CHANGE THESE to thin out or tighten the stitching ----
+  ///
+  /// A longer pair means fewer, larger dashes. The reference uses 5 and
+  /// 3.5, which at button size reads as a fine dotted line rather than
+  /// as stitching.
+  final double dashLength;
+  final double dashGap;
 
   final String semanticLabel;
 
@@ -54,7 +69,10 @@ class ApertureButton extends StatefulWidget {
     this.bladeColor = const Color(0xFFFFFFFF),
     this.groundColor = const Color(0xFF0B0B0B),
     this.ringColor = const Color(0xFF5F5E5A),
+    this.knobColor,
     this.bloomColor = const Color(0xFFED93B1),
+    this.dashLength = 7,
+    this.dashGap = 6,
     this.semanticLabel = 'Assistant',
   });
 
@@ -137,7 +155,10 @@ class _ApertureButtonState extends State<ApertureButton>
                   bladeColor: widget.bladeColor,
                   groundColor: widget.groundColor,
                   ringColor: widget.ringColor,
+                  knobColor: widget.knobColor ?? widget.ringColor,
                   bloomColor: widget.bloomColor,
+                  dashLength: widget.dashLength,
+                  dashGap: widget.dashGap,
                 ),
               ),
             ),
@@ -154,7 +175,10 @@ class _AperturePainter extends CustomPainter {
   final Color bladeColor;
   final Color groundColor;
   final Color ringColor;
+  final Color knobColor;
   final Color bloomColor;
+  final double dashLength;
+  final double dashGap;
 
   const _AperturePainter({
     required this.state,
@@ -162,7 +186,10 @@ class _AperturePainter extends CustomPainter {
     required this.bladeColor,
     required this.groundColor,
     required this.ringColor,
+    required this.knobColor,
     required this.bloomColor,
+    required this.dashLength,
+    required this.dashGap,
   });
 
   /// Blade count and the ring they close against, from the reference.
@@ -190,7 +217,7 @@ class _AperturePainter extends CustomPainter {
     double spin;
     Color ground = groundColor;
     Color ring = ringColor;
-    Color knobColor = bladeColor;
+    Color knob = knobColor;
     double knobAngle = _knobAngleFor(const Offset(17, -29.4));
     double ringScale = 1;
 
@@ -222,7 +249,7 @@ class _AperturePainter extends CustomPainter {
         opening = 3 + 10 * e;
         spin = -30 * e * math.pi / 180;
         ring = Color.lerp(ringColor, bloomColor, math.min(1, c / 0.55))!;
-        knobColor = Color.lerp(bladeColor, bloomColor, e)!;
+        knob = Color.lerp(knobColor, bloomColor, e)!;
         ground = c < 0.35
             ? groundColor
             : Color.lerp(
@@ -249,7 +276,7 @@ class _AperturePainter extends CustomPainter {
     canvas.drawCircle(
       Offset(_dashRing * math.cos(knobAngle), _dashRing * math.sin(knobAngle)),
       _knob,
-      Paint()..color = knobColor,
+      Paint()..color = knob,
     );
 
     canvas.restore();
@@ -266,11 +293,11 @@ class _AperturePainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..color = colour;
 
-    const dash = 5.0, gap = 3.5;
     final circumference = 2 * math.pi * radius;
-    final steps = (circumference / (dash + gap)).floor();
+    // At least a few, however long the pair is set to.
+    final steps = math.max(4, (circumference / (dashLength + dashGap)).floor());
     final sweep = 2 * math.pi / steps;
-    final on = sweep * dash / (dash + gap);
+    final on = sweep * dashLength / (dashLength + dashGap);
 
     for (var i = 0; i < steps; i++) {
       canvas.drawArc(
@@ -356,5 +383,8 @@ class _AperturePainter extends CustomPainter {
       old.seconds != seconds ||
       old.state != state ||
       old.bladeColor != bladeColor ||
-      old.groundColor != groundColor;
+      old.groundColor != groundColor ||
+      old.ringColor != ringColor ||
+      old.dashLength != dashLength ||
+      old.dashGap != dashGap;
 }

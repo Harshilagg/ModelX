@@ -188,18 +188,21 @@ class AppTextField extends StatelessWidget {
         fillColor: p.surfaceField,
         counterText: '',
         isDense: true,
+        // The height comes from padding, not from constraints.
+        //
+        // InputDecoration.constraints resizes the decorator's slot
+        // while the fill and the border stay wrapped around the
+        // content, so raising it grew the gap under the field and left
+        // the visible box exactly as it was -- at any value, 60 or 200.
+        // Vertical padding is inside the border, so it is the thing
+        // that actually makes the box taller.
         contentPadding: EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: multiline ? 14 : 0,
+          vertical: multiline ? 14 : _inset(context),
         ),
+
         // A fixed height only works for a single line; a textarea has to
         // grow, so the constraint is applied per case.
-        constraints: multiline
-            ? null
-            : BoxConstraints(
-                minHeight: height ?? AppMetrics.field,
-                maxHeight: height ?? AppMetrics.field,
-              ),
         suffixIcon: suffix,
         // Zero minimums so a suffix sizes to its own content and sits
         // centred. Pinning this to the field height stretched it and
@@ -216,6 +219,20 @@ class AppTextField extends StatelessWidget {
     );
 
     return field;
+  }
+
+  /// Vertical padding that renders a box of the requested height.
+  ///
+  /// Derived from the text's own line height rather than assumed, so
+  /// the box stays the height asked for when the system font scales
+  /// rather than growing past it.
+  double _inset(BuildContext context) {
+    const fontSize = 16.0;
+    const lineHeight = 1.5;
+    final text = MediaQuery.textScalerOf(context).scale(fontSize) * lineHeight;
+    final target = height ?? AppMetrics.field;
+    final inset = (target - text) / 2;
+    return inset < 0 ? 0 : inset;
   }
 
   static OutlineInputBorder _border(Color color, {double width = 1}) =>

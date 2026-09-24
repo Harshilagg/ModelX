@@ -275,7 +275,8 @@ void main() {
       );
       expect(email.filled, password.filled);
       expect(email.fillColor, password.fillColor);
-      expect(email.contentPadding, password.contentPadding);
+      // contentPadding is how height is set now, so it differs by
+      // design between the two.
       expect(email.isDense, password.isDense);
       // This is where they had actually drifted: one pinned its suffix
       // to the field height, the other to 36.
@@ -313,6 +314,40 @@ void main() {
       expect(
         tester.getSize(find.text('cm')).height,
         lessThan(AppMetrics.field),
+      );
+    });
+
+    // This is the one that was missing. Every earlier height test
+    // measured the decorator's slot, which the constraints did resize
+    // -- so they all passed while the visible box never changed, at any
+    // value. Asking for several heights and checking the box follows is
+    // what catches it.
+    for (final asked in const [52.0, 68.0, 100.0, 200.0]) {
+      testWidgets('a box asked for ${asked}pt renders ${asked}pt', (
+        tester,
+      ) async {
+        await pump(
+          tester,
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: AppTextField(height: asked, hintText: 'you@email.com'),
+          ),
+        );
+        expect(tester.getSize(find.byType(InputDecorator)).height, asked);
+      });
+    }
+
+    testWidgets('a password box follows its own constant', (tester) async {
+      await pump(
+        tester,
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: AppPasswordField(hintText: 'Your password'),
+        ),
+      );
+      expect(
+        tester.getSize(find.byType(InputDecorator)).height,
+        AppMetrics.passwordField,
       );
     });
 

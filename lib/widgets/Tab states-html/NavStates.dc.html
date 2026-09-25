@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ModelX nav tab states</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;font-family:"Instrument Sans","Helvetica Neue",sans-serif;background:#0b0b0b}
+</style>
+</helmet>
+<div style="width: 390px; height: 360px; box-sizing: border-box; padding: 32px 16px; background: #0b0b0b; display: flex; flex-direction: column; gap: 16px">
+<sc-for list="{{rows}}" as="row" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 10px">
+<div style="flex-grow: 1; height: 62px; box-sizing: border-box; padding: 6px; display: flex; align-items: center; gap: 6px; background: #141413; border: 1px solid #262624; border-radius: 31px">
+<sc-for list="{{row.tabs}}" as="tab" hint-placeholder-count="4">
+<div style="height: 48px; box-sizing: border-box; padding: 4px; border-radius: 24px; display: flex; align-items: center; gap: 10px; overflow: hidden; flex-shrink: 0; {{tab.btnStyle}}">
+<div style="width: 40px; height: 40px; flex-shrink: 0; border-radius: 20px; display: flex; align-items: center; justify-content: center; {{tab.circleStyle}}">
+<sc-if value="{{tab.isHome}}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"></path></svg></sc-if>
+<sc-if value="{{tab.isJobs}}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2.5"></rect><path d="M9 7V5h6v2M3 13h18"></path></svg></sc-if>
+<sc-if value="{{tab.isNetwork}}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .7 3 2.8 3 6"></path></svg></sc-if>
+<sc-if value="{{tab.isProfile}}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"></path></svg></sc-if>
+</div>
+<span style="font-size: 14px; font-weight: 500; color: #F2EFE8; white-space: nowrap; {{tab.labelStyle}}">{{tab.label}}</span>
+</div>
+</sc-for>
+</div>
+<div style="width: 62px; height: 62px; flex-shrink: 0; border-radius: 31px; background: #F2EFE8; display: flex; align-items: center; justify-content: center">
+<svg width="46" height="46" viewBox="-23 -23 46 46" fill="none">
+<circle r="17" stroke="#0b0b0b" stroke-width="1.6" stroke-dasharray="4 3" stroke-linecap="round"></circle>
+<path d="M0 -7.5L16.85 2.23M6.5 -3.75L6.5 15.71M6.5 3.75L-10.36 13.48M0 7.5L-16.85 -2.23M-6.5 3.75L-6.5 -15.71M-6.5 -3.75L10.36 -13.48" stroke="#0b0b0b" stroke-width="1.7" stroke-linecap="round"></path>
+<circle cx="2" cy="-16.9" r="2.4" fill="#0b0b0b"></circle>
+</svg>
+</div>
+</div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#F2EFE8","options":["#F2EFE8","#C8F169","#ED93B1","#D97757"]},"$preview":{"width":390,"height":360}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var accent = this.props.accent ?? '#F2EFE8';
+    var defs = [
+      { id: 'home', label: 'Home' },
+      { id: 'jobs', label: 'Jobs' },
+      { id: 'network', label: 'Network' },
+      { id: 'profile', label: 'Profile' }
+    ];
+    var rows = defs.map(function (sel) {
+      return {
+        tabs: defs.map(function (d) {
+          var on = d.id === sel.id;
+          return {
+            label: d.label,
+            isHome: d.id === 'home', isJobs: d.id === 'jobs', isNetwork: d.id === 'network', isProfile: d.id === 'profile',
+            btnStyle: on ? 'width:112px;background:#232322;' : 'width:48px;background:transparent;',
+            circleStyle: on ? 'background:' + accent + ';color:#0b0b0b;' : 'background:transparent;color:#9a9892;',
+            labelStyle: on ? 'opacity:1;' : 'opacity:0;'
+          };
+        })
+      };
+    });
+    return { rows: rows };
+  }
+}
+</script>
+</body>
+</html>

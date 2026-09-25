@@ -11,9 +11,10 @@ import 'search_results_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../widgets/model_x_copilot.dart';
 import '../ui/board_theme.dart';
 import '../widgets/board_widgets.dart';
+import '../services/copilot_conversation.dart';
+import '../widgets/kit/kit.dart';
 
 /// The app shell for the model side.
 ///
@@ -31,13 +32,18 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  int _selectedIndex = 0;
+  /// The bar's four destinations, in order.
+  ///
+  /// Notifications used to be the second of five. The redesigned bar
+  /// holds four -- a fifth does not fit once the selected one expands
+  /// to carry its label -- and notifications is the one people reach
+  /// from a badge rather than by browsing, so it moved to the top bar.
+  static const _tabHome = 0;
+  static const _tabJobs = 1;
+  static const _tabProfile = 3;
 
-  /// Set when Home's Up next counts open Jobs, so the list arrives
-  /// already narrowed to whatever was tapped. Cleared as soon as the
-  /// user picks another tab, or the filter would stick on every later
-  /// visit.
-  String? _jobsStatus;
+  int _selectedIndex = _tabHome;
+
   DateTime? _lastBackPress;
 
   final SearchService _searchService = SearchService();
@@ -59,12 +65,12 @@ class _DashboardPageState extends State<DashboardPage> {
   /// now told apart by its content, not by being tinted.
   static const _accent = BoardColors.brass;
 
+  /// One per destination, in the bar's order.
   static const _searchHints = [
-    'SEARCH USERS OR @USERNAME',
-    'SEARCH USERS OR @USERNAME',
-    'SEARCH USERS OR @USERNAME',
-    'SEARCH JOBS, BRANDS, CITIES',
-    'SEARCH USERS OR @USERNAME',
+    'Search users or @username',
+    'Search jobs, brands, cities',
+    'Search users or @username',
+    'Search users or @username',
   ];
 
   @override
@@ -165,16 +171,20 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     const accent = _accent;
     final navBottom = MediaQuery.of(context).padding.bottom + 14;
-    // Profile carries its own ink header (back/title/exit), so the shared
-    // search bar would be a second, competing header on that tab.
-    final showTopBar = _selectedIndex != 4;
+    final keyboardUp = MediaQuery.viewInsetsOf(context).bottom > 0;
+    // Profile carries its own header, so the shared search bar would be
+    // a second one competing with it. This read `!= 4` against the old
+    // five-tab order and quietly started showing once Profile moved to
+    // index three.
+    final showTopBar = _selectedIndex != _tabProfile;
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        if (_selectedIndex != 0) {
-          setState(() => _selectedIndex = 0);
+        // Back goes to Home first, and only leaves the app from there.
+        if (_selectedIndex != _tabHome) {
+          setState(() => _selectedIndex = _tabHome);
           return;
         }
         final now = DateTime.now();
@@ -210,13 +220,22 @@ class _DashboardPageState extends State<DashboardPage> {
                         onChanged: onSearchChanged,
                         onAvatar: () {
                           _dismissSearch();
-                          setState(() => _selectedIndex = 4);
+                          setState(() => _selectedIndex = _tabProfile);
                         },
                         onSearch: () {
                           if (_searchController.text.trim().isEmpty) {
                             _loadRecentSearches();
                             setState(() => showRecent = true);
                           }
+                        },
+                        onNotifications: () {
+                          _dismissSearch();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const NotificationsPage(),
+                            ),
+                          );
                         },
                         onMessages: () {
                           _dismissSearch();
@@ -249,17 +268,10 @@ class _DashboardPageState extends State<DashboardPage> {
                         children: [
                           HomePage(
                             onOpenJobs: () =>
-                                setState(() => _selectedIndex = 3),
-                            // The counts on the Up next card open Jobs
-                            // already narrowed to what was counted.
-                            onOpenJobsFiltered: (status) => setState(() {
-                              _jobsStatus = status;
-                              _selectedIndex = 3;
-                            }),
+                                setState(() => _selectedIndex = _tabJobs),
                           ),
-                          const NotificationsPage(),
+                          const JobsPage(),
                           const NetworkPage(),
-                          JobsPage(initialStatus: _jobsStatus),
                           const ProfilePage(embedded: true),
                         ],
                       ),
@@ -282,30 +294,29 @@ class _DashboardPageState extends State<DashboardPage> {
             if (showTopBar && (showRecent || searchResults.isNotEmpty))
               _searchOverlay(),
 
-            // The copilot sits in the Stack rather than in the Scaffold's
-            // floatingActionButton slot: the nav bar below is a Positioned
-            // child, not a bottomNavigationBar, so the Scaffold has no way
-            // to know it's there and would drop the FAB straight on top of
-            // it. Anchoring both to the same bottom inset keeps them
-            // stacked no matter the device's safe area.
-            Positioned(
-              right: 16,
-              bottom: navBottom + BoardNavBar.height + 12,
-              child: ModelXCopilot(
-                accent: accent,
-                pageContext: {
-                  'page': 'home',
-                  'role': _userType,
-                  'tab': const [
-                    'Home',
-                    'Notifications',
-                    'Network',
-                    'Jobs',
-                    'Profile',
-                  ][_selectedIndex],
-                },
+            // The assistant, docked or open.
+            //
+            // Rendered in the shell's own Stack rather than pushed as a
+            // route or a modal sheet: the aperture has to stay visible
+            // and tappable while it works, which is what its states are
+            // for, and a modal would cover it with the thing it opened.
+            if (_copilot == CopilotStage.docked)
+              Positioned(
+                left: 14,
+                right: 14,
+                bottom: navBottom + AppNavBar.height + 12,
+                child: AnimatedBuilder(
+                  animation: CopilotConversation.instance,
+                  builder: (context, _) => CopilotDock(
+                    conversation: CopilotConversation.instance,
+                    pageContext: _copilotContext,
+                    suggestions: _copilotOpeners,
+                    onExpand: _openConversation,
+                    onDismiss: () =>
+                        setState(() => _copilot = CopilotStage.closed),
+                  ),
+                ),
               ),
-            ),
 
             // The floating pill bar rides above the content rather than
             // taking a row of its own, which is why every board screen
@@ -314,22 +325,137 @@ class _DashboardPageState extends State<DashboardPage> {
               left: 14,
               right: 14,
               bottom: navBottom,
-              child: BoardNavBar(
-                currentIndex: _selectedIndex,
-                accent: accent,
-                onTap: (i) {
-                  // Picking a tab by hand clears any filter Home asked
-                  // for, or Jobs would stay narrowed on every later
-                  // visit with nothing on screen explaining why.
-                  if (i != 3) _jobsStatus = null;
-                  _dismissSearch();
-                  setState(() => _selectedIndex = i);
-                },
+              // The assistant rides beside the bar rather than floating
+              // over the content. It used to sit above it, which meant
+              // it covered whatever was underneath on every screen.
+              child: Row(
+                children: [
+                  // With the keyboard up, the destinations step aside
+                  // and only the assistant stays. They were riding above
+                  // the keyboard alongside it, which is a row of tabs
+                  // you cannot reach without dismissing what you are
+                  // typing into.
+                  if (!keyboardUp)
+                    Expanded(
+                      child: AppNavBar(
+                        currentIndex: _selectedIndex,
+                        accent: accent,
+                        destinations: const [
+                          NavDestination(label: 'Home', glyph: NavGlyph.home),
+                          NavDestination(label: 'Jobs', glyph: NavGlyph.jobs),
+                          NavDestination(
+                            label: 'Network',
+                            glyph: NavGlyph.network,
+                          ),
+                          NavDestination(
+                            label: 'Profile',
+                            glyph: NavGlyph.profile,
+                          ),
+                        ],
+                        onTap: (i) {
+                          _dismissSearch();
+                          setState(() => _selectedIndex = i);
+                        },
+                      ),
+                    )
+                  else
+                    const Spacer(),
+                  const SizedBox(width: 10),
+                  _assistant(),
+                ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  /// The assistant, on the light disc the design gives it.
+  ///
+  /// Dark blades on a pale ground here rather than the reverse: the
+  /// button sits against a dark bar, and it is the one thing on the row
+  /// that is not a destination.
+  /// Where the assistant is: shut, docked over the bar, or open.
+  CopilotStage _copilot = CopilotStage.closed;
+
+  Map<String, dynamic> get _copilotContext => {
+    'page': 'home',
+    'role': _userType,
+    'tab': const ['Home', 'Jobs', 'Network', 'Profile'][_selectedIndex],
+  };
+
+  /// Openers for the destination underneath, so the first tap is a
+  /// question rather than a blank field.
+  List<String> get _copilotOpeners {
+    final model = _userType != 'Brand' && _userType != 'Agency';
+    return switch (_selectedIndex) {
+      _tabJobs =>
+        model
+            ? const ['Which of these fit me?', 'How do I stand out?']
+            : const ['How do I post a gig?', 'Who should I shortlist?'],
+      _tabProfile =>
+        model
+            ? const ['Analyze my bio', 'Portfolio tips']
+            : const ['Company profile tips', 'View my postings'],
+      _ =>
+        model
+            ? const ['How do I get hired?', 'Portfolio tips']
+            : const ['How do I scout models?', 'Hiring tips'],
+    };
+  }
+
+  void _openAssistant() {
+    _dismissSearch();
+    setState(() {
+      // Tapping it again puts it away, since the button stays on screen
+      // rather than being covered by what it opened.
+      _copilot = _copilot == CopilotStage.closed
+          ? CopilotStage.docked
+          : CopilotStage.closed;
+    });
+  }
+
+  /// Opens the conversation full screen.
+  ///
+  /// A route rather than another layer in this stack: as a layer it sat
+  /// under the floating bar, which covered the composer -- the one
+  /// control it cannot do without.
+  Future<void> _openConversation() async {
+    setState(() => _copilot = CopilotStage.closed);
+    FocusScope.of(context).unfocus();
+    await CopilotRoute.open(
+      context,
+      conversation: CopilotConversation.instance,
+      pageContext: _copilotContext,
+      suggestions: _copilotOpeners,
+    );
+    // Back to the dock, so the thread is one tap away rather than gone.
+    if (mounted) setState(() => _copilot = CopilotStage.docked);
+  }
+
+  /// The button reflects what the assistant is doing, which is the
+  /// reason it has states and the reason it stays visible.
+  ApertureState get _apertureState {
+    if (_copilot == CopilotStage.closed) return ApertureState.idle;
+    if (CopilotConversation.instance.sending) return ApertureState.thinking;
+    return ApertureState.listening;
+  }
+
+  /// The assistant: the mark on its own, no disc behind it.
+  ///
+  /// Which means it keeps the palette it was designed in -- pale blades
+  /// on a dark ground -- rather than being inverted to read against a
+  /// light circle. Sized to the bar so the row lines up.
+  Widget _assistant() {
+    return ApertureButton(
+      state: _apertureState,
+      size: AppNavBar.height,
+      // Ink, not the reference's grey. With no disc behind it the ring
+      // sits straight on the page, where grey-on-paper barely reads --
+      // the reference drew it on near-black.
+      ringColor: BoardColors.ink,
+      onPressed: _openAssistant,
     );
   }
 

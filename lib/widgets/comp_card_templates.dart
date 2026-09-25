@@ -269,16 +269,29 @@ class CompCardFaceView extends StatelessWidget {
     // MediaQuery is neutralised inside the card: this is print, and a
     // system font scale must not reflow a 5.5 × 8.5 in layout.
     return MediaQuery.withNoTextScaling(
-      child: SizedBox(
-        width: trimWidth,
-        height: trimHeight,
-        child: switch (template) {
-          CompCardTemplate.maison => back ? _maisonBack() : _maisonFront(),
-          CompCardTemplate.grid => back ? _gridBack() : _gridFront(),
-          CompCardTemplate.runway => back ? _runwayBack() : _runwayFront(),
-          CompCardTemplate.range => back ? _rangeBack() : _rangeFront(),
-          CompCardTemplate.signal => back ? _signalBack() : _signalFront(),
-        },
+      // A comp card is a print object and has to render identically in
+      // any host. Without text defaults of its own it inherits
+      // DefaultTextStyle.fallback(), which draws a yellow double
+      // underline under every string -- harmless inside a Scaffold,
+      // which supplies its own, and baked into the PDF when the card is
+      // captured outside one.
+      child: DefaultTextStyle(
+        style: const TextStyle(
+          color: Color(0xFF000000),
+          fontSize: 14,
+          decoration: TextDecoration.none,
+        ),
+        child: SizedBox(
+          width: trimWidth,
+          height: trimHeight,
+          child: switch (template) {
+            CompCardTemplate.maison => back ? _maisonBack() : _maisonFront(),
+            CompCardTemplate.grid => back ? _gridBack() : _gridFront(),
+            CompCardTemplate.runway => back ? _runwayBack() : _runwayFront(),
+            CompCardTemplate.range => back ? _rangeBack() : _rangeFront(),
+            CompCardTemplate.signal => back ? _signalBack() : _signalFront(),
+          },
+        ),
       ),
     );
   }
@@ -1148,7 +1161,7 @@ class CompCardFaceView extends StatelessWidget {
 
   static const _carbon = Color(0xFF101210);
   static const _bone = Color(0xFFF2F0E9);
-  static const _chartreuse = Color(0xFFC6E43B);
+  static const _chartreuse = Color(0xFF556B2F);
 
   TextStyle _syne({
     double size = 34,

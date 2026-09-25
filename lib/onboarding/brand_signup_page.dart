@@ -343,6 +343,7 @@ class _BrandSignupFlowState extends State<BrandSignupFlow> {
       error: _errors['password'],
       spaced: false,
       child: AppPasswordField(
+        hintText: 'At least 8 characters',
         hasError: _errors['password'] != null,
         onChanged: (v) => _set(() => _password = v),
       ),

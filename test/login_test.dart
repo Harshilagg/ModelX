@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_application_modelx/widgets/kit/kit.dart';
 import 'package:flutter_application_modelx/onboarding/auth_router.dart';
 import 'package:flutter_application_modelx/onboarding/login_page.dart';
 
@@ -132,6 +133,32 @@ void main() {
       await pumpLogin(tester);
       expect(find.text('Continue with Google'), findsOneWidget);
       expect(find.text('Continue with Apple'), findsNothing);
+    });
+
+    testWidgets('each box is its configured height, and both carry a hint', (
+      tester,
+    ) async {
+      // The two are sized separately on purpose. A password box carries
+      // a Show toggle and reads taller than an empty one at the same
+      // number, so matching the numbers does not match the look.
+      await pumpLogin(tester);
+
+      final boxes = find.byType(InputDecorator);
+      expect(boxes, findsNWidgets(2));
+      expect(tester.getSize(boxes.at(0)).height, AppMetrics.field);
+      expect(tester.getSize(boxes.at(1)).height, AppMetrics.passwordField);
+
+      for (var i = 0; i < 2; i++) {
+        final decoration = tester
+            .widget<InputDecorator>(boxes.at(i))
+            .decoration;
+        expect(
+          decoration.hintText,
+          isNotNull,
+          reason: 'input $i renders as an empty box',
+        );
+        expect(decoration.hintText, isNotEmpty);
+      }
     });
 
     testWidgets('lays out at 360x640', (tester) async {

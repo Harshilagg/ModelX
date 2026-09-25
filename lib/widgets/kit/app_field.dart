@@ -112,6 +112,16 @@ class AppTextField extends StatelessWidget {
   /// Figures that should not jitter as they are typed or compared.
   final bool tabularFigures;
 
+  /// Hides what is typed. Set through [AppPasswordField] rather than
+  /// directly, so the Show toggle comes with it.
+  final bool obscureText;
+
+  /// Overrides [AppMetrics.field]. Only [AppPasswordField] passes this.
+  final double? height;
+
+  /// Off for anything secret, or the keyboard learns it.
+  final bool enableSuggestions;
+
   final TextAlign textAlign;
 
   const AppTextField({
@@ -134,6 +144,9 @@ class AppTextField extends StatelessWidget {
     this.suffix,
     this.tabularFigures = false,
     this.textAlign = TextAlign.start,
+    this.obscureText = false,
+    this.enableSuggestions = true,
+    this.height,
   });
 
   @override
@@ -145,6 +158,8 @@ class AppTextField extends StatelessWidget {
       controller: controller,
       focusNode: focusNode,
       enabled: enabled,
+      obscureText: obscureText,
+      enableSuggestions: enableSuggestions,
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       autocorrect: autocorrect,
@@ -173,23 +188,26 @@ class AppTextField extends StatelessWidget {
         fillColor: p.surfaceField,
         counterText: '',
         isDense: true,
+        // The height comes from padding, not from constraints.
+        //
+        // InputDecoration.constraints resizes the decorator's slot
+        // while the fill and the border stay wrapped around the
+        // content, so raising it grew the gap under the field and left
+        // the visible box exactly as it was -- at any value, 60 or 200.
+        // Vertical padding is inside the border, so it is the thing
+        // that actually makes the box taller.
         contentPadding: EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: multiline ? 14 : 0,
+          vertical: multiline ? 14 : _inset(context),
         ),
+
         // A fixed height only works for a single line; a textarea has to
         // grow, so the constraint is applied per case.
-        constraints: multiline
-            ? null
-            : const BoxConstraints(
-                minHeight: AppMetrics.control,
-                maxHeight: AppMetrics.control,
-              ),
         suffixIcon: suffix,
-        suffixIconConstraints: const BoxConstraints(
-          minHeight: AppMetrics.control,
-          minWidth: 0,
-        ),
+        // Zero minimums so a suffix sizes to its own content and sits
+        // centred. Pinning this to the field height stretched it and
+        // pushed its baseline off from the text beside it.
+        suffixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 0),
         border: _border(p.line),
         enabledBorder: _border(hasError ? p.rejectedText : p.line),
         focusedBorder: _border(
@@ -201,6 +219,20 @@ class AppTextField extends StatelessWidget {
     );
 
     return field;
+  }
+
+  /// Vertical padding that renders a box of the requested height.
+  ///
+  /// Derived from the text's own line height rather than assumed, so
+  /// the box stays the height asked for when the system font scales
+  /// rather than growing past it.
+  double _inset(BuildContext context) {
+    const fontSize = 16.0;
+    const lineHeight = 1.5;
+    final text = MediaQuery.textScalerOf(context).scale(fontSize) * lineHeight;
+    final target = height ?? AppMetrics.field;
+    final inset = (target - text) / 2;
+    return inset < 0 ? 0 : inset;
   }
 
   static OutlineInputBorder _border(Color color, {double width = 1}) =>
@@ -246,55 +278,43 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
   Widget build(BuildContext context) {
     final p = BoardColors.of(context);
 
-    return TextField(
+    // Built on AppTextField rather than beside it. The two used to
+    // declare their own decorations and had quietly drifted apart --
+    // different suffix constraints, and this one missing a couple of
+    // the borders -- so the email box and the password box under it did
+    // not read as the same control. There is now one definition of what
+    // an input looks like and this adds only the toggle.
+    return AppTextField(
+      height: AppMetrics.passwordField,
       controller: widget.controller,
+      hintText: widget.hintText,
+      hasError: widget.hasError,
       obscureText: !_shown,
-      // Autocorrect on an obscured field suggests words from the
-      // password to the keyboard's dictionary.
+      // Both off: a keyboard that learns from an obscured field starts
+      // suggesting the password elsewhere.
       autocorrect: false,
       enableSuggestions: false,
       onChanged: widget.onChanged,
       onSubmitted: widget.onSubmitted,
       textInputAction: widget.textInputAction,
-      autofillHints: [
-        widget.isNew ? AutofillHints.newPassword : AutofillHints.password,
-      ],
-      cursorColor: p.onSurface,
-      style: AppType.body(fontSize: 16, color: p.onSurface),
-      decoration: InputDecoration(
-        hintText: widget.hintText,
-        hintStyle: AppType.body(fontSize: 16, color: p.onSurfaceFaint),
-        filled: true,
-        fillColor: p.surfaceField,
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-        constraints: const BoxConstraints(
-          minHeight: AppMetrics.control,
-          maxHeight: AppMetrics.control,
-        ),
-        suffixIcon: Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: TextButton(
-            onPressed: () => setState(() => _shown = !_shown),
-            style: TextButton.styleFrom(
-              minimumSize: const Size(56, 36),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              _shown ? 'Hide' : 'Show',
-              style: AppType.label(color: p.onSurfaceSoft),
-            ),
+      autofillHint: widget.isNew
+          ? AutofillHints.newPassword
+          : AutofillHints.password,
+      suffix: Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: TextButton(
+          onPressed: () => setState(() => _shown = !_shown),
+          style: TextButton.styleFrom(
+            minimumSize: const Size(56, 36),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-        ),
-        suffixIconConstraints: const BoxConstraints(minHeight: 36, minWidth: 0),
-        border: AppTextField._border(p.line),
-        enabledBorder: AppTextField._border(
-          widget.hasError ? p.rejectedText : p.line,
-        ),
-        focusedBorder: AppTextField._border(
-          widget.hasError ? p.rejectedText : p.onSurfaceSoft,
-          width: 1.4,
+          // Words, not an eye: the crossed-eye glyph is read as both
+          // "hidden" and "tap to hide".
+          child: Text(
+            _shown ? 'Hide' : 'Show',
+            style: AppType.label(color: p.onSurfaceSoft),
+          ),
         ),
       ),
     );

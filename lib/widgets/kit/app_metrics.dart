@@ -14,13 +14,27 @@ class AppMetrics {
   static const double gutter = 24;
 
   /// Between one form field and the next.
-  static const double fieldGap = 20;
+  static const double fieldGap = 18;
 
   /// Between a step title (and its hint) and the first field under it.
   static const double titleGap = 28;
 
-  /// Pills, inputs and anything that has to line up with them.
-  static const double control = 52;
+  /// Pill buttons, and anything that has to line up with them.
+  static const double control = 56;
+
+  /// Height of a normal input: email, phone, name, city, height.
+  ///
+  /// ---- CHANGE THIS to resize the email and phone style boxes ----
+  static const double field = 50;
+
+  /// Height of a password input.
+  ///
+  /// ---- CHANGE THIS to resize the password boxes ----
+  ///
+  /// Separate from [field] because a password box carries a Show
+  /// toggle and reads taller than an empty one at the same height.
+  /// Matching the two numbers does not make them look matched.
+  static const double passwordField = 50;
 
   /// Chips, and the segmented control's inner buttons.
   static const double chip = 40;

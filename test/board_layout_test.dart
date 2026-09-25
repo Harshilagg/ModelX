@@ -95,7 +95,7 @@ void main() {
         final error = await layout(
           tester,
           BoardTabRail(
-            tabs: const ['Details', 'Portfolio', 'Posts'],
+            tabs: const ['Portfolio', 'Details', 'Posts'],
             index: 0,
             onTap: (_) {},
           ),

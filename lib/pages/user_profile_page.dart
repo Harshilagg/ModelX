@@ -5,9 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'chat_page.dart';
 import '../ui/board_theme.dart';
 import '../widgets/board_widgets.dart';
+import '../widgets/circular_gallery.dart';
 import '../widgets/portfolio_masonry.dart';
 import '../widgets/profile_photo_viewer.dart';
-import '../widgets/shot_carousel.dart';
 import '../widgets/state_views.dart';
 
 /// A profile as other people see it (style board 7d).
@@ -35,7 +35,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
   bool isRequestSent = false;
   bool isConnected = false;
   bool isOwnProfile = false;
-  int _tab = 0;
+
+  /// Portfolio first, matching the owner's own profile.
+  ///
+  /// Named rather than written as a number where it is used: the "ALL
+  /// n" link below jumped to "tab 1" meaning Portfolio, which silently
+  /// became a jump to Details the moment the order changed.
+  static const _tabPortfolio = 0;
+
+  int _tab = _tabPortfolio;
 
   /// Held in a field, not rebuilt inline. `.snapshots()` returns a new
   /// Stream each call and a StreamBuilder resubscribes when its stream
@@ -179,7 +187,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           _hero(),
           _quadStats(),
           BoardTabRail(
-            tabs: const ['Details', 'Portfolio'],
+            tabs: const ['Portfolio', 'Details'],
             index: _tab,
             onTap: (i) => setState(() => _tab = i),
             accent: BoardColors.brass,
@@ -187,7 +195,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           Expanded(
             child: IndexedStack(
               index: _tab,
-              children: [_detailsTab(), _portfolioTab()],
+              children: [_portfolioTab(), _detailsTab()],
             ),
           ),
         ],
@@ -264,7 +272,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Circular: an identity, not a portfolio tile. Their
-                  // work keeps the comp-card cut, in Latest shots and the
+                  // work keeps the comp-card cut, in Featured shots and the
                   // Portfolio tab below.
                   //
                   // Tappable — somebody else's profile photo had no way
@@ -498,10 +506,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             BoardSectionLabel(
-              'Latest shots',
+              'Featured shots',
               trailing: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => setState(() => _tab = 1),
+                onTap: () => setState(() => _tab = _tabPortfolio),
                 child: MonoChip(
                   'ALL ${urls.length}',
                   filled: true,
@@ -510,10 +518,18 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 ),
               ),
             ),
-            const SizedBox(height: 10),
-            ShotCarousel(
-              urls: urls,
-              accent: BoardColors.brass,
+            const SizedBox(height: 4),
+            CircularGallery(
+              shots: [
+                for (var i = 0; i < urls.length; i++)
+                  GalleryShot(
+                    url: urls[i],
+                    // The portfolio collection carries no captions, so
+                    // the frames are numbered. A blank strip under each
+                    // one reads as something failing to load.
+                    label: (i + 1).toString().padLeft(2, '0'),
+                  ),
+              ],
               onTap: (i) => _openShot(urls, i),
             ),
           ],
@@ -530,39 +546,48 @@ class _UserProfilePageState extends State<UserProfilePage> {
       barrierColor: Colors.black.withValues(alpha: 0.92),
       builder: (dialogContext) {
         final controller = PageController(initialPage: index);
-        return Stack(
-          children: [
-            PageView.builder(
-              controller: controller,
-              itemCount: urls.length,
-              itemBuilder: (_, i) => Center(
-                child: InteractiveViewer(
-                  maxScale: 4,
-                  child: Image.network(
-                    urls[i],
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Icon(
-                      Icons.broken_image_outlined,
-                      color: BoardColors.onInkFaint,
-                      size: 40,
+        // showDialog gives no Material, so the Close label was drawn
+        // with the yellow debug underline under it. Transparent because
+        // the barrier is already the background.
+        return Material(
+          type: MaterialType.transparency,
+          child: Stack(
+            children: [
+              PageView.builder(
+                controller: controller,
+                itemCount: urls.length,
+                itemBuilder: (_, i) => Center(
+                  child: InteractiveViewer(
+                    maxScale: 4,
+                    child: Image.network(
+                      urls[i],
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Icon(
+                        Icons.broken_image_outlined,
+                        color: BoardColors.onInkFaint,
+                        size: 40,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Positioned(
-              top: MediaQuery.of(dialogContext).padding.top + 12,
-              right: 16,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => Navigator.of(dialogContext).pop(),
-                child: Text(
-                  'Close',
-                  style: BoardType.mono(fontSize: 11, color: BoardColors.brass),
+              Positioned(
+                top: MediaQuery.of(dialogContext).padding.top + 12,
+                right: 16,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.of(dialogContext).pop(),
+                  child: Text(
+                    'Close',
+                    style: BoardType.mono(
+                      fontSize: 11,
+                      color: BoardColors.brass,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );

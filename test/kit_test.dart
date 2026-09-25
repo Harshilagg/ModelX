@@ -205,6 +205,157 @@ void main() {
     });
   });
 
+  group('input sizing', () {
+    testWidgets('each single-line input takes its own height', (tester) async {
+      // Sized separately on purpose: a password box carries a Show
+      // toggle and reads taller than an empty box at the same number.
+      await pump(
+        tester,
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            children: [
+              AppTextField(hintText: 'you@email.com'),
+              AppPasswordField(),
+            ],
+          ),
+        ),
+      );
+
+      final fields = find.byType(TextField);
+      expect(tester.getSize(fields.at(0)).height, AppMetrics.field);
+      expect(tester.getSize(fields.at(1)).height, AppMetrics.passwordField);
+    });
+
+    testWidgets('a multiline field grows instead', (tester) async {
+      await pump(
+        tester,
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: AppTextField(maxLines: 4),
+        ),
+      );
+      expect(
+        tester.getSize(find.byType(TextField)).height,
+        greaterThan(AppMetrics.field),
+      );
+    });
+
+    testWidgets('an email box and a password box share one decoration', (
+      tester,
+    ) async {
+      // Heights are tuned separately on purpose. Everything that makes
+      // them look like the same control -- fill, radius, borders -- is
+      // not, and had drifted before the password field was built on the
+      // text field.
+      await pump(
+        tester,
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            children: [
+              AppTextField(hintText: 'you@email.com'),
+              AppPasswordField(),
+            ],
+          ),
+        ),
+      );
+
+      final decorators = find.byType(InputDecorator);
+      expect(decorators, findsNWidgets(2));
+
+      final email = tester.widget<InputDecorator>(decorators.at(0)).decoration;
+      final password = tester
+          .widget<InputDecorator>(decorators.at(1))
+          .decoration;
+
+      expect(
+        tester.getSize(decorators.at(0)).width,
+        tester.getSize(decorators.at(1)).width,
+      );
+      expect(email.filled, password.filled);
+      expect(email.fillColor, password.fillColor);
+      // contentPadding is how height is set now, so it differs by
+      // design between the two.
+      expect(email.isDense, password.isDense);
+      // This is where they had actually drifted: one pinned its suffix
+      // to the field height, the other to 36.
+      expect(email.suffixIconConstraints, password.suffixIconConstraints);
+      expect(email.counterText, password.counterText);
+      expect(email.disabledBorder, isNotNull);
+      expect(password.disabledBorder, isNotNull);
+
+      // The borders are what actually get painted.
+      for (final pair in [
+        (email.enabledBorder, password.enabledBorder),
+        (email.focusedBorder, password.focusedBorder),
+        (email.border, password.border),
+      ]) {
+        final a = pair.$1 as OutlineInputBorder?;
+        final b = pair.$2 as OutlineInputBorder?;
+        expect(a?.borderRadius, b?.borderRadius);
+        expect(a?.borderSide.color, b?.borderSide.color);
+        expect(a?.borderSide.width, b?.borderSide.width);
+      }
+    });
+
+    testWidgets('a suffix sizes to itself rather than the field', (
+      tester,
+    ) async {
+      // Pinning the suffix to the field height stretched it and threw
+      // its baseline off from the text beside it.
+      await pump(
+        tester,
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: AppTextField(suffix: Text('cm')),
+        ),
+      );
+      expect(
+        tester.getSize(find.text('cm')).height,
+        lessThan(AppMetrics.field),
+      );
+    });
+
+    // This is the one that was missing. Every earlier height test
+    // measured the decorator's slot, which the constraints did resize
+    // -- so they all passed while the visible box never changed, at any
+    // value. Asking for several heights and checking the box follows is
+    // what catches it.
+    for (final asked in const [52.0, 68.0, 100.0, 200.0]) {
+      testWidgets('a box asked for ${asked}pt renders ${asked}pt', (
+        tester,
+      ) async {
+        await pump(
+          tester,
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: AppTextField(height: asked, hintText: 'you@email.com'),
+          ),
+        );
+        expect(tester.getSize(find.byType(InputDecorator)).height, asked);
+      });
+    }
+
+    testWidgets('a password box follows its own constant', (tester) async {
+      await pump(
+        tester,
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: AppPasswordField(hintText: 'Your password'),
+        ),
+      );
+      expect(
+        tester.getSize(find.byType(InputDecorator)).height,
+        AppMetrics.passwordField,
+      );
+    });
+
+    test('inputs are at least as tall as the minimum tap target', () {
+      expect(AppMetrics.field, greaterThanOrEqualTo(AppMetrics.tapTarget));
+    });
+  });
+
   group('AppField', () {
     testWidgets('an error replaces the hint rather than stacking', (
       tester,

@@ -3,19 +3,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'user_profile_page.dart';
-import '../services/application_feed.dart';
-import '../widgets/kit/kit.dart';
 import '../ui/board_theme.dart';
 import '../widgets/board_widgets.dart';
 import '../widgets/state_views.dart';
 import '../widgets/app_skeleton.dart';
 
-/// Home -- what needs a decision first, the feed second.
+/// Home -- the feed.
 ///
-/// The card at the top answers the only urgent question a working model
-/// has on open: is anything waiting on me. It shows one item rather
-/// than a list, because a list of applications is what the Jobs tab is
-/// for.
+/// It opened on a card summarising what needed a decision. That is the
+/// Jobs tab's job, and two answers to the same question stacked above
+/// the feed made the screen busy rather than useful, so the feed starts
+/// at the top now.
 ///
 /// Everything on the board is assembled from data the app already
 /// stores: open gigs/castings plus this model's own application document
@@ -29,12 +27,7 @@ class HomePage extends StatefulWidget {
   /// Home a way to move the selection.
   final VoidCallback? onOpenJobs;
 
-  /// The same, with a status preselected. The counts on the Up next
-  /// card are only worth tapping if they land somewhere narrower than
-  /// the whole list.
-  final void Function(String status)? onOpenJobsFiltered;
-
-  const HomePage({super.key, this.onOpenJobs, this.onOpenJobsFiltered});
+  const HomePage({super.key, this.onOpenJobs});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -85,13 +78,6 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(
-          key: const ValueKey('board'),
-          child: _UpNextPanel(
-            onOpenJobs: widget.onOpenJobs,
-            onOpenJobsFiltered: widget.onOpenJobsFiltered,
-          ),
-        ),
         SliverToBoxAdapter(
           key: const ValueKey('feed-header'),
           child: _feedHeader(),
@@ -243,106 +229,6 @@ class _HomePageState extends State<HomePage> {
         );
       },
     );
-  }
-}
-
-/// ---------------------------------------------------------------------
-/// Up next
-/// ---------------------------------------------------------------------
-
-/// What needs a decision, and how much of everything else there is.
-///
-/// Replaces the departures board. That panel listed every application
-/// as a split-flap row under a countdown that read "NO CALL SCHEDULED"
-/// whenever nothing was booked -- which, for most people most of the
-/// time, meant the most prominent thing on Home said nothing at all.
-class _UpNextPanel extends StatelessWidget {
-  final VoidCallback? onOpenJobs;
-  final void Function(String status)? onOpenJobsFiltered;
-
-  const _UpNextPanel({this.onOpenJobs, this.onOpenJobsFiltered});
-
-  @override
-  Widget build(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-
-    if (uid == null) {
-      return const UpNextCard(
-        item: null,
-        counts: [],
-        emptyMessage: 'Sign in to see what needs your attention.',
-      );
-    }
-
-    return ApplicationFeed(
-      uid: uid,
-      builder: (applications, loading) {
-        // Most urgent first, then soonest. A rejection is excluded by
-        // isUpNext, as is a booking whose shoot date has passed.
-        final candidates = applications.where((a) => a.isUpNext).toList()
-          ..sort((a, b) {
-            final byUrgency = a.state.urgency.compareTo(b.state.urgency);
-            if (byUrgency != 0) return byUrgency;
-            final x = a.start, y = b.start;
-            if (x == null && y == null) return 0;
-            if (x == null) return 1;
-            if (y == null) return -1;
-            return x.compareTo(y);
-          });
-
-        int count(AppStatus s) =>
-            applications.where((a) => a.state == s).length;
-
-        final headline = candidates.isEmpty ? null : candidates.first;
-
-        return UpNextCard(
-          loading: loading,
-          emptyMessage:
-              'Nothing needs you right now. Applying to a job brings it here.',
-          item: headline == null
-              ? null
-              : UpNextItem(
-                  title: headline.title.isEmpty ? 'Untitled' : headline.title,
-                  subtitle: _context(headline),
-                  status: headline.state,
-                  onOpen: () => headline.open(context),
-                ),
-          counts: [
-            UpNextCount(
-              label: 'Applied',
-              value: count(AppStatus.applied),
-              onTap: () => onOpenJobsFiltered?.call('applied'),
-            ),
-            UpNextCount(
-              label: 'Shortlisted',
-              value: count(AppStatus.shortlisted),
-              onTap: () => onOpenJobsFiltered?.call('shortlisted'),
-            ),
-            UpNextCount(
-              label: 'Negotiating',
-              value: count(AppStatus.negotiating),
-              onTap: () => onOpenJobsFiltered?.call('negotiating'),
-            ),
-            UpNextCount(
-              label: 'Booked',
-              value: count(AppStatus.booked),
-              onTap: () => onOpenJobsFiltered?.call('booked'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Who posted it, and when it shoots -- in that order, because the
-  /// name is what identifies the job in a glance.
-  static String _context(Application a) {
-    final parts = [
-      if (a.posterName.trim().isNotEmpty) a.posterName.trim(),
-      if (a.subtitle.trim().isNotEmpty) a.subtitle.trim(),
-      if (a.start != null) 'Shoots ${relativeTime(a.start)}',
-    ];
-    return parts.isEmpty ? 'No details yet' : parts.join(' - ');
   }
 }
 

@@ -41,6 +41,24 @@ class RunwayScene {
   /// The name is not final, so it lives in one place.
   static const String appName = 'ModelX';
 
+  /// The wordmark's face, set the way the rest of the app sets it.
+  ///
+  /// Albert Sans, uppercase, tracked -- the same lockup the splash,
+  /// role select and login all use, scaled up. This screen hands
+  /// straight over to the splash, so a different face here would cut
+  /// between two logos a third of a second apart.
+  ///
+  /// ---- CHANGE THESE to resize the wordmark ----
+  ///
+  /// [wordmarkTracking] is in ems, so it follows the size. Keep it at
+  /// the splash's ratio or the two marks stop matching. Past a size of
+  /// 36 the mark runs out of room on a 360-wide screen.
+  static const double wordmarkSize = 34;
+  static const double wordmarkTracking = 0.34;
+
+  /// The tracked wordmark's letter spacing, in points.
+  static double get wordmarkLetterSpacing => wordmarkSize * wordmarkTracking;
+
   /// Wordmark ink. Reads against whatever the accent turns out to be:
   /// a light accent needs dark type on it.
   ///

@@ -342,15 +342,21 @@ class _Flood extends StatelessWidget {
                   Center(
                     child: Opacity(
                       opacity: word,
+                      // Tracking is painted after the last letter too,
+                      // so a centred tracked mark sits half a space
+                      // left of true centre. Nudged back by half.
                       child: Transform.translate(
-                        offset: Offset(0, 10 * (1 - word)),
+                        offset: Offset(
+                          RunwayScene.wordmarkLetterSpacing / 2,
+                          10 * (1 - word),
+                        ),
                         child: Text(
-                          RunwayScene.appName,
+                          RunwayScene.appName.toUpperCase(),
                           style: TextStyle(
-                            fontFamily: 'Instrument Sans',
+                            fontFamily: 'Albert Sans',
                             fontWeight: FontWeight.w500,
-                            fontSize: 50,
-                            letterSpacing: -1.5,
+                            fontSize: RunwayScene.wordmarkSize,
+                            letterSpacing: RunwayScene.wordmarkLetterSpacing,
                             color: RunwayScene.wordmarkInk(RunwayScene.accent),
                           ),
                         ),

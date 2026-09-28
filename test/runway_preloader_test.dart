@@ -7,6 +7,8 @@ import 'package:flutter_application_modelx/features/launch/app_ready.dart';
 import 'package:flutter_application_modelx/features/launch/runway_painter.dart';
 import 'package:flutter_application_modelx/features/launch/runway_preloader.dart';
 import 'package:flutter_application_modelx/features/launch/runway_scene.dart';
+import 'package:flutter_application_modelx/onboarding/splash_page.dart'
+    show kWordmark;
 
 /// WCAG relative contrast between two opaque colours.
 double contrast(Color a, Color b) {
@@ -237,6 +239,32 @@ void main() {
       expect(RunwayScene.appName, 'ModelX');
       expect(RunwayScene.accent, const Color(0xFF6B1F2A));
       expect(RunwayScene.accentGlow, const Color(0xFFBF4A5B));
+    });
+
+    test('the wordmark is the lockup the rest of the app uses', () {
+      // The splash sets it at 15pt with 5.1 of tracking. That ratio is
+      // the mark; the size is just how big it is drawn. If these two
+      // drift, the flood and the screen after it stop matching.
+      expect(RunwayScene.wordmarkTracking, closeTo(5.1 / 15, 0.001));
+      expect(RunwayScene.appName, kWordmark);
+    });
+
+    test('the wordmark fits the narrowest screen it ships on', () {
+      final painter = TextPainter(
+        text: TextSpan(
+          text: RunwayScene.appName.toUpperCase(),
+          style: TextStyle(
+            fontFamily: 'Albert Sans',
+            fontWeight: FontWeight.w500,
+            fontSize: RunwayScene.wordmarkSize,
+            letterSpacing: RunwayScene.wordmarkLetterSpacing,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+      // 360 wide, less a 24pt gutter either side.
+      expect(painter.width, lessThanOrEqualTo(360 - 48));
     });
 
     test('the flood carries the wordmark', () {

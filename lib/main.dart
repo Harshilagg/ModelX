@@ -12,6 +12,8 @@ import 'pages/create_profile_page.dart';
 import 'config.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'ui/app_theme.dart';
+import 'features/launch/app_ready.dart';
+import 'features/launch/launch_gate.dart';
 import 'ui/theme_controller.dart';
 import 'brand/brand_dashboard_page.dart';
 import 'agency/agency_dashboard_page.dart';
@@ -111,7 +113,7 @@ class _MyAppState extends State<MyApp> {
           theme: AppTheme.light(),
           darkTheme: AppTheme.night(),
           themeMode: widget.themeController.mode,
-          home: const AppEntry(),
+          home: const LaunchGate(child: AppEntry()),
         ),
       ),
     );
@@ -155,7 +157,7 @@ class _AppEntryState extends State<AppEntry> {
   @override
   Widget build(BuildContext context) {
     if (hasSeenOnboarding == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const AppLoadingPlaceholder();
     }
 
     // If the user is already signed in, show the auth gate immediately.
@@ -163,11 +165,15 @@ class _AppEntryState extends State<AppEntry> {
       return const AuthGate();
     }
 
-    if (kForceShowOnboarding) return const OnboardingFlow();
+    if (kForceShowOnboarding) {
+      return const AppReadyMarker(child: OnboardingFlow());
+    }
 
     // The flow records `seen_onboarding` itself, when the user leaves
     // the splash rather than when they finish signing up.
-    return hasSeenOnboarding! ? const AuthGate() : const OnboardingFlow();
+    return hasSeenOnboarding!
+        ? const AuthGate()
+        : const AppReadyMarker(child: OnboardingFlow());
   }
 }
 
@@ -220,23 +226,21 @@ class AuthGate extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.active) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const AppLoadingPlaceholder();
         }
 
         final user = snapshot.data;
-        if (user == null) return const OnboardingLoginPage();
+        if (user == null) {
+          return const AppReadyMarker(child: OnboardingLoginPage());
+        }
 
         return FutureBuilder<Widget>(
           future: _getHome(user),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
+              return const AppLoadingPlaceholder();
             }
-            return snapshot.data!;
+            return AppReadyMarker(child: snapshot.data!);
           },
         );
       },

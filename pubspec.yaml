@@ -70,6 +70,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  flutter_native_splash: ^2.4.7
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -96,6 +97,17 @@ flutter:
     - family: Albert Sans
       fonts:
         - asset: assets/fonts/AlbertSans-Variable.ttf
+
+    # The launch preloader's two faces, bundled for the same reason as
+    # Albert Sans: it is the first thing drawn, and a runtime fetch
+    # shows fallback type on a cold start and never resolves offline.
+    - family: Instrument Sans
+      fonts:
+        - asset: assets/fonts/InstrumentSans-Variable.ttf
+    - family: Instrument Serif
+      fonts:
+        - asset: assets/fonts/InstrumentSerif-Italic.ttf
+          style: italic
 
 
   # To add assets to your application, add an assets section, like this:

@@ -1,0 +1,21 @@
+# The OS launch screen, kept plain so there is nothing between it and
+# the preloader but the same colour.
+#
+# Regenerate after changing this:
+#   dart run flutter_native_splash:create
+flutter_native_splash:
+  # Must match RunwayScene.ground.
+  color: "#0B0B0B"
+  color_dark: "#0B0B0B"
+
+  # No image on purpose. Anything here would appear, sit still, and be
+  # replaced by the preloader a frame later -- two openings instead of
+  # one.
+
+  android_12:
+    color: "#0B0B0B"
+    color_dark: "#0B0B0B"
+
+  android: true
+  ios: true
+  web: false

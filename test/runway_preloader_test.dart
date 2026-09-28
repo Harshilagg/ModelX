@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +7,13 @@ import 'package:flutter_application_modelx/features/launch/app_ready.dart';
 import 'package:flutter_application_modelx/features/launch/runway_painter.dart';
 import 'package:flutter_application_modelx/features/launch/runway_preloader.dart';
 import 'package:flutter_application_modelx/features/launch/runway_scene.dart';
+
+/// WCAG relative contrast between two opaque colours.
+double contrast(Color a, Color b) {
+  final x = a.computeLuminance();
+  final y = b.computeLuminance();
+  return (math.max(x, y) + 0.05) / (math.min(x, y) + 0.05);
+}
 
 Future<void> pump(
   WidgetTester tester, {
@@ -227,19 +235,49 @@ void main() {
   group('the brand', () {
     test('the name and the accent each live in one place', () {
       expect(RunwayScene.appName, 'ModelX');
-      expect(RunwayScene.accent, const Color(0xFF2A3FF5));
+      expect(RunwayScene.accent, const Color(0xFF6B1F2A));
+      expect(RunwayScene.accentGlow, const Color(0xFFBF4A5B));
+    });
+
+    test('the flood carries the wordmark', () {
+      expect(
+        contrast(
+          RunwayScene.accent,
+          RunwayScene.wordmarkInk(RunwayScene.accent),
+        ),
+        greaterThanOrEqualTo(4.5),
+      );
+    });
+
+    test('the feet still read on the floor once they turn accent', () {
+      // The reason accentGlow exists. Oxblood itself is 1.7:1 here, so
+      // recolouring the feet with the flood colour would erase them at
+      // the moment they land.
+      expect(
+        contrast(RunwayScene.accentGlow, RunwayScene.ground),
+        greaterThanOrEqualTo(3.0),
+      );
+      expect(
+        RunwayScene.accentGlow.computeLuminance(),
+        greaterThan(RunwayScene.accent.computeLuminance()),
+      );
     });
 
     test('the wordmark stays legible whatever the accent becomes', () {
       // A light accent needs dark type on it.
-      expect(
-        RunwayScene.wordmarkInk(const Color(0xFF2A3FF5)),
-        RunwayScene.wordmarkOnDark,
-      );
-      expect(
-        RunwayScene.wordmarkInk(const Color(0xFFF0E9C8)),
-        RunwayScene.ground,
-      );
+      for (final accent in [
+        RunwayScene.accent,
+        const Color(0xFF2A3FF5), // the cobalt this replaced
+        const Color(0xFFC29A60), // brass, which sits near the crossover
+        const Color(0xFFF0E9C8),
+      ]) {
+        final ink = RunwayScene.wordmarkInk(accent);
+        expect(
+          contrast(accent, ink),
+          greaterThanOrEqualTo(4.5),
+          reason: '$accent was given the less legible of the two inks',
+        );
+      }
     });
   });
 

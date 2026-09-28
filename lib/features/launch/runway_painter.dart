@@ -14,6 +14,9 @@ enum RunwayPhase {
   holding,
 
   /// Startup finished; the scene turns accent and gives way.
+  ///
+  /// The marks on the floor take [RunwayScene.accentGlow]; the flood
+  /// that follows them takes [RunwayScene.accent] itself.
   firing,
 }
 
@@ -253,7 +256,11 @@ class RunwayPainter extends CustomPainter {
     final accent = frame.phase == RunwayPhase.firing
         ? _ramp(frame.fire, 0, 0.3)
         : 0.0;
-    final colour = Color.lerp(RunwayScene.light, RunwayScene.accent, accent)!;
+    final colour = Color.lerp(
+      RunwayScene.light,
+      RunwayScene.accentGlow,
+      accent,
+    )!;
 
     canvas.save();
     canvas.translate(0, 437);
@@ -305,7 +312,7 @@ class RunwayPainter extends CustomPainter {
       if (last && frame.phase == RunwayPhase.firing) {
         colour = Color.lerp(
           RunwayScene.light,
-          RunwayScene.accent,
+          RunwayScene.accentGlow,
           _ramp(frame.fire, 0, 0.3),
         )!;
       }
@@ -343,7 +350,7 @@ class RunwayPainter extends CustomPainter {
       }
 
       final scale = 1 + 1.6 * t;
-      final colour = firing ? RunwayScene.accent : RunwayScene.light;
+      final colour = firing ? RunwayScene.accentGlow : RunwayScene.light;
       canvas.drawOval(
         Rect.fromCenter(
           center: RunwayScene.mark,

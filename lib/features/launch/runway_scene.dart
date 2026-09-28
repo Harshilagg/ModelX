@@ -23,15 +23,35 @@ class RunwayScene {
   static const Color wordmarkOnDark = Color(0xFFF5F4F0);
 
   /// ---- CHANGE THIS to recolour the flood ----
-  static const Color accent = Color(0xFF2A3FF5);
+  static const Color accent = Color(0xFF6B1F2A);
+
+  /// The accent as a lit surface, for the marks on the floor.
+  ///
+  /// [accent] does two jobs, and they pull opposite ways. As a flood it
+  /// wants to be deep. As the recoloured feet and their reflection it
+  /// has to read against [ground] -- and oxblood against near-black is
+  /// 1.7:1, so the feet would disappear at the exact moment they land.
+  ///
+  /// Same hue and saturation, value raised: what a spotlight on oxblood
+  /// looks like. 4.1:1 on [ground], where the old cobalt managed 2.9:1.
+  ///
+  /// ---- CHANGE THIS with [accent], keeping it the lighter of the two ----
+  static const Color accentGlow = Color(0xFFBF4A5B);
 
   /// The name is not final, so it lives in one place.
   static const String appName = 'ModelX';
 
   /// Wordmark ink. Reads against whatever the accent turns out to be:
   /// a light accent needs dark type on it.
+  ///
+  /// The crossover is where [ground] and [wordmarkOnDark] contrast
+  /// equally against the accent, which solves to a luminance of 0.18 --
+  /// not the 0.6 this started at. At 0.6 a mid-luminance accent like
+  /// brass (0.35) would have been given light type at 2.4:1. Oxblood
+  /// sits at 0.04 and takes light type either way, so this changes
+  /// nothing today and stops being wrong if the accent ever moves.
   static Color wordmarkInk(Color accent) =>
-      accent.computeLuminance() > 0.6 ? ground : wordmarkOnDark;
+      accent.computeLuminance() > 0.18 ? ground : wordmarkOnDark;
 
   // ---- The runway ----------------------------------------------------
 
